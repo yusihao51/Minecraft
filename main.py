@@ -228,3 +228,4 @@ if __name__ == '__main__':
     options = parser.parse_args()
     initialize_config()
     main(options)
+    G.SQL_SESSION.commit()

@@ -26,7 +26,7 @@ import globals as G
 
 def get_item(item_or_block_id):
     """
-    Get the Block or Item with the specified id, which must either be an instance
+    Get the BlockType or Item with the specified id, which must either be an instance
     of BlockID, or a string format BlockID knows how to parse.
     """
     if not isinstance(item_or_block_id, BlockID):

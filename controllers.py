@@ -75,8 +75,8 @@ class MainMenuController(Controller):
         return pyglet.event.EVENT_HANDLED
 
     def new_game_func(self):
-        if G.DISABLE_SAVE:
-            remove_world(G.game_dir, G.SAVE_FILENAME)
+        # if G.DISABLE_SAVE:
+        #     remove_world(G.game_dir, G.SAVE_FILENAME)
         self.window.switch_controller(GameController(self.window))
         return pyglet.event.EVENT_HANDLED
 
@@ -117,14 +117,6 @@ class GameController(Controller):
         self.sorted = False
 
     def update(self, dt):
-        sector = sectorize(self.player.position)
-        if sector != self.sector:
-            self.model.change_sectors(sector)
-            # When the world is loaded, show every visible sector.
-            if self.sector is None:
-                self.model.process_entire_queue()
-            self.sector = sector
-
         self.model.content_update(dt)
 
         m = 8
@@ -184,15 +176,17 @@ class GameController(Controller):
             glFogf(GL_FOG_START, 20.0)
             glFogf(GL_FOG_END, G.DRAW_DISTANCE)  # 80)
 
-        self.focus_block = Block(width=1.05, height=1.05)
+        self.focus_block = BlockType(width=1.05, height=1.05)
         self.earth = vec(0.8, 0.8, 0.8, 1.0)
         self.white = vec(1.0, 1.0, 1.0, 1.0)
         self.ambient = vec(1.0, 1.0, 1.0, 1.0)
         self.polished = GLfloat(100.0)
         self.crack_batch = pyglet.graphics.Batch()
+        self.player = Player((0, 0, 0), (-20, 0),
+                             game_mode=G.GAME_MODE)
 
         if G.DISABLE_SAVE and world_exists(G.game_dir, G.SAVE_FILENAME):
-            open_world(self, G.game_dir, G.SAVE_FILENAME)
+            self.model = Model(controller=self, initialize=False)
         else:
             seed = G.LAUNCH_OPTIONS.seed
             if seed is None:
@@ -214,10 +208,8 @@ class GameController(Controller):
                     'Seed used the %d %m %Y at %H:%M:%S\n'))
                 seeds.write('%s\n\n' % seed)
 
-            self.model = Model()
-            self.player = Player((0, 0, 0), (-20, 0),
-                                 game_mode=G.GAME_MODE)
-            self.save_to_file() #So the hardcoded spawn sectors aren't overwritten by the worldgen
+            self.model = Model(controller=self)
+            # self.save_to_file() #So the hardcoded spawn sectors aren't overwritten by the worldgen
         print('Game mode: ' + self.player.game_mode)
         self.item_list = ItemSelector(self, self.player, self.model)
         self.inventory_list = InventorySelector(self, self.player, self.model)
@@ -244,6 +236,7 @@ class GameController(Controller):
                 anchor_x='left', anchor_y='top', color=(255, 255, 255, 255))
         pyglet.clock.schedule_interval_soft(self.model.process_queue,
                                             1.0 / G.MAX_FPS)
+        pyglet.clock.schedule_interval_soft(lambda dt: self.model.change_sectors(), 1)
 
     def update_time(self):
         """
@@ -303,8 +296,9 @@ class GameController(Controller):
         self.crack = None
 
     def save_to_file(self):
-        if G.DISABLE_SAVE:
-            save_world(self, G.game_dir, G.SAVE_FILENAME)
+        pass
+        # if G.DISABLE_SAVE:
+        #     save_world(self, G.game_dir, G.SAVE_FILENAME)
 
     def on_mouse_press(self, x, y, button, modifiers):
         if self.window.exclusive:
@@ -489,7 +483,7 @@ class GameController(Controller):
             % (self.time_of_day if (self.time_of_day < 12.0)
                else (24.0 - self.time_of_day),
                pyglet.clock.get_fps(), x, y, z,
-               len(self.model._shown), len(self.model))
+               len(self.model.shown), len(self.model))
         self.label.draw()
 
     def write_line(self, text, **kwargs):
@@ -544,4 +538,5 @@ class GameController(Controller):
         self.window.pop_handlers()
 
     def on_close(self):
-        self.save_to_file()
+        pass
+        # self.save_to_file()

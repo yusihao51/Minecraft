@@ -16,6 +16,9 @@ import os
 
 # Third-party packages
 from pyglet.resource import get_settings_path
+from sqlalchemy import create_engine, MetaData
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 # Modules from this project
 # Nothing for now...
@@ -86,7 +89,7 @@ KEY_BINDINGS = dict(
 #
 
 DISABLE_SAVE = True
-SAVE_FILENAME = None
+SAVE_FILENAME = 'pyCraftr.sqlite'
 
 PICKLE_SAVE_MODE = 'pickle'
 PICKLE_COMPRESSED_SAVE_MODE = 'pickle_compressed'
@@ -110,7 +113,7 @@ TILESET_SIZE = 16  # The tileset therefore contains TILESET_SIZE ** 2 tiles.
 # Game logic
 #
 
-BLOCKS_DIR = {}  # Block ID => block object
+BLOCKS_DIR = {}  # BlockType ID => block object
 ITEMS_DIR = {}  # Item ID => item object
 
 VERTEX_CUBE = 'cube'
@@ -257,3 +260,9 @@ ANCHOR_BOTTOM = 1 << 3
 ICONS_PATH = os.path.join('resources', 'textures', 'icons')
 TEXTURES_PATH = os.path.join('resources', 'textures')
 DEFAULT_FONT = 'ChunkFive Roman'
+
+SQL_ENGINE = create_engine('sqlite:///%s.sqlite'
+                           % os.path.join(game_dir, APP_NAME))
+metadata = MetaData(SQL_ENGINE)
+SQLBase = declarative_base(metadata=metadata)
+SQL_SESSION = sessionmaker(bind=SQL_ENGINE)()

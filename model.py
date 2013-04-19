@@ -10,12 +10,15 @@ import time
 import globals as G
 from nature import *
 from world import *
+from world import Block
 
 
 class Model(World):
-    def __init__(self, initialize=True):
+    def __init__(self, controller=None, initialize=True):
         super(Model, self).__init__()
+        self.controller = controller
         if initialize:
+            G.SQLBase.metadata.create_all(G.SQL_ENGINE)
             print('Building terrain...')
             start = time.time()
             self.initialize()
@@ -23,6 +26,19 @@ class Model(World):
 
             print('Preparing game...')
             self.post_initialize()
+        else:
+            print('Loading world...')
+            x, y, z = self.controller.player.position
+            blocks = G.SQL_SESSION.query(Block).filter(
+                Block.x.between(x - 5, x + 5),
+                Block.y.between(y - 5, y + 5),
+                Block.z.between(z - 5, z + 5))
+            maximum = blocks.count()
+            for i, block in enumerate(blocks.all()):
+                self.add_block(block.position, G.BLOCKS_DIR[block.blocktype_id],
+                               force=False, sync=False, exists=True)
+                if not i % 10000:
+                    print('%f %%' % (100 * i / maximum))
 
     def initialize(self):
         world_size = G.config.getint('World', 'size')
@@ -177,4 +193,8 @@ class Model(World):
             x, y, z = position
             above_position = x, y + 1, z
             if above_position not in self or self[above_position].transparent:
-                self[position] = grass_block
+                self.add_block(position, grass_block, sync=False, force=True)
+
+        Sector.rebuild_sectors()
+
+        G.SQL_SESSION.commit()

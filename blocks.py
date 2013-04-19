@@ -7,17 +7,17 @@ from __future__ import unicode_literals
 
 # Python packages
 import os
+from random import randint
 
 # Third-party packages
 import pyglet
 from pyglet.gl import *
 from pyglet.image.atlas import TextureAtlas
-from utils import load_image
 
 # Modules from this project
 import globals as G
-from random import randint
 import sounds
+from utils import load_image
 
 
 def get_texture_coordinates(x, y, tileset_size=G.TILESET_SIZE):
@@ -61,7 +61,7 @@ class TextureGroupIndividual(pyglet.graphics.Group):
 
 class BlockID(object):
     """
-    Datatype for Block and Item IDs
+    Datatype for BlockType and Item IDs
 
     Creation: BlockID(1)   BlockID(35)   BlockID(35, 3)   BlockID((35,
     3))   BlockID("35.3")
@@ -123,7 +123,7 @@ class BlockID(object):
         return '%d.%d' % (self.main, self.sub)
 
 
-class Block(object):
+class BlockType(object):
     id = None  # Original minecraft id (also called data value).
                # Verify on http://www.minecraftwiki.net/wiki/Data_values
                # when creating a new "official" block.
@@ -161,7 +161,7 @@ class Block(object):
     # Inventory attributes
     max_stack_size = 64
     amount_label_color = 255, 255, 255, 255
-    name = "Block"
+    name = "BlockType"
 
     digging_tool = -1
     # How long can this item burn (-1 for non-fuel items)
@@ -254,7 +254,7 @@ class Block(object):
             sounds.play_sound(self.break_sound, player=player, position=position)
 
 
-class AirBlock(Block):
+class AirBlock(BlockType):
     top_texture = -1, -1
     bottom_texture = -1, -1
     side_texture = -1, -1
@@ -264,12 +264,12 @@ class AirBlock(Block):
     name = "Air"
 
 
-class WoodBlock(Block):
+class WoodBlock(BlockType):
     break_sound = sounds.wood_break
     digging_tool = G.AXE
 
 
-class HardBlock(Block):
+class HardBlock(BlockType):
     break_sound = sounds.stone_break
 
 class StoneBlock(HardBlock):
@@ -287,7 +287,7 @@ class StoneBlock(HardBlock):
         self.drop_id = BlockID(CobbleBlock.id)
 
 
-class GrassBlock(Block):
+class GrassBlock(BlockType):
     top_texture = 1, 0
     bottom_texture = 0, 1
     side_texture = 0, 0
@@ -303,7 +303,7 @@ class GrassBlock(Block):
         self.drop_id = BlockID(DirtBlock.id)
 
 
-class DirtBlock(Block):
+class DirtBlock(BlockType):
     top_texture = 0, 1
     bottom_texture = 0, 1
     side_texture = 0, 1
@@ -314,7 +314,7 @@ class DirtBlock(Block):
     digging_tool = G.SHOVEL
     break_sound = sounds.dirt_break
 
-class SnowBlock(Block):
+class SnowBlock(BlockType):
     top_texture = 4, 1
     bottom_texture = 4, 1
     side_texture = 4, 1
@@ -325,7 +325,7 @@ class SnowBlock(Block):
     amount_label_color = 0, 0, 0, 255
     break_sound = sounds.dirt_break
 
-class SandBlock(Block):
+class SandBlock(BlockType):
     top_texture = 1, 1
     bottom_texture = 1, 1
     side_texture = 1, 1
@@ -399,7 +399,7 @@ class BrickBlock(HardBlock):
     name = "Bricks"
 
 
-class LampBlock(Block):
+class LampBlock(BlockType):
     top_texture = 3, 1
     bottom_texture = 3, 1
     side_texture = 3, 1
@@ -410,7 +410,7 @@ class LampBlock(Block):
     break_sound = sounds.glass_break
 
 
-class GlassBlock(Block):
+class GlassBlock(BlockType):
     top_texture = 0, 5
     bottom_texture = 0, 5
     side_texture = 0, 5
@@ -423,7 +423,7 @@ class GlassBlock(Block):
     break_sound = sounds.glass_break
 
 
-class GravelBlock(Block):
+class GravelBlock(BlockType):
     top_texture = 1, 5
     bottom_texture = 1, 5
     side_texture = 1, 5
@@ -457,7 +457,7 @@ class BedrockBlock(HardBlock):
     name = "Bedrock"
 
 
-class WaterBlock(Block):
+class WaterBlock(BlockType):
     height = 0.8
     top_texture = 0, 2
     bottom_texture = 6, 7
@@ -616,7 +616,7 @@ class JungleWoodPlankBlock(WoodBlock):
 
 # FIXME: Can't find its specific id on minecraftwiki.
 # from ronmurphy: This is just the snowy side grass from the above texture pack.  MC has one like this also.
-class SnowGrassBlock(Block):
+class SnowGrassBlock(BlockType):
     top_texture = 4, 1
     bottom_texture = 0, 1
     side_texture = 4, 0
@@ -677,7 +677,7 @@ class BirchWoodBlock(WoodBlock):
     burning_time = 15
 
 
-class CactusBlock(Block):
+class CactusBlock(BlockType):
     width = 0.8
     top_texture = 7, 5
     bottom_texture = 7, 3
@@ -688,7 +688,7 @@ class CactusBlock(Block):
     name = "Cactus"
 
 
-class TallCactusBlock(Block):
+class TallCactusBlock(BlockType):
     width = 0.3
     top_texture = 7, 5
     bottom_texture = 7, 3
@@ -700,7 +700,7 @@ class TallCactusBlock(Block):
     name = "Thin Cactus"
 
 
-class LeafBlock(Block):
+class LeafBlock(BlockType):
     break_sound = sounds.leaves_break
 
     def __init__(self):
@@ -742,7 +742,7 @@ class BirchLeafBlock(LeafBlock):
         self.drop_id = None
 
 
-class MelonBlock(Block):
+class MelonBlock(BlockType):
     width = 0.8
     height = 0.8
     top_texture = 4, 3
@@ -757,7 +757,7 @@ class MelonBlock(Block):
     break_sound = sounds.melon_break
 
 
-class PumpkinBlock(Block):
+class PumpkinBlock(BlockType):
     width = 0.8
     height = 0.8
     top_texture = 2, 5
@@ -784,7 +784,7 @@ class TorchBlock(WoodBlock):
     id = 50
     name = "Torch"
 
-class YFlowersBlock(Block):
+class YFlowersBlock(BlockType):
     width = 0.5
     height = 0.7
     top_texture = 6, 6
@@ -1002,7 +1002,7 @@ class FurnaceBlock(HardBlock):
         # smelting task
         self.smelt_task = G.main_timer.add_task(smelting_time, self.smelt_done)
 
-class FarmBlock(Block):
+class FarmBlock(BlockType):
     top_texture = 5, 3
     bottom_texture = 0, 1
     side_texture = 0, 1
@@ -1015,7 +1015,7 @@ class FarmBlock(Block):
         super(FarmBlock, self).__init__()
         self.drop_id = BlockID(DirtBlock.id)
 
-class ChestBlock(Block):
+class ChestBlock(BlockType):
     top_texture = 8, 4
     bottom_texture = 8, 2
     side_texture = 8, 3
@@ -1026,7 +1026,7 @@ class ChestBlock(Block):
 
 # Wool blocks
 
-class BlackWoolBlock(Block):
+class BlackWoolBlock(BlockType):
     top_texture = 15, 0
     bottom_texture = 15, 0
     side_texture = 15, 0
@@ -1035,7 +1035,7 @@ class BlackWoolBlock(Block):
     id = 35,15
     name = "Black Wool"
 
-class RedWoolBlock(Block):
+class RedWoolBlock(BlockType):
     top_texture = 15, 1
     bottom_texture = 15, 1
     side_texture = 15, 1
@@ -1044,7 +1044,7 @@ class RedWoolBlock(Block):
     id = 35,14
     name = "Red Wool"
 
-class GreenWoolBlock(Block):
+class GreenWoolBlock(BlockType):
     top_texture = 15, 2
     bottom_texture = 15, 2
     side_texture = 15, 2
@@ -1053,7 +1053,7 @@ class GreenWoolBlock(Block):
     id = 35,13
     name = "Green Wool"
 
-class BrownWoolBlock(Block):
+class BrownWoolBlock(BlockType):
     top_texture = 15, 3
     bottom_texture = 15, 3
     side_texture = 15, 3
@@ -1062,7 +1062,7 @@ class BrownWoolBlock(Block):
     id = 35,12
     name = "Brown Wool"
 
-class BlueWoolBlock(Block):
+class BlueWoolBlock(BlockType):
     top_texture = 15, 4
     bottom_texture = 15, 4
     side_texture = 15, 4
@@ -1071,7 +1071,7 @@ class BlueWoolBlock(Block):
     id = 35,11
     name = "Blue Wool"
 
-class PurpleWoolBlock(Block):
+class PurpleWoolBlock(BlockType):
     top_texture = 15, 5
     bottom_texture = 15, 5
     side_texture = 15, 5
@@ -1080,7 +1080,7 @@ class PurpleWoolBlock(Block):
     id = 35,10
     name = "Purple Wool"
 
-class CyanWoolBlock(Block):
+class CyanWoolBlock(BlockType):
     top_texture = 15, 6
     bottom_texture = 15, 6
     side_texture = 15, 6
@@ -1089,7 +1089,7 @@ class CyanWoolBlock(Block):
     id = 35,9
     name = "Cyan Wool"
 
-class LightGreyWoolBlock(Block):
+class LightGreyWoolBlock(BlockType):
     top_texture = 15, 7
     bottom_texture = 15, 7
     side_texture = 15, 7
@@ -1098,7 +1098,7 @@ class LightGreyWoolBlock(Block):
     id = 35,8
     name = "Light Grey Wool"
 
-class GreyWoolBlock(Block):
+class GreyWoolBlock(BlockType):
     top_texture = 15, 8
     bottom_texture = 15, 8
     side_texture = 15, 8
@@ -1107,7 +1107,7 @@ class GreyWoolBlock(Block):
     id = 35,7
     name = "Grey Wool"
 
-class PinkWoolBlock(Block):
+class PinkWoolBlock(BlockType):
     top_texture = 15, 9
     bottom_texture = 15, 9
     side_texture = 15, 9
@@ -1116,7 +1116,7 @@ class PinkWoolBlock(Block):
     id = 35,6
     name = "Pink Wool"
 
-class LimeWoolBlock(Block):
+class LimeWoolBlock(BlockType):
     top_texture = 15, 10
     bottom_texture = 15, 10
     side_texture = 15, 10
@@ -1125,7 +1125,7 @@ class LimeWoolBlock(Block):
     id = 35,5
     name = "Lime Wool"
 
-class YellowWoolBlock(Block):
+class YellowWoolBlock(BlockType):
     top_texture = 15, 11
     bottom_texture = 15, 11
     side_texture = 15, 11
@@ -1134,7 +1134,7 @@ class YellowWoolBlock(Block):
     id = 35,4
     name = "Yellow Wool"
 
-class LightBlueWoolBlock(Block):
+class LightBlueWoolBlock(BlockType):
     top_texture = 15, 12
     bottom_texture = 15, 12
     side_texture = 15, 12
@@ -1143,7 +1143,7 @@ class LightBlueWoolBlock(Block):
     id = 35,3
     name = "Light Blue Wool"
 
-class MagentaWoolBlock(Block):
+class MagentaWoolBlock(BlockType):
     top_texture = 15, 13
     bottom_texture = 15, 13
     side_texture = 15, 13
@@ -1152,7 +1152,7 @@ class MagentaWoolBlock(Block):
     id = 35,2
     name = "Magenta Wool"
 
-class OrangeWoolBlock(Block):
+class OrangeWoolBlock(BlockType):
     top_texture = 15, 14
     bottom_texture = 15, 14
     side_texture = 15, 14
@@ -1161,7 +1161,7 @@ class OrangeWoolBlock(Block):
     id = 35,1
     name = "Orange Wool"
 
-class WhiteWoolBlock(Block):
+class WhiteWoolBlock(BlockType):
     top_texture = 15, 15
     bottom_texture = 15, 15
     side_texture = 15, 15
@@ -1172,7 +1172,7 @@ class WhiteWoolBlock(Block):
 amount_label_color = 0, 0, 0, 255
 
 # moreplants
-class RoseBlock(Block):
+class RoseBlock(BlockType):
     width = 0.5
     height = 0.7
     top_texture = -1, -1
@@ -1187,7 +1187,7 @@ class RoseBlock(Block):
     break_sound = sounds.leaves_break
     amount_label_color = 0, 0, 0, 255
 
-class ReedBlock(Block):
+class ReedBlock(BlockType):
     top_texture = -1, -1
     bottom_texture = -1, -1
     side_texture = 10, 1
@@ -1201,7 +1201,7 @@ class ReedBlock(Block):
     max_stack_size = 16
     amount_label_color = 0, 0, 0, 255
 
-class PotatoBlock(Block):
+class PotatoBlock(BlockType):
     top_texture = -1, -1
     bottom_texture = -1, -1
     side_texture = 10, 3
@@ -1214,7 +1214,7 @@ class PotatoBlock(Block):
     regenerated_health = 1
     amount_label_color = 0, 0, 0, 255
 
-class CarrotBlock(Block):
+class CarrotBlock(BlockType):
     top_texture = -1, -1
     bottom_texture = -1, -1
     side_texture = 10, 2
@@ -1287,7 +1287,7 @@ class MossyStonebrickBlock(HardBlock):
     digging_tool = G.PICKAXE
     name = "Mossy Stone Bricks"
 
-class IceBlock(Block):
+class IceBlock(BlockType):
     top_texture = 8, 7
     bottom_texture = 8, 7
     side_texture = 8, 7
