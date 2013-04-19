@@ -18,7 +18,6 @@ class Model(World):
         super(Model, self).__init__()
         self.controller = controller
         if initialize:
-            G.SQLBase.metadata.create_all(G.SQL_ENGINE)
             print('Building terrain...')
             start = time.time()
             self.initialize()

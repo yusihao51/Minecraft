@@ -5,7 +5,7 @@ from math import cos, sin, atan2, radians
 import random
 
 # Third-party packages
-# Nothing for now...
+from sqlalchemy import Column, Boolean
 
 # Modules from this project
 from entity import *
@@ -15,27 +15,35 @@ from world import *
 
 
 class Player(Entity):
-    def __init__(self, position, rotation, flying=False,
+    __tablename__ = 'players'
+
+    flying = Column(Boolean)
+
+    max_health = 10
+    attack_power = 2.0 / 3.0
+    attack_range = 4
+
+    def __init__(self, position=(0, 0, 0), rotation=(-20, 0), flying=False,
                  game_mode=G.GAME_MODE):
-        super(Player, self).__init__(position, rotation, health=7,
-                                     max_health=10, attack_power=2.0 / 3,
-                                     attack_range=4)
+        super(Player, self).__init__(position, rotation, health=7)
+        self.flying = flying
+        self.game_mode = game_mode
+
+    def post_init(self):
+        # TODO: Save these fields using SQL.
         self.inventory = Inventory()
         self.quick_slots = Inventory(9)
         self.armor = Inventory(4)
-        self.flying = flying
-        self.game_mode = game_mode
         self.strafe = [0, 0]
         self.dy = 0
-
         initial_items = [torch_block, stick_item]
 
         for item in initial_items:
             quantity = random.randint(2, 10)
             if random.choice((True, False)):
                 self.inventory.add_item(item.id, quantity)
-            #else:
-            #    self.quick_slots.add_item(item.id, quantity)
+                #else:
+                #    self.quick_slots.add_item(item.id, quantity)
 
     def add_item(self, item_id):
         if self.quick_slots.add_item(item_id):

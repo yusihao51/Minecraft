@@ -182,10 +182,16 @@ class GameController(Controller):
         self.ambient = vec(1.0, 1.0, 1.0, 1.0)
         self.polished = GLfloat(100.0)
         self.crack_batch = pyglet.graphics.Batch()
-        self.player = Player((0, 0, 0), (-20, 0),
-                             game_mode=G.GAME_MODE)
 
-        if G.DISABLE_SAVE and world_exists(G.game_dir, G.SAVE_FILENAME):
+        has_save = world_exists(G.game_dir, G.SAVE_FILENAME)
+
+        G.SQLBase.metadata.create_all(G.SQL_ENGINE)
+
+        self.player = get_or_create(Player)
+        self.player.post_init()
+        self.player.game_mode = G.GAME_MODE
+
+        if G.DISABLE_SAVE and has_save:
             self.model = Model(controller=self, initialize=False)
         else:
             seed = G.LAUNCH_OPTIONS.seed
