@@ -8,7 +8,7 @@ import warnings
 # Third-party packages
 import pyglet
 from pyglet.gl import *
-from sqlalchemy import Column, Integer, ForeignKey, Boolean, func
+from sqlalchemy import Column, Integer, ForeignKey, Boolean, func, exists
 from sqlalchemy.orm import relationship, backref
 
 
@@ -232,8 +232,6 @@ class World(dict):
         self.transparency_batch = pyglet.graphics.Batch()
         self.group = TextureGroup(os.path.join('resources', 'textures', 'texture.png'))
 
-        import savingsystem #This module doesn't like being imported at modulescope
-        self.savingsystem = savingsystem
         self.shown = {}
         self.sectors = defaultdict(list)
         self.shown_sectors = []
@@ -257,17 +255,16 @@ class World(dict):
                               'spreading mutations; your save is probably '
                               'corrupted' % repr(position))
 
-    def add_block(self, position, block, sync=True, force=True, exists=False, sector=None):
+    def add_block(self, position, blocktype, sync=True, force=True, sector=None):
         if position in self:
             if force:
                 self.remove_block(None, position, sync=sync)
-        if not exists:
-            G.SQL_SESSION.add(Block(position=position, blocktype=block, sector=sector))
+        block = get_or_create(Block, position=position, blocktype=blocktype, sector=sector)
 
-        if block.id == furnace_block.id:
+        if blocktype.id == furnace_block.id:
             self[position] = FurnaceBlock()
         else:
-            self[position] = block
+            self[position] = blocktype
         self.sectors[sectorize(position)].append(position)
         if sync:
             if self.is_exposed(block):
@@ -341,7 +338,10 @@ class World(dict):
             return block.is_exposed
 
         for other_position in self.neighbors_iterator(block.position):
-            other_block = self.get_block(*other_position)
+            if other_position in self:
+                other_block = Block(position=other_position, blocktype=self[other_position])
+            else:
+                other_block = self.get_block(*other_position)
             if not other_block or other_block.blocktype.transparent:
                 block.is_exposed = True
                 G.SQL_SESSION.add(block)
@@ -369,7 +369,6 @@ class World(dict):
         return None, None
 
     def hide_block(self, position, immediate=True):
-        del self.shown[position]
         if immediate:
             self._hide_block(position)
         else:
@@ -379,7 +378,7 @@ class World(dict):
         self.shown.pop(position).delete()
 
     def show_block(self, block, immediate=True):
-        self.shown[block.position] = block.blocktype
+        self[block.position] = block.blocktype
         try:
             int(block.id)
         except ValueError:
@@ -427,14 +426,8 @@ class World(dict):
         self.shown_sectors.append(sector)
 
     def _show_sector(self, sector):
-        if False and G.SAVE_MODE == G.REGION_SAVE_MODE and not sector in self.sectors:
-            #The sector is not in memory, load or create it
-            if self.savingsystem.sector_exists(sector):
-                #If its on disk, load it
-                self.savingsystem.load_region(self, sector=sector)
-            else:
-                #The sector doesn't exist yet, generate it!
-                self.terraingen.generate_sector(sector)
+        if sector.position not in self.sectors:
+            self.terraingen.generate_sector(sector.position)
 
         if not sector.blocks:
             blocks = sector.get_blocks().all()
@@ -459,6 +452,11 @@ class World(dict):
                 self.hide_block(block)
 
     def change_sectors(self):
+        xs, ys, zs = sectorize(self.controller.player.position)
+        if not G.SQL_SESSION.query(exists().where(Sector.x==xs and Sector.y==ys and Sector.z==zs)).scalar():
+            s = Sector(x=xs, y=ys, z=zs)
+            G.SQL_SESSION.add(s)
+            self.show_sector(s)
         x, y, z = self.controller.player.position
 
         d = G.VISIBLE_SECTORS_RADIUS * G.SECTOR_SIZE

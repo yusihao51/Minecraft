@@ -369,9 +369,10 @@ class TerrainGeneratorSimple(object):
 
         return int(self._clamp((y+1)/2)*self.height_range)
     def generate_sector(self, sector):
+        import savingsystem
         #For ease of saving/loading, generates a whole region (4x4x4 sectors) at once
         world = self.world
-        cx, cy, cz = world.savingsystem.sector_to_blockpos(sector)
+        cx, cy, cz = savingsystem.sector_to_blockpos(sector)
         rx, ry, rz = cx/32*32, cy/32*32, cz/32*32
 
         #Create the sector so even if the worldgen says its air, it'll still prevent future generation attempts
@@ -383,9 +384,9 @@ class TerrainGeneratorSimple(object):
         if 0 >= ry < 32:
             #The current terraingen doesn't build higher than 32.
             rytop = ry + 31
-            world_init_block, self_get_height = world.init_block, self.get_height #Localize for speed
+            world_add_block, self_get_height = world.add_block, self.get_height #Localize for speed
             for x in xrange(rx, rx+32):
                 for z in xrange(rz, rz+32):
                     y = self_get_height(x,z)
                     if ry <= y <= rytop:
-                        world_init_block((x, y, z), grass_block)
+                        world_add_block((x, y, z), grass_block)

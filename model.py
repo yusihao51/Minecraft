@@ -25,19 +25,6 @@ class Model(World):
 
             print('Preparing game...')
             self.post_initialize()
-        else:
-            print('Loading world...')
-            x, y, z = self.controller.player.position
-            blocks = G.SQL_SESSION.query(Block).filter(
-                Block.x.between(x - 5, x + 5),
-                Block.y.between(y - 5, y + 5),
-                Block.z.between(z - 5, z + 5))
-            maximum = blocks.count()
-            for i, block in enumerate(blocks.all()):
-                self.add_block(block.position, G.BLOCKS_DIR[block.blocktype_id],
-                               force=False, sync=False, exists=True)
-                if not i % 10000:
-                    print('%f %%' % (100 * i / maximum))
 
     def initialize(self):
         world_size = G.config.getint('World', 'size')
