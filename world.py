@@ -218,9 +218,6 @@ class Block(G.SQLBase):
         self.blocktype_id = value.id
 
 
-# GeometryDDL(Block.__table__)
-
-
 class World(dict):
     spreading_mutations = {
         dirt_block: grass_block,
