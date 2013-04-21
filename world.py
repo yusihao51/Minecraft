@@ -9,7 +9,7 @@ import warnings
 import pyglet
 from pyglet.gl import *
 from sqlalchemy import Column, Integer, ForeignKey, Boolean, func, exists
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, joinedload, subqueryload
 
 
 # Modules from this project
@@ -453,7 +453,9 @@ class World(dict):
 
     def change_sectors(self):
         xs, ys, zs = sectorize(self.controller.player.position)
-        if not G.SQL_SESSION.query(exists().where(Sector.x==xs and Sector.y==ys and Sector.z==zs)).scalar():
+        if not G.SQL_SESSION.query(
+                exists().where(Sector.x == xs and Sector.y == ys
+                               and Sector.z == zs)).scalar():
             s = Sector(x=xs, y=ys, z=zs)
             G.SQL_SESSION.add(s)
             self.show_sector(s)
@@ -462,7 +464,7 @@ class World(dict):
         d = G.VISIBLE_SECTORS_RADIUS * G.SECTOR_SIZE
         sectors = G.SQL_SESSION.query(Sector)
         if self.shown_sectors:
-            sectors.filter(~Sector.id.in_([s.id for s in self.shown_sectors]))
+            sectors = sectors.filter(~Sector.id.in_([s.id for s in self.shown_sectors]))
         sectors = sectors.filter(
             Sector.x >= x - d, Sector.x <= x + d,
             Sector.y >= y - d, Sector.y <= y + d,
