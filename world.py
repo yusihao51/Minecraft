@@ -168,6 +168,11 @@ class Sector(G.SQLBase):
         return G.SQL_SESSION.query(exists(self.get_exposed_blocks().statement)).scalar()
 
     @staticmethod
+    def exists_at(x, y, z):
+        return G.SQL_SESSION.query(exists().where(
+            Sector.x == x and Sector.y == y and Sector.z == z)).scalar()
+
+    @staticmethod
     def get_from_block_position(block_position):
         x, y, z = sectorize(block_position)
         return get_or_create(Sector, x=x, y=y, z=z)
@@ -459,7 +464,6 @@ class World(dict):
     def _show_sector(self, sector):
         if sector.is_empty():
             self.terraingen.generate_sector(sector.position)
-            sector.rebuild_blocks()
 
         for block in sector.get_exposed_blocks().all():
             if block.position not in self.shown and self.is_exposed(block):
@@ -484,9 +488,7 @@ class World(dict):
 
     def change_sectors(self):
         xs, ys, zs = sectorize(self.controller.player.position)
-        if not G.SQL_SESSION.query(
-                exists().where(Sector.x == xs and Sector.y == ys
-                               and Sector.z == zs)).scalar():
+        if not Sector.exists_at(xs, ys, zs):
             s = Sector(x=xs, y=ys, z=zs)
             G.SQL_SESSION.add(s)
             self.show_sector(s)
