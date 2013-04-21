@@ -181,9 +181,9 @@ class Block(G.SQLBase):
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
-        if kwargs.get('sector', None) is None:
-            x, y, z = sectorize(self.position)
-            self.sector_id = get_or_create(Sector, x=x, y=y, z=z).id
+        # if kwargs.get('sector', None) is None:
+        #     x, y, z = sectorize(self.position)
+        #     self.sector_id = get_or_create(Sector, x=x, y=y, z=z).id
         super(Block, self).__init__()
 
     def __eq__(self, other):
