@@ -10,10 +10,11 @@ import random
 
 # Third-party packages
 # Nothing for now
-from perlin import SimplexNoise
 
 # Modules from this project
 from blocks import *
+from debug import performance_info
+from perlin import SimplexNoise
 from utils import FastRandom, fast_floor, fast_abs
 
 
@@ -368,18 +369,15 @@ class TerrainGeneratorSimple(object):
             z *= self.PERSISTENCE
 
         return int(self._clamp((y+1)/2)*self.height_range)
+
+    @performance_info
     def generate_sector(self, sector):
         import savingsystem
+        from world import Sector
         #For ease of saving/loading, generates a whole region (4x4x4 sectors) at once
         world = self.world
         cx, cy, cz = savingsystem.sector_to_blockpos(sector)
         rx, ry, rz = cx/32*32, cy/32*32, cz/32*32
-
-        #Create the sector so even if the worldgen says its air, it'll still prevent future generation attempts
-        for secx in xrange(rx/8,rx/8+4):
-            for secy in xrange(ry/8,ry/8+4):
-                for secz in xrange(rz/8,rz/8+4):
-                    world.sectors[(secx,secy,secz)] = []
 
         if 0 >= ry < 32:
             #The current terraingen doesn't build higher than 32.
@@ -388,5 +386,8 @@ class TerrainGeneratorSimple(object):
             for x in xrange(rx, rx+32):
                 for z in xrange(rz, rz+32):
                     y = self_get_height(x,z)
+                    position = x, y, z
+                    sector = Sector.get_from_block_position(position)
                     if ry <= y <= rytop:
-                        world_add_block((x, y, z), grass_block)
+                        world_add_block(position, grass_block, sync=False,
+                                        sector=sector)

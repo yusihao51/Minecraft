@@ -7,6 +7,7 @@ from binascii import hexlify
 import datetime
 
 # Third-party packages
+from sqlalchemy.engine import reflection
 from pyglet.gl import *
 
 # Modules from this project
@@ -75,8 +76,8 @@ class MainMenuController(Controller):
         return pyglet.event.EVENT_HANDLED
 
     def new_game_func(self):
-        # if G.DISABLE_SAVE:
-        #     remove_world(G.game_dir, G.SAVE_FILENAME)
+        if G.DISABLE_SAVE:
+            G.SQLBase.metadata.drop_all(G.SQL_ENGINE)
         self.window.switch_controller(GameController(self.window))
         return pyglet.event.EVENT_HANDLED
 
@@ -183,7 +184,10 @@ class GameController(Controller):
         self.polished = GLfloat(100.0)
         self.crack_batch = pyglet.graphics.Batch()
 
-        has_save = world_exists(G.game_dir, G.SAVE_FILENAME)
+        sql_inspector = reflection.Inspector.from_engine(G.SQL_ENGINE)
+
+        has_save = world_exists(G.game_dir, G.SAVE_FILENAME) \
+            and sql_inspector.get_table_names()
 
         G.SQLBase.metadata.create_all(G.SQL_ENGINE)
 
@@ -270,7 +274,7 @@ class GameController(Controller):
             self.time_of_day = 0.0
             time_of_day = 0.0
 
-        side = len(self.model.sectors) * 2.0
+        side = len(self.model.shown_sectors) * 2.0
 
         self.light_y = 2.0 * side * sin(time_of_day * self.hour_deg
                                         * G.DEG_RAD)

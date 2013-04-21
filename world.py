@@ -3,17 +3,19 @@
 # Python packages
 from collections import deque, defaultdict
 import os
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 import warnings
 
 # Third-party packages
 import pyglet
 from pyglet.gl import *
 from sqlalchemy import Column, Integer, ForeignKey, Boolean, func, exists
-from sqlalchemy.orm import relationship, backref, joinedload, subqueryload
+from sqlalchemy.orm import relationship, backref
 
 
 # Modules from this project
 from blocks import *
+from debug import performance_info
 import globals as G
 import terrain
 
@@ -99,12 +101,12 @@ class TextureGroup(pyglet.graphics.Group):
 
 
 def get_or_create(model, **kwargs):
-    instance = G.SQL_SESSION.query(model).filter_by(**kwargs).first()
-    if instance:
+    try:
+        return G.SQL_SESSION.query(model).filter_by(**kwargs).one()
+    except NoResultFound:
+        instance = model(**kwargs)
+        G.SQL_SESSION.add(instance)
         return instance
-    instance = model(**kwargs)
-    G.SQL_SESSION.add(instance)
-    return instance
 
 
 class Sector(G.SQLBase):
@@ -137,19 +139,41 @@ class Sector(G.SQLBase):
     def position(self, value):
         self.x, self.y, self.z = value
 
+    def has_blocks(self):
+        return G.SQL_SESSION.query(exists(self.blocks.statement)).scalar()
+
+    def is_empty(self):
+        return not self.has_blocks()
+
     def get_blocks(self):
+        if self.has_blocks():
+            return self.blocks
+        self.rebuild_blocks()
+        return self.blocks
+
+    def rebuild_blocks(self):
         d = G.SECTOR_SIZE
-        return G.SQL_SESSION.query(Block).filter(
+        self.blocks = G.SQL_SESSION.query(Block).filter(
             Block.x.between(self.x, self.x + d),
             Block.y.between(self.y, self.y + d),
             Block.z.between(self.z, self.z + d),
-        )
+        ).all()
+        G.SQL_SESSION.add(self)
 
     def get_exposed_blocks(self):
         return self.get_blocks().filter(
-            (Block.is_exposed == True) | (Block.is_exposed == None)).all()
+            (Block.is_exposed == True) | (Block.is_exposed == None))
+
+    def is_visible(self):
+        return G.SQL_SESSION.query(exists(self.get_exposed_blocks().statement)).scalar()
+
+    @staticmethod
+    def get_from_block_position(block_position):
+        x, y, z = sectorize(block_position)
+        return get_or_create(Sector, x=x, y=y, z=z)
 
     @classmethod
+    @performance_info
     def rebuild_sectors(cls):
         xm = G.SQL_SESSION.query(func.min(Block.x)).scalar()
         xM = G.SQL_SESSION.query(func.max(Block.x)).scalar()
@@ -160,9 +184,10 @@ class Sector(G.SQLBase):
         for x in range(xm, xM, G.SECTOR_SIZE):
             for y in range(ym, yM, G.SECTOR_SIZE):
                 for z in range(zm, zM, G.SECTOR_SIZE):
-                    s = Sector(x=x, y=y, z=z)
-                    s.blocks = s.get_blocks().all()
-                    G.SQL_SESSION.add(s)
+                    sector = get_or_create(Sector, x=x, y=y, z=z)
+                    if sector.is_empty():
+                        sector.get_blocks()  # Rebuilds the link with blocks
+                        G.SQL_SESSION.add(sector)
 
 
 class Block(G.SQLBase):
@@ -175,15 +200,15 @@ class Block(G.SQLBase):
     is_exposed = Column(Boolean, index=True)
     blocktype_id_main = Column(Integer)
     blocktype_id_sub = Column(Integer)
-    sector_id = Column(Integer, ForeignKey('sectors.id'), nullable=True)
-    sector = relationship('Sector', backref=backref('blocks'))
+    sector_id = Column(Integer, ForeignKey('sectors.id'), nullable=True,
+                       index=True)
+    sector = relationship('Sector', backref=backref('blocks', lazy='dynamic'))
 
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
         # if kwargs.get('sector', None) is None:
-        #     x, y, z = sectorize(self.position)
-        #     self.sector_id = get_or_create(Sector, x=x, y=y, z=z).id
+        #     self.sector = Sector.get_from_block_position(self.position)
         super(Block, self).__init__()
 
     def __eq__(self, other):
@@ -192,6 +217,9 @@ class Block(G.SQLBase):
 
     def __hash__(self):
         return self.id
+
+    def __repr__(self):
+        return '<Block %d %d %d>' % self.position
 
     @property
     def position(self):
@@ -230,7 +258,6 @@ class World(dict):
         self.group = TextureGroup(os.path.join('resources', 'textures', 'texture.png'))
 
         self.shown = {}
-        self.sectors = defaultdict(list)
         self.shown_sectors = []
         self.shown_blocks = []
         self.before_set = set()
@@ -258,13 +285,16 @@ class World(dict):
         if position in self:
             if force:
                 self.remove_block(None, position, sync=sync)
-        block = get_or_create(Block, position=position, blocktype=blocktype, sector=sector)
+        x, y, z = position
+        block = get_or_create(Block, x=x, y=y, z=z,
+                              blocktype_id_main=blocktype.id.main,
+                              blocktype_id_sub=blocktype.id.sub,
+                              sector=sector)
 
         if blocktype.id == furnace_block.id:
             self[position] = FurnaceBlock()
         else:
             self[position] = blocktype
-        self.sectors[sectorize(position)].append(position)
         if sync:
             if self.is_exposed(block):
                 self.show_block(block)
@@ -275,16 +305,9 @@ class World(dict):
             self[position].play_break_sound(player, position)
         del self[position]
         x, y, z = position
-        block = G.SQL_SESSION.query(Block).filter_by(x=x, y=y, z=z).first()
+        block = G.SQL_SESSION.query(Block).filter_by(x=x, y=y, z=z).one()
         if block is not None:
             G.SQL_SESSION.delete(block)
-        sector_position = sectorize(position)
-        try:
-            self.sectors[sector_position].remove(position)
-        except ValueError:
-            warnings.warn('BlockType %s was unexpectedly not found in sector %s;'
-                          'your save is probably corrupted'
-                          % (position, sector_position))
         if sync:
             if position in self.shown:
                 self.hide_block(position)
@@ -339,7 +362,8 @@ class World(dict):
 
         for other_position in self.neighbors_iterator(block.position):
             if other_position in self:
-                other_block = Block(position=other_position, blocktype=self[other_position])
+                other_block = Block(position=other_position,
+                                    blocktype=self[other_position])
             else:
                 other_block = self.get_block(*other_position)
             if not other_block or other_block.blocktype.transparent:
@@ -352,7 +376,13 @@ class World(dict):
         return False
 
     def get_block(self, x, y, z):
-        return G.SQL_SESSION.query(Block).filter_by(x=x, y=y, z=z).first()
+        try:
+            return G.SQL_SESSION.query(Block).filter_by(x=x, y=y, z=z).one()
+        except NoResultFound:
+            return
+        except MultipleResultsFound:
+            warnings.warn('Two or more blocks were unexpectedly found '
+                          'at ' + repr((x, y, z)))
 
     def hit_test(self, position, vector, max_distance=8):
         m = 8
@@ -417,26 +447,25 @@ class World(dict):
                                           ('t2f/static', texture_data))
 
     def show_sector(self, sector, immediate=False):
+        if sector in self.shown_sectors:
+            return
         self.delete_opposite_task(self._hide_sector, sector)
 
         if immediate:
             self._show_sector(sector)
         else:
             self.enqueue(self._show_sector, sector, urgent=True)
-        self.shown_sectors.append(sector)
 
     def _show_sector(self, sector):
-        if sector.position not in self.sectors:
+        if sector.is_empty():
             self.terraingen.generate_sector(sector.position)
+            sector.rebuild_blocks()
 
-        if not sector.blocks:
-            blocks = sector.get_blocks().all()
-            for block in blocks:
-                block.sector_id = sector.id
-                G.SQL_SESSION.add(block)
-        for block in sector.get_exposed_blocks():
+        for block in sector.get_exposed_blocks().all():
             if block.position not in self.shown and self.is_exposed(block):
                 self.show_block(block)
+
+        self.shown_sectors.append(sector)
 
     def hide_sector(self, sector, immediate=False):
         self.delete_opposite_task(self._show_sector, sector)
@@ -447,9 +476,11 @@ class World(dict):
             self.enqueue(self._hide_sector, sector)
 
     def _hide_sector(self, sector):
-        for block in sector.blocks:
+        for block in sector.get_blocks():
             if block.position in self.shown:
                 self.hide_block(block)
+
+        self.shown_sectors.remove(sector)
 
     def change_sectors(self):
         xs, ys, zs = sectorize(self.controller.player.position)
@@ -471,8 +502,7 @@ class World(dict):
             Sector.z >= z - d, Sector.z <= z + d).all()
 
         for sector in sectors:
-            if sector not in self.shown_sectors:
-                self.show_sector(sector)
+            self.show_sector(sector)
 
     def enqueue(self, func, *args, **kwargs):
         task = func, args, kwargs
