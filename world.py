@@ -181,9 +181,9 @@ class Block(G.SQLBase):
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
-        # if kwargs.get('sector', None) is None:
-        #     x, y, z = sectorize(self.position)
-        #     self.sector_id = get_or_create(Sector, x=x, y=y, z=z).id
+        if kwargs.get('sector', None) is None:
+            x, y, z = sectorize(self.position)
+            self.sector_id = get_or_create(Sector, x=x, y=y, z=z).id
         super(Block, self).__init__()
 
     def __eq__(self, other):
@@ -247,9 +247,11 @@ class World(dict):
     def __delitem__(self, position):
         super(World, self).__delitem__(position)
 
-        if position in self.spreading_mutable_blocks:
+        block = self.get_block(*position)
+
+        if block in self.spreading_mutable_blocks:
             try:
-                self.spreading_mutable_blocks.remove(position)
+                self.spreading_mutable_blocks.remove(block)
             except ValueError:
                 warnings.warn('BlockType %s was unexpectedly not found in the '
                               'spreading mutations; your save is probably '
@@ -298,9 +300,10 @@ class World(dict):
 
     def check_neighbors(self, block):
         for other_position in self.neighbors_iterator(block.position):
-            if other_position not in self:
-                continue
             block = self.get_block(*other_position)
+            if block is None:
+                continue
+            block.is_exposed = None
             if self.is_exposed(block):
                 self.check_spreading_mutable(block)
                 if other_position not in self.shown:
@@ -313,7 +316,7 @@ class World(dict):
         x, y, z = block.position
         above_position = x, y + 1, z
         if above_position in self \
-                or block.position in self.spreading_mutable_blocks \
+                or block in self.spreading_mutable_blocks \
                 or not self.is_exposed(block):
             return
         if block.blocktype in self.spreading_mutations and self.has_neighbors(
@@ -506,6 +509,7 @@ class World(dict):
         if self.spreading_time >= G.SPREADING_MUTATION_DELAY:
             self.spreading_time = 0.0
             if self.spreading_mutable_blocks:
-                position = self.spreading_mutable_blocks.pop()
+                block = self.spreading_mutable_blocks.pop()
+                position = block.position
                 self.add_block(position,
                                self.spreading_mutations[self[position]])
