@@ -1,6 +1,7 @@
 # Imports, sorted alphabetically.
 
 # Python packages
+import random
 from math import floor, ceil
 
 # Third-party packages
@@ -83,6 +84,14 @@ class Button(pyglet.event.EventDispatcher, Rectangle):
             self.sprite_highlighted.x, self.sprite_highlighted.y = position
         if hasattr(self, 'label') and self.label:
             self.label.x, self.label.y = self.center
+            
+    @property
+    def caption(self):
+        return self.label.text
+
+    @caption.setter
+    def caption(self, text):
+        self.label.text = text
 
     def draw(self):
         self.draw_sprite()
@@ -105,6 +114,18 @@ class Button(pyglet.event.EventDispatcher, Rectangle):
             self.dispatch_event('on_click')
 
 Button.register_event_type('on_click')
+
+
+class ToggleButton(Button):
+    def __init__(self, parent, x, y, width, height, image=None, image_highlighted=None, caption=None, batch=None, group=None, label_group=None, font_name=G.DEFAULT_FONT):
+        super(ToggleButton, self).__init__(parent, x, y, width, height, image=image, image_highlighted=image_highlighted, caption=caption, batch=batch, group=group, label_group=label_group, font_name=font_name)
+        self.toggled = False
+
+    def on_mouse_click(self, x, y, button, modifiers):
+        if self.hit_test(x, y):
+            self.toggled = not self.toggled
+        print self.toggled
+        super(ToggleButton, self).on_mouse_click( x, y, button, modifiers)
 
 
 class Control(pyglet.event.EventDispatcher):
@@ -921,3 +942,53 @@ class TextWidget(Control):
             self.layout.view_y += scroll_y * 15
             return pyglet.event.EVENT_HANDLED
 
+
+class ProgressBarWidget(Control):
+    def __init__(self, parent, background_pic, foreground_pic,
+                x, y, width, height, progress_updater = None, progress = 0, text_color = (0, 0, 0, 255), 
+                *args, **kwargs):
+        super(ProgressBarWidget, self).__init__(parent, *args, **kwargs)
+        self.batch = pyglet.graphics.Batch()
+        self.group = pyglet.graphics.OrderedGroup(1)
+        self.background_pic = image_sprite(background_pic, self.batch, self.group)
+        self.foreground_pic = foreground_pic
+        self.progress_pic = None
+        self.progress_pic.x = x
+        self.progress_pic.y = y
+        self.text_color = text_color
+        self.x = x
+        self.y = y
+        self.height = height
+        self.width = width
+        self.progress_updater = progress_updater
+        self.progress = progress
+
+    def set_progress(self, progress):
+        self.progress = progress
+        self.update_progress
+
+    def update_progress(self):
+        if self.progress_updater is not None:
+            self.progress = self.progress_updater()
+
+        self.progress_pic = image_sprite(self.foreground_pic, self.batch, self.group, x=0, y=0,
+                width=floor(self.width * progress), height=self.height)
+
+    def _on_draw(self):
+        self.update_progress()
+        self.batch.draw()
+
+
+
+frame_image = load_image('resources', 'textures', 'frame.png')
+button_image = load_image('resources', 'textures', 'button.png')
+button_highlighted = load_image('resources', 'textures', 'button_highlighted.png')
+background_image = load_image('resources', 'textures', 'main_menu_background.png')
+backdrop_images = []
+rnd_backdrops = ('main_menu_background.png', 'main_menu_background_2.png', 'main_menu_background_3.png',
+'main_menu_background_4.png', 'main_menu_background_5.png', 'main_menu_background_6.png')
+
+for backdrop in rnd_backdrops:
+    backdrop_images.append(load_image('resources', 'textures', backdrop))
+    
+backdrop = random.choice(backdrop_images)

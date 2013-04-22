@@ -9,12 +9,13 @@ would lead to unpredictable consequences.
 # Imports, sorted alphabetically.
 
 # Python packages
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, NoSectionError, NoOptionError
 import argparse
 from math import pi
 import os
 
 # Third-party packages
+import pyglet
 from pyglet.resource import get_settings_path
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
@@ -74,6 +75,7 @@ VALIDATE_KEY = 'ENTER'
 SOUND_UP_KEY = 'PAGEUP'
 SOUND_DOWN_KEY = 'PAGEDOWN'
 TOGGLE_HUD_KEY = 'F3'
+SCREENCAP_KEY = 'F2'
 
 # Various
 SAVE_KEY = 'V'
@@ -164,8 +166,19 @@ TERRAIN_CHOICE = DEFAULT_TERRAIN_CHOICE
 TERRAIN = TERRAIN_CHOICES[DEFAULT_TERRAIN_CHOICE]
 
 SEED = None
-
-
+TREE_CHANCE = 0.006
+WILDFOOD_CHANCE = 0.0005
+GRASS_CHANCE = 0.05
+#
+# Biome
+#
+DESERT, PLAINS, MOUNTAINS, SNOW, FOREST = range(5)
+OLD_BIOME = DEFAULT_TERRAIN_CHOICE
+NEW_BIOME = 'plains'
+# THE LARGER THE NUMBER, THE MORE TO WALK TO  ANEW BIOME
+BIOME_BLOCK_TRIGGER = 80
+BIOME_NEGATIVE_BLOCK_TRIGGER = -80
+BIOME_BLOCK_COUNT = 0
 #
 # Graphical rendering
 #
@@ -175,6 +188,7 @@ WINDOW_WIDTH = 850  # Screen width (in pixels)
 WINDOW_HEIGHT = 480  # Screen height (in pixels)
 
 MAX_FPS = 60  # Maximum frames per second.
+QUEUE_PROCESS_SPEED = 0.3 / MAX_FPS #Try shrinking this if chunk loading is laggy, higher loads chunks faster
 
 VISIBLE_SECTORS_RADIUS = 8
 DELOAD_SECTORS_RADIUS = 16
@@ -191,11 +205,11 @@ DRAW_DISTANCE = DRAW_DISTANCE_CHOICES[DRAW_DISTANCE_CHOICE]
 FOV = 65.0  # TODO: add menu option to change FOV
 NEAR_CLIP_DISTANCE = 0.1  # TODO: make min and max clip distance dynamic
 FAR_CLIP_DISTANCE = 200.0  # Maximum render distance,
-                           # ignoring effects of sector_size and fog
-
-FOG_ENABLED = True
+                           # ignoring effects of sector_size
 
 MOTION_BLUR = False
+
+TEXTURE_PACK = 'default'
 
 HUD_ENABLED = True
 
@@ -237,7 +251,6 @@ smelting_recipes = None
 TIMER_INTERVAL = 1
 main_timer = None
 
-
 #
 # Global files & directories
 #
@@ -266,3 +279,115 @@ SQL_ENGINE = create_engine('sqlite:///%s.sqlite'
 metadata = MetaData(SQL_ENGINE)
 SQLBase = declarative_base(metadata=metadata)
 SQL_SESSION = sessionmaker(bind=SQL_ENGINE)()
+
+class InvalidChoice(Exception):
+    pass
+
+
+class InvalidKey(Exception):
+    pass
+
+
+def get_key(key_name):
+    key_code = getattr(pyglet.window.key, key_name, None)
+    if key_code is None:
+        # Handles cases like pyglet.window.key._1
+        key_code = getattr(pyglet.window.key, '_' + key_name, None)
+        if key_code is None:
+            raise InvalidKey('%s is not a valid key.' % key_name)
+    return key_code
+    
+
+def get_or_update_config(section, option, default_value, conv=str, choices=()):
+    user_value = False
+    try:
+        if conv is bool:
+            user_value = config.getboolean(section, option)
+        else:
+            user_value = conv(config.get(section, option))
+    except NoSectionError:
+        config.add_section(section)
+    except NoOptionError:
+        pass
+        
+    # If the option is already set:
+    if choices and user_value not in choices:
+        raise InvalidChoice('%s.%s must be in %s' %
+                            (section, option, repr(tuple(choices))))
+    if not user_value:
+        user_value = default_value
+    config.set(section, option, str(user_value))
+    return user_value
+
+
+def initialize_config():
+    #
+    # General
+    #
+    global DEBUG, FULLSCREEN, WINDOW_WIDTH, WINDOW_HEIGHT, DRAW_DISTANCE_CHOICE, DRAW_DISTANCE_CHOICES, DRAW_DISTANCE, MOTION_BLUR, TEXTURE_PACK
+
+    general = 'General'
+
+    DEBUG = get_or_update_config(
+        general, 'debug', DEBUG, conv=bool)
+
+    get_or_update_config(
+        general, 'save_mode', SAVE_MODE, choices=SAVE_MODES)
+
+    #
+    # Graphics
+    #
+
+    graphics = 'Graphics'
+
+    FULLSCREEN = get_or_update_config(
+        graphics, 'fullscreen', FULLSCREEN, conv=bool)
+    WINDOW_WIDTH = get_or_update_config(
+        graphics, 'width', WINDOW_WIDTH, conv=int)
+    WINDOW_HEIGHT = get_or_update_config(
+        graphics, 'height', WINDOW_HEIGHT, conv=int)
+
+    DRAW_DISTANCE_CHOICE = get_or_update_config(
+        graphics, 'draw_distance', DRAW_DISTANCE_CHOICE,
+        choices=DRAW_DISTANCE_CHOICES)
+    DRAW_DISTANCE = DRAW_DISTANCE_CHOICES[DRAW_DISTANCE_CHOICE]
+
+    MOTION_BLUR = get_or_update_config(
+        graphics, 'motion_blur', MOTION_BLUR, conv=bool)
+
+    TEXTURE_PACK = get_or_update_config(
+        graphics, 'texture_pack', TEXTURE_PACK, conv=str)
+
+    #
+    # World
+    #
+
+    world = 'World'
+
+    # TODO: This setting must be removed when terrain generation will improve.
+    get_or_update_config(world, 'size', 64, conv=int)
+
+    #
+    # Controls
+    #
+
+    controls = 'Controls'
+
+    # Adds missing keys to configuration file and converts to pyglet keys.
+    for control, default_key_name in KEY_BINDINGS.items():
+        key_name = get_or_update_config(controls, control, default_key_name)
+        try:
+            pyglet_key = get_key(key_name)
+        except InvalidKey:
+            pyglet_key = get_key(default_key_name)
+            config.set(controls, control, default_key_name)
+        globals()[control.upper() + '_KEY'] = pyglet_key
+
+    #
+    # Save config file
+    #
+
+    with open(config_file, 'wb') as handle:
+        config.write(handle)
+
+initialize_config()

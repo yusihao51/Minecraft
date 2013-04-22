@@ -1,9 +1,9 @@
 # Imports, sorted alphabetically.
 
 # Python packages
-from collections import deque, defaultdict
+from collections import deque, OrderedDict
 import os
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from time import time
 import warnings
 
 # Third-party packages
@@ -11,6 +11,7 @@ import pyglet
 from pyglet.gl import *
 from sqlalchemy import Column, Integer, ForeignKey, Boolean, func, exists
 from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 
 # Modules from this project
@@ -328,12 +329,11 @@ class World(dict):
             try:
                 block = G.SQL_SESSION.query(Block).filter_by(x=x, y=y, z=z).one()
             except NoResultFound:
-                pass
-            else:
-                G.SQL_SESSION.delete(block)
+                return
             if position in self.shown:
                 self.hide_block(position)
             self.check_neighbors(block)
+            G.SQL_SESSION.delete(block)
         else:
             if position in self.to_be_added:
                 del self.to_be_added[position]
@@ -409,7 +409,7 @@ class World(dict):
             warnings.warn('Two or more blocks were unexpectedly found '
                           'at ' + repr((x, y, z)))
 
-    def hit_test(self, position, vector, max_distance=8):
+    def hit_test(self, position, vector, max_distance=8, hitwater=False):
         m = 8
         x, y, z = position
         dx, dy, dz = vector
@@ -417,7 +417,7 @@ class World(dict):
         previous = ()
         for _ in xrange(max_distance * m):
             key = normalize((x, y, z))
-            if key != previous and key in self:
+            if key != previous and key in self and (self[key].density != 0.5 or hitwater):
                 return key, previous
             previous = key
             x, y, z = x + dx, y + dy, z + dz
@@ -492,8 +492,6 @@ class World(dict):
         self.shown_sectors.append(sector)
 
     def hide_sector(self, sector, immediate=False):
-        self.delete_opposite_task(self._show_sector, sector)
-
         if immediate:
             self._hide_sector(sector)
         else:
@@ -544,7 +542,9 @@ class World(dict):
             self.lazy_queue.remove(opposite_task)
 
     def process_queue(self, dt):
-        if self.urgent_queue or self.lazy_queue:
+        stoptime = time() + G.QUEUE_PROCESS_SPEED
+        # Process as much of the queues as we can
+        while (self.urgent_queue or self.lazy_queue) and time() < stoptime:
             self.dequeue()
 
     def process_entire_queue(self):

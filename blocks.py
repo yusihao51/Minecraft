@@ -19,6 +19,8 @@ import globals as G
 import sounds
 from utils import load_image
 
+BLOCK_TEXTURE_DIR = {}
+
 
 def get_texture_coordinates(x, y, tileset_size=G.TILESET_SIZE):
     if x == -1 and y == -1:
@@ -39,7 +41,16 @@ class TextureGroupIndividual(pyglet.graphics.Group):
         self.texture_data = []
         i=0
         for name in names:
-            subtex = atlas.add(load_image('resources', 'texturepacks', 'textures', 'blocks', name+'.png').get_region(0,0,64,64))
+            if not name in BLOCK_TEXTURE_DIR:
+                if G.TEXTURE_PACK != 'default':
+                    BLOCK_TEXTURE_DIR[name] = load_image('resources', 'texturepacks', G.TEXTURE_PACK, 'textures', 'blocks', name + '.png')
+                else:
+                    BLOCK_TEXTURE_DIR[name] = load_image('resources', 'texturepacks', 'textures', 'blocks', name + '.png')
+
+            if not BLOCK_TEXTURE_DIR[name]:
+                return None
+
+            subtex = atlas.add(BLOCK_TEXTURE_DIR[name].get_region(0,0,64,64))
             for val in subtex.tex_coords:
                 i += 1
                 if i % 3 != 0: self.texture_data.append(val) #tex_coords has a z component we don't utilize
@@ -138,6 +149,16 @@ class BlockType(object):
     def drop_id(self, value):
         self._drop_id = value
 
+    _texture_data = None
+
+    @property
+    def texture_data(self):
+        return self._texture_data
+
+    @texture_data.setter
+    def texture_data(self, value):
+        self._texture_data = value
+
     width = 1.0
     height = 1.0
 
@@ -178,10 +199,13 @@ class BlockType(object):
         if height is not None:
             self.height = height
 
-        if self.texture_name and os.path.exists(os.path.join('resources', 'texturepacks', 'textures', 'blocks')):
+        if self.texture_name and G.TEXTURE_PACK != 'default':
             self.group = TextureGroupIndividual(self.texture_name)
-            self.texture_data = self.group.texture_data
-        else:
+
+            if self.group:
+                self.texture_data = self.group.texture_data
+        
+        if not self.texture_data:
             # Applies get_texture_coordinates to each of the faces to be textured.
             for k in ('top_texture', 'bottom_texture', 'side_texture'):
                 v = getattr(self, k)
@@ -460,9 +484,9 @@ class BedrockBlock(HardBlock):
 class WaterBlock(BlockType):
     height = 0.8
     top_texture = 0, 2
-    bottom_texture = 6, 7
-    side_texture = 6, 7
-    texture_name = "Water",
+    bottom_texture = 0, 6 # transparent
+    side_texture = 0, 6 # transparent
+    texture_name = "water",
     transparent = True
     hardness = -1  # Unobtainable
     density = 0.5
@@ -508,9 +532,6 @@ class EmeraldOreBlock(HardBlock):
     hardness = 2
     id = 129,0
     name = "Emerald Ore"
-    #def __init__(self):
-        #super(EmeraldOreBlock, self).__init__()
-        #self.drop_id = 388
 
 class LapisOreBlock(HardBlock):
     top_texture = 8, 6
@@ -1211,6 +1232,7 @@ class PotatoBlock(BlockType):
     id = 142
     name = "Potato"
     max_stack_size = 16
+    break_sound = sounds.leaves_break
     regenerated_health = 1
     amount_label_color = 0, 0, 0, 255
 
@@ -1224,8 +1246,108 @@ class CarrotBlock(BlockType):
     id = 141
     name = "Carrot"
     regenerated_health = 2
+    break_sound = sounds.leaves_break
     max_stack_size = 16
     amount_label_color = 0, 0, 0, 255
+
+class WheatCropBlock(BlockType):
+    top_texture = -1, -1
+    bottom_texture = -1, -1
+    side_texture = -1, -1
+    vertex_mode = G.VERTEX_GRID
+    hardness = 0.0
+    transparent = True
+    id = 59
+    name = "Wheat Crop"
+    break_sound = sounds.leaves_break
+    max_stack_size = 16
+    amount_label_color = 0, 0, 0, 255
+
+    # used to update texture
+    position = None
+    world = None
+
+    growth_stage = 0
+    texture_list = []
+    # second per stage
+    grow_time = 10
+    grow_task = None
+
+    def __init__(self, grow=True):
+        self.top_texture = get_texture_coordinates(-1, -1)
+        self.bottom_texture = get_texture_coordinates(-1, -1)
+        for i in range(0, 8):
+            self.side_texture = get_texture_coordinates(14, i)
+            self.texture_list.append(self.get_texture_data())
+        # start to grow
+        if grow:
+            self.grow_task = G.main_timer.add_task(self.grow_time, self.grow_callback)
+
+    def __del__(self):
+        if self.grow_task is not None:
+            G.main_timer.remove_task(self.grow_task)
+        if self.position in self.world:
+            self.world.hide_block(self.position)
+
+    def grow_callback(self):
+        self.growth_stage = self.growth_stage + 1
+        if self.position in self.world:
+            self.world.hide_block(self.position)
+            self.world.show_block(self.position)
+        if self.growth_stage < 7:
+            self.grow_task = G.main_timer.add_task(self.grow_time, self.grow_callback)
+        else:
+            self.grow_task = None
+
+    # special hack to return different texture, which depends on the growth stage
+    @property
+    def texture_data(self):
+        return self.texture_list[self.growth_stage]
+
+    @texture_data.setter
+    def texture_data(self, value):
+        self._texture_data = value
+
+    @property
+    def drop_id(self):
+        if self.growth_stage == 7:
+            return BlockID(296) # wheat
+        else:
+            return BlockID(295) #seed
+
+    @drop_id.setter
+    def drop_id(self, value):
+        self._drop_id = value
+
+class WildGrassBlock(BlockType):
+    width = 0.9
+    height = 0.9
+    top_texture = -1, -1
+    bottom_texture = -1, -1
+    side_texture = 10, 4
+    vertex_mode = G.VERTEX_CROSS
+    hardness = 0.0
+    transparent = True
+    density = 0.3
+    id = 31
+    name = "Fern"
+    break_sound = sounds.leaves_break
+    amount_label_color = 0, 0, 0, 255
+
+   # def __init__(self):
+    #    super(WildGrassBlock, self).__init__()
+    #    self.drop_id = BlockID(295) ## seed
+    @property
+    def drop_id(self):
+        # 10% chance of dropping seed
+        if randint(0, 10) == 0:
+            return BlockID(295)
+        else:
+            return BlockID(0)
+
+    @drop_id.setter
+    def drop_id(self, value):
+        self._drop_id = value
 
 class DiamondBlock(HardBlock):
     top_texture = 11, 0
@@ -1289,8 +1411,8 @@ class MossyStonebrickBlock(HardBlock):
 
 class IceBlock(BlockType):
     top_texture = 8, 7
-    bottom_texture = 8, 7
-    side_texture = 8, 7
+    bottom_texture = 0, 6 # transparent
+    side_texture = 0, 6 # transparent
     texture_name = "ice",
     id = 79
     hardness = 0.5
@@ -1322,6 +1444,9 @@ class CrackTextureBlock(object):
             self.texture_data.append(texture_coords * 6)
 
 crack_textures = CrackTextureBlock()
+
+# blocks that have their own data
+data_blocks = [FurnaceBlock, WheatCropBlock]
 
 air_block = AirBlock()
 grass_block = GrassBlock()
@@ -1404,3 +1529,5 @@ emeraldore_block = EmeraldOreBlock()
 lapisore_block = LapisOreBlock()
 rubyore_block = RubyOreBlock()
 sapphireore_block = SapphireOreBlock()
+fern_block = WildGrassBlock()
+wheat_crop_block = WheatCropBlock(False)

@@ -1,7 +1,7 @@
 # Imports, sorted alphabetically.
 
 # Python packages
-import time
+from time import time
 
 # Third-party packages
 # Nothing for now...
@@ -19,9 +19,12 @@ class Model(World):
         self.controller = controller
         if initialize:
             print('Building terrain...')
-            start = time.time()
+            print('using Perlin...')
+
+            #skip all of this, using perlin now.
+            start = time()
             self.initialize()
-            print('Terrain successfully built in %f seconds.' % (time.time() - start))
+            print('Terrain successfully built in %f seconds.' % (time() - start))
 
             print('Preparing game...')
             self.post_initialize()
@@ -166,8 +169,6 @@ class Model(World):
             return
 
         tree_class.add_to_world(self, position)
-
-        self.max_trees -= 1
 
     def init_block(self, position, block):
         self.add_block(position, block, sync=False, force=False)

@@ -36,6 +36,8 @@ class Player(Entity):
         self.armor = Inventory(4)
         self.strafe = [0, 0]
         self.dy = 0
+        self.current_density = 1 # Current density of the block we're colliding with
+
         initial_items = [torch_block, stick_item]
 
         for item in initial_items:
@@ -63,25 +65,36 @@ class Player(Entity):
     def on_key_release(self, symbol, modifiers):
         if symbol == G.MOVE_FORWARD_KEY:
             self.strafe[0] += 1
+            G.BIOME_BLOCK_COUNT +=1
+            #print ('north' + str(G.BIOME_BLOCK_COUNT))
         elif symbol == G.MOVE_BACKWARD_KEY:
             self.strafe[0] -= 1
+            G.BIOME_BLOCK_COUNT -=1
         elif symbol == G.MOVE_LEFT_KEY:
             self.strafe[1] += 1
+            G.BIOME_BLOCK_COUNT +=1
         elif symbol == G.MOVE_RIGHT_KEY:
             self.strafe[1] -= 1
+            G.BIOME_BLOCK_COUNT +=1
         elif (symbol == G.JUMP_KEY
               or symbol == G.CROUCH_KEY) and self.flying:
             self.dy = 0
 
+        #print G.BIOME_BLOCK_COUNT
+
     def on_key_press(self, symbol, modifiers):
         if symbol == G.MOVE_FORWARD_KEY:
             self.strafe[0] -= 1
+            G.BIOME_BLOCK_COUNT +=1
         elif symbol == G.MOVE_BACKWARD_KEY:
             self.strafe[0] += 1
+            G.BIOME_BLOCK_COUNT -=1
         elif symbol == G.MOVE_LEFT_KEY:
             self.strafe[1] -= 1
+            G.BIOME_BLOCK_COUNT +=1
         elif symbol == G.MOVE_RIGHT_KEY:
             self.strafe[1] += 1
+            G.BIOME_BLOCK_COUNT -=1
         elif symbol == G.JUMP_KEY:
             if self.flying:
                 self.dy = 0.045  # jump speed
@@ -93,6 +106,8 @@ class Player(Entity):
         elif symbol == G.FLY_KEY and self.game_mode == G.CREATIVE_MODE:
             self.dy = 0
             self.flying = not self.flying
+
+        #print G.BIOME_BLOCK_COUNT
 
     def get_motion_vector(self):
         if any(self.strafe):
@@ -135,7 +150,7 @@ class Player(Entity):
 
     def update(self, dt, parent):
         # walking
-        speed = 15 if self.flying else 5
+        speed = 15 if self.flying else 5*self.current_density
         d = dt * speed
         dx, dy, dz = self.get_motion_vector()
         dx, dy, dz = dx * d, dy * d, dz * d
@@ -156,6 +171,7 @@ class Player(Entity):
         pad = 0.25
         p = list(position)
         np = normalize(position)
+        self.current_density = 1 # Reset it, incase we don't hit any water
         for face in FACES:  # check all surrounding blocks
             for i in xrange(3):  # check each dimension independently
                 if not face[i]:
@@ -172,6 +188,10 @@ class Player(Entity):
                     # we can walk there.
                     if op not in parent.model \
                             or parent.model[op].vertex_mode != G.VERTEX_CUBE:
+                        continue
+                    # if density <= 1 then we can walk through it. (water)
+                    if parent.model[op].density < 1:
+                        self.current_density = parent.model[op].density
                         continue
                     p[i] -= (d - pad) * face[i]
                     if face == (0, -1, 0) or face == (0, 1, 0):

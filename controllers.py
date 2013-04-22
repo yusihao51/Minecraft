@@ -21,7 +21,7 @@ from savingsystem import *
 from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, CommandException, UnknownCommandException
 from utils import init_resources
 from views import *
-
+from skydome import Skydome
 
 def vec(*args):
     """Creates GLfloat arrays of floats"""
@@ -97,6 +97,10 @@ class MainMenuController(Controller):
         self.switch_view(ControlsView(self))
         return pyglet.event.EVENT_HANDLED
 
+    def textures_func(self):
+        self.switch_view(TexturesView(self))
+        return pyglet.event.EVENT_HANDLED
+
 class GameController(Controller):
     def __init__(self, window):
         super(GameController, self).__init__(window)
@@ -156,26 +160,38 @@ class GameController(Controller):
                             self.inventory_list.update_items()
         self.update_time()
         self.camera.update(dt)
-
-    def setup(self):
-        glClearColor(self.bg_red, self.bg_green, self.bg_blue, 1)
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-        glEnable(GL_LIGHT1)
-        glEnable(GL_LIGHT2)
+        
+    def init_gl(self):
         glEnable(GL_ALPHA_TEST)
         glAlphaFunc(GL_GREATER, 0.1)
+        glEnable(GL_COLOR_MATERIAL)
         glEnable(GL_BLEND)
+        
         glEnable(GL_LINE_SMOOTH)
+        #glEnable(GL_POLYGON_SMOOTH)
+        #glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
+        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST)
 
-        if G.FOG_ENABLED:
-            glEnable(GL_FOG)
-            glFogfv(GL_FOG_COLOR, vec(self.bg_red, self.bg_green, self.bg_blue, 1))
-            glHint(GL_FOG_HINT, GL_DONT_CARE)
-            glFogi(GL_FOG_MODE, GL_LINEAR)
-            glFogf(GL_FOG_DENSITY, 0.35)
-            glFogf(GL_FOG_START, 20.0)
-            glFogf(GL_FOG_END, G.DRAW_DISTANCE)  # 80)
+        glClampColorARB(GL_CLAMP_VERTEX_COLOR_ARB, GL_FALSE)
+        glClampColorARB(GL_CLAMP_FRAGMENT_COLOR_ARB, GL_FALSE)
+        glClampColorARB(GL_CLAMP_READ_COLOR_ARB, GL_FALSE)
+            
+        glClearColor(0, 0, 0, 0)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    def setup(self):
+        self.init_gl()
+        
+        sky_rotation = -20.0  # -20.0
+        print 'loading sky'
+        self.skydome = Skydome(
+            'resources/skydome.jpg',
+            0.7,
+            100.0,
+            sky_rotation,
+        )
+
+        lux = 600.0
 
         self.focus_block = BlockType(width=1.05, height=1.05)
         self.earth = vec(0.8, 0.8, 0.8, 1.0)
@@ -191,7 +207,10 @@ class GameController(Controller):
 
         G.SQLBase.metadata.create_all(G.SQL_ENGINE)
 
-        self.player = get_or_create(Player)
+        try:
+            self.player = G.SQL_SESSION.query(Player).one()
+        except NoResultFound:
+            self.player = Player((0, 0, 0), (-20, 0))
         self.player.post_init()
         self.player.game_mode = G.GAME_MODE
 
@@ -219,7 +238,9 @@ class GameController(Controller):
                 seeds.write('%s\n\n' % seed)
 
             self.model = Model(controller=self)
-            # self.save_to_file() #So the hardcoded spawn sectors aren't overwritten by the worldgen
+
+        self.player.y = self.model.terraingen.get_height(0, 0) + 2
+
         print('Game mode: ' + self.player.game_mode)
         self.item_list = ItemSelector(self, self.player, self.model)
         self.inventory_list = InventorySelector(self, self.player, self.model)
@@ -340,13 +361,16 @@ class GameController(Controller):
                             # if current block is an item,
                             # call its on_right_click() method to handle this event
                             if current_block.id >= G.ITEM_ID_MIN:
-                                current_block.on_right_click()
+                                if current_block.on_right_click(self.model, self.player):
+                                    self.item_list.get_current_block_item().change_amount(-1)
+                                    self.item_list.update_health()
+                                    self.item_list.update_items()
                             else:
                                 localx, localy, localz = map(operator.sub,previous,normalize(self.player.position))
                                 if localx != 0 or localz != 0 or (localy != 0 and localy != -1):
                                     self.model.add_block(previous, current_block)
                                     self.item_list.remove_current_block()
-                elif self.item_list.get_current_block() and self.item_list.get_current_block().regenerated_health != 0 and self.player.health < self.player.max_health:
+                elif self.item_list.get_current_block() and hasattr(self.item_list.get_current_block(), 'regenerated_health') and self.item_list.get_current_block().regenerated_health != 0 and self.player.health < self.player.max_health:
                     self.player.change_health(self.item_list.get_current_block().regenerated_health)
                     self.item_list.get_current_block_item().change_amount(-1)
                     self.item_list.update_health()
@@ -395,6 +419,16 @@ class GameController(Controller):
             G.EFFECT_VOLUME = min(G.EFFECT_VOLUME + .1, 1)
         elif symbol == G.SOUND_DOWN_KEY:
             G.EFFECT_VOLUME = max(G.EFFECT_VOLUME - .1, 0)
+        elif symbol == G.SCREENCAP_KEY:  # dedicated screencap key
+            now = datetime.datetime.now()
+            dt = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute, now.second)
+            st = dt.strftime('%Y-%m-%d_%H.%M.%S')
+            filename = str(st) + '.png'
+            if not os.path.exists('screencaptures'):
+                os.makedirs('screencaptures')
+            path = 'screencaptures/' + filename
+            pyglet.image.get_buffer_manager().get_color_buffer().save(path)
+           # self.send_info("Screen capture saved to '%s'" % path)
         self.last_key = symbol
 
     def on_key_release(self, symbol, modifiers):
@@ -411,8 +445,6 @@ class GameController(Controller):
 
     def set_3d(self):
         width, height = self.window.get_size()
-        if G.FOG_ENABLED:
-            glFogfv(GL_FOG_COLOR, vec(self.bg_red, self.bg_green, self.bg_blue, 1.0))
         glEnable(GL_DEPTH_TEST)
         glViewport(0, 0, width, height)
         glMatrixMode(GL_PROJECTION)
@@ -422,17 +454,11 @@ class GameController(Controller):
                        G.FAR_CLIP_DISTANCE)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
+        glPushMatrix()
+        self.camera.look()
+        self.skydome.draw()
+        glPopMatrix()
         self.camera.transform()
-        glEnable(GL_LIGHTING)
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, vec(0.9, 0.9, 0.9, 1.0))
-        glLightfv(GL_LIGHT0, GL_SPECULAR, vec(0.9, 0.9, 0.9, 1.0))
-        glLightfv(GL_LIGHT0, GL_POSITION,
-                  vec(1.0, self.light_y, self.light_z, 1.0))
-        glLightfv(GL_LIGHT1, GL_AMBIENT, self.ambient)
-        glLightfv(GL_LIGHT2, GL_AMBIENT, self.ambient)
-        glMaterialfv(GL_FRONT, GL_AMBIENT, self.earth)
-        glMaterialfv(GL_FRONT, GL_DIFFUSE, self.white)
-        glMaterialfv(GL_FRONT, GL_SHININESS, self.polished)
 
     def clear(self):
         glClearColor(self.bg_red, self.bg_green, self.bg_blue, 1.0)
@@ -440,8 +466,9 @@ class GameController(Controller):
 
     def on_draw(self):
         self.clear()
+        #self.window.clear()
         self.set_3d()
-        glColor3d(1, 1, 1)
+        #glColor3d(1, 1, 1)
         self.model.batch.draw()
         self.model.transparency_batch.draw()
         self.crack_batch.draw()
@@ -489,11 +516,11 @@ class GameController(Controller):
 
     def draw_label(self):
         x, y, z = self.player.position
-        self.label.text = '%.1f %02d (%.2f, %.2f, %.2f) %d / %d' \
-            % (self.time_of_day if (self.time_of_day < 12.0)
+        self.label.text = 'Time:%.1f Inaccurate FPS:%02d (%.2f, %.2f, %.2f) Blocks Shown: %d / %d sector_queue:%d'\
+                          % (self.time_of_day if (self.time_of_day < 12.0)
                else (24.0 - self.time_of_day),
                pyglet.clock.get_fps(), x, y, z,
-               len(self.model.shown), len(self.model))
+               len(self.model.shown), len(self.model), len(self.model.urgent_queue))
         self.label.draw()
 
     def write_line(self, text, **kwargs):
