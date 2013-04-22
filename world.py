@@ -112,7 +112,7 @@ def get_or_create(model, **kwargs):
 class Sector(G.SQLBase):
     __tablename__ = 'sectors'
 
-    id = Column(Integer, primary_key=True)
+    pk = Column(Integer, primary_key=True)
     x = Column(Integer, index=True)
     y = Column(Integer, index=True)
     z = Column(Integer, index=True)
@@ -126,7 +126,7 @@ class Sector(G.SQLBase):
         return self.position == other.position
 
     def __hash__(self):
-        return self.id
+        return self.pk
 
     def __repr__(self):
         return '<Sector %d %d %d>' % self.position
@@ -209,14 +209,14 @@ class Sector(G.SQLBase):
 class Block(G.SQLBase):
     __tablename__ = 'blocks'
 
-    id = Column(Integer, primary_key=True)
+    pk = Column(Integer, primary_key=True)
     x = Column(Integer, index=True)
     y = Column(Integer, index=True)
     z = Column(Integer, index=True)
     is_exposed = Column(Boolean, index=True)
     blocktype_id_main = Column(Integer)
     blocktype_id_sub = Column(Integer)
-    sector_id = Column(Integer, ForeignKey('sectors.id'), nullable=True,
+    sector_id = Column(Integer, ForeignKey(Sector.pk), nullable=True,
                        index=True)
     sector = relationship('Sector', backref=backref('blocks', lazy='dynamic'))
 
@@ -232,7 +232,7 @@ class Block(G.SQLBase):
             and self.blocktype == other.blocktype
 
     def __hash__(self):
-        return self.id
+        return self.pk
 
     def __repr__(self):
         return '<Block %d %d %d>' % self.position
@@ -435,11 +435,11 @@ class World(dict):
     def show_block(self, block, immediate=True):
         self[block.position] = block.blocktype
         try:
-            int(block.id)
+            int(block.pk)
         except ValueError:
             pass
         else:
-            self.shown_blocks.append(block.id)
+            self.shown_blocks.append(block.pk)
         if immediate:
             self._show_block(block)
         else:
@@ -517,7 +517,7 @@ class World(dict):
         d = G.VISIBLE_SECTORS_RADIUS * G.SECTOR_SIZE
         sectors = G.SQL_SESSION.query(Sector)
         if self.shown_sectors:
-            sectors = sectors.filter(~Sector.id.in_([s.id for s in self.shown_sectors]))
+            sectors = sectors.filter(~Sector.pk.in_([s.pk for s in self.shown_sectors]))
         sectors = sectors.filter(
             Sector.x >= x - d, Sector.x <= x + d,
             Sector.y >= y - d, Sector.y <= y + d,

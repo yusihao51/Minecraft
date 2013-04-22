@@ -16,7 +16,7 @@ class Entity(AbstractConcreteBase, G.SQLBase):
     Base class for players, mobs, TNT and so on.
     """
 
-    id = Column(Integer, primary_key=True)
+    pk = Column(Integer, primary_key=True)
     x = Column(Float)
     y = Column(Float)
     z = Column(Float)
