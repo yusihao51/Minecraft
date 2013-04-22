@@ -152,7 +152,7 @@ class Sector(G.SQLBase):
         return self.blocks
 
     def rebuild_blocks(self):
-        d = G.SECTOR_SIZE
+        d = G.SECTOR_SIZE - 1
         self.blocks = G.SQL_SESSION.query(Block).filter(
             Block.x.between(self.x, self.x + d),
             Block.y.between(self.y, self.y + d),
@@ -188,13 +188,22 @@ class Sector(G.SQLBase):
             func.min(Block.z),
             func.max(Block.z),
         ).all()[0]
-        for x in xrange(xm, xM, G.SECTOR_SIZE):
-            for y in xrange(ym, yM, G.SECTOR_SIZE):
-                for z in xrange(zm, zM, G.SECTOR_SIZE):
+        d = G.SECTOR_SIZE - 1
+
+        max_blocks = G.SECTOR_SIZE ** 3
+        for x in xrange(xm, xM, d):
+            for y in xrange(ym, yM, d):
+                for z in xrange(zm, zM, d):
                     sector = get_or_create(Sector, x=x, y=y, z=z)
-                    if sector.is_empty():
-                        sector.rebuild_blocks()
-                        G.SQL_SESSION.add(sector)
+                    blocks = sector.get_blocks()
+                    if blocks.count() == max_blocks:
+                        blocks.filter(
+                            Block.is_exposed == None,
+                            Block.x.between(x + 1, x + d - 1),
+                            Block.y.between(y + 1, y + d - 1),
+                            Block.z.between(z + 1, z + d - 1),
+                        ).update({'is_exposed': False},
+                                 synchronize_session=False)
 
 
 class Block(G.SQLBase):

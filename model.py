@@ -184,6 +184,6 @@ class Model(World):
         performance_info(G.SQL_SESSION.add_all)(self.to_be_added.values())
         self.to_be_added = {}
 
-        performance_info(G.SQL_SESSION.commit)()
+        Sector.rebuild_sectors()
 
-        performance_info(Sector.rebuild_sectors)()
+        performance_info(G.SQL_SESSION.commit)()
