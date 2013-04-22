@@ -181,6 +181,9 @@ class Model(World):
             if above_position not in self or self[above_position].transparent:
                 self.add_block(position, grass_block, sync=False, force=True)
 
-        Sector.rebuild_sectors()
+        performance_info(G.SQL_SESSION.add_all)(self.to_be_added.values())
+        self.to_be_added = {}
 
-        G.SQL_SESSION.commit()
+        performance_info(G.SQL_SESSION.commit)()
+
+        performance_info(Sector.rebuild_sectors)()

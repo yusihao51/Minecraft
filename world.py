@@ -180,18 +180,20 @@ class Sector(G.SQLBase):
     @classmethod
     @performance_info
     def rebuild_sectors(cls):
-        xm = G.SQL_SESSION.query(func.min(Block.x)).scalar()
-        xM = G.SQL_SESSION.query(func.max(Block.x)).scalar()
-        ym = G.SQL_SESSION.query(func.min(Block.y)).scalar()
-        yM = G.SQL_SESSION.query(func.max(Block.y)).scalar()
-        zm = G.SQL_SESSION.query(func.min(Block.z)).scalar()
-        zM = G.SQL_SESSION.query(func.max(Block.z)).scalar()
-        for x in range(xm, xM, G.SECTOR_SIZE):
-            for y in range(ym, yM, G.SECTOR_SIZE):
-                for z in range(zm, zM, G.SECTOR_SIZE):
+        xm, xM, ym, yM, zm, zM = G.SQL_SESSION.query(
+            func.min(Block.x),
+            func.max(Block.x),
+            func.min(Block.y),
+            func.max(Block.y),
+            func.min(Block.z),
+            func.max(Block.z),
+        ).all()[0]
+        for x in xrange(xm, xM, G.SECTOR_SIZE):
+            for y in xrange(ym, yM, G.SECTOR_SIZE):
+                for z in xrange(zm, zM, G.SECTOR_SIZE):
                     sector = get_or_create(Sector, x=x, y=y, z=z)
                     if sector.is_empty():
-                        sector.get_blocks()  # Rebuilds the link with blocks
+                        sector.rebuild_blocks()
                         G.SQL_SESSION.add(sector)
 
 
@@ -262,6 +264,7 @@ class World(dict):
         self.transparency_batch = pyglet.graphics.Batch()
         self.group = TextureGroup(os.path.join('resources', 'textures', 'texture.png'))
 
+        self.to_be_added = {}
         self.shown = {}
         self.shown_sectors = []
         self.shown_blocks = []
@@ -290,33 +293,41 @@ class World(dict):
         if position in self:
             if force:
                 self.remove_block(None, position, sync=sync)
-        x, y, z = position
-        block = get_or_create(Block, x=x, y=y, z=z,
-                              blocktype_id_main=blocktype.id.main,
-                              blocktype_id_sub=blocktype.id.sub,
-                              sector=sector)
+
+        block = Block(position=position, blocktype=blocktype, sector=sector)
 
         if blocktype.id == furnace_block.id:
             self[position] = FurnaceBlock()
         else:
             self[position] = blocktype
+
         if sync:
+            G.SQL_SESSION.add(block)
             if self.is_exposed(block):
                 self.show_block(block)
             self.check_neighbors(block)
+        else:
+            self.to_be_added[position] = block
 
     def remove_block(self, player, position, sync=True, sound=True):
         if sound and player is not None:
             self[position].play_break_sound(player, position)
         del self[position]
-        x, y, z = position
-        block = G.SQL_SESSION.query(Block).filter_by(x=x, y=y, z=z).one()
-        if block is not None:
-            G.SQL_SESSION.delete(block)
+
         if sync:
+            x, y, z = position
+            try:
+                block = G.SQL_SESSION.query(Block).filter_by(x=x, y=y, z=z).one()
+            except NoResultFound:
+                pass
+            else:
+                G.SQL_SESSION.delete(block)
             if position in self.shown:
                 self.hide_block(position)
             self.check_neighbors(block)
+        else:
+            if position in self.to_be_added:
+                del self.to_be_added[position]
 
     def neighbors_iterator(self, position, relative_neighbors_positions=FACES):
         x, y, z = position
