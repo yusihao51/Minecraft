@@ -1414,6 +1414,8 @@ class CarrotBlock(Block):
     max_stack_size = 16
     amount_label_color = 0, 0, 0, 255
 
+
+# TODO: Rewrite this from scratch.
 class WheatCropBlock(Block):
     top_texture = -1, -1
     bottom_texture = -1, -1
@@ -1438,6 +1440,8 @@ class WheatCropBlock(Block):
     grow_time = 10
     grow_task = None
 
+    # FIXME: This constructor contains many heresies.  The parent class
+    # constructor is not called and it contains hard-coded values.
     def __init__(self, grow=True):
         self.top_texture = get_texture_coordinates(-1, -1)
         self.bottom_texture = get_texture_coordinates(-1, -1)
