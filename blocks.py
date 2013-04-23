@@ -1432,6 +1432,7 @@ class WheatCropBlock(Block):
     world = None
 
     growth_stage = 0
+    # FIXME: A class attribute should never be mutable.
     texture_list = []
     # second per stage
     grow_time = 10
