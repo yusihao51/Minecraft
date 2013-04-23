@@ -239,39 +239,39 @@ class Block(object):
         zm = z - w
         zp = z + w
 
-        ret = []
+        vertices = ()
         if len(self.top_texture) > 0 or len(self.side_texture) == 0:
-            ret.extend([
+            vertices += (
                 xm, yp, zm,   xm, yp, zp,   xp, yp, zp,   xp, yp, zm  # top
-            ])
+            )
         if len(self.bottom_texture) > 0 or len(self.side_texture) == 0:
-            ret.extend([
+            vertices += (
                 xm, ym, zm,   xp, ym, zm,   xp, ym, zp,   xm, ym, zp  # bottom
-            ])
+            )
         if self.vertex_mode == G.VERTEX_CROSS:
-            ret.extend([
+            vertices += (
                 xm, ym, zm,   xp, ym, zp,   xp, yp, zp,   xm, yp, zm,
                 xm, ym, zp,   xp, ym, zm,   xp, yp, zm,   xm, yp, zp,
-            ])
+            )
         elif self.vertex_mode == G.VERTEX_GRID:
             xm2 = x - w / 2.0
             xp2 = x + w / 2.0
             zm2 = z - w / 2.0
             zp2 = z + w / 2.0
-            ret.extend([
+            vertices += (
                 xm2, ym, zm,   xm2, ym, zp,   xm2, yp, zp,   xm2, yp, zm,  # left
                 xp2, ym, zp,   xp2, ym, zm,   xp2, yp, zm,   xp2, yp, zp,  # right
                 xm, ym, zp2,   xp, ym, zp2,   xp, yp, zp2,   xm, yp, zp2,  # front
                 xp, ym, zm2,   xm, ym, zm2,   xm, yp, zm2,   xp, yp, zm2,  # back
-            ])
+            )
         else:
-            ret.extend([
+            vertices += (
                 xm, ym, zm,   xm, ym, zp,   xm, yp, zp,   xm, yp, zm,  # left
                 xp, ym, zp,   xp, ym, zm,   xp, yp, zm,   xp, yp, zp,  # right
                 xm, ym, zp,   xp, ym, zp,   xp, yp, zp,   xm, yp, zp,  # front
                 xp, ym, zm,   xm, ym, zm,   xm, yp, zm,   xp, yp, zm,  # back
-            ])
-        return ret
+            )
+        return vertices
 
     def play_break_sound(self, player=None, position=None):
         if self.break_sound is not None:
