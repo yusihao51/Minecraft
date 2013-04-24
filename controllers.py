@@ -10,10 +10,11 @@ import datetime
 from pyglet.gl import *
 
 # Modules from this project
-from blocks import Block
+from blocks import Block, CRACK_LEVELS, crack_textures
 from cameras import *
 import globals as G
 from gui import *
+from items import Tool
 from player import *
 from savingsystem import *
 from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, CommandException

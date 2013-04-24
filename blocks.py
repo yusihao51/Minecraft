@@ -6,7 +6,7 @@
 from __future__ import unicode_literals
 
 # Python packages
-import os
+# Nothing for now...
 
 # Third-party packages
 import pyglet
