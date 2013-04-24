@@ -198,7 +198,7 @@ class World(dict):
             return
         if block in self.spreading_mutations and self.has_neighbors(
                 position,
-                is_in=(self.spreading_mutations[block],),
+                is_in=set((self.spreading_mutations[block],)),
                 diagonals=True):
             self.spreading_mutable_blocks.appendleft(position)
 

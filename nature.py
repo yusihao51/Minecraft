@@ -78,8 +78,8 @@ class Tree(object):
                         continue
                     # Avoids orphaned leaves
                     if not world.has_neighbors((xl, yl, zl),
-                                               (cls.trunk_block,
-                                                cls.leaf_block)):
+                                               set((cls.trunk_block,
+                                                    cls.leaf_block))):
                         continue
                     dz = abs(zl - z)
                     # The farther we are (horizontally) from the trunk,
@@ -242,8 +242,8 @@ TREES = set((
 
 VEGETATION = PLANTS | TREES
 
-TREE_BLOCKS = tuple(tree.trunk_block for tree in TREES)
+TREE_BLOCKS = set(tree.trunk_block for tree in TREES)
 
-PLANT_BLOCKS = tuple(plant.block for plant in PLANTS)
+PLANT_BLOCKS = set(plant.block for plant in PLANTS)
 
-VEGETATION_BLOCKS = PLANT_BLOCKS + TREE_BLOCKS
+VEGETATION_BLOCKS = PLANT_BLOCKS | TREE_BLOCKS

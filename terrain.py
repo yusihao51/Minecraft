@@ -9,14 +9,12 @@ from math import sqrt, floor
 import random
 
 # Third-party packages
-from debug import performance_info
 from perlin import SimplexNoise
 
 # Modules from this project
 from blocks import *
-from utils import FastRandom, fast_abs
+from utils import FastRandom
 from nature import *
-from world import *
 import globals as G
 
 
@@ -26,29 +24,29 @@ class PerlinNoise(object):
     def __init__(self, seed):
         rand = FastRandom(seed)
 
-        self.perm = [ None ] * 512
-        noise_tbl = [ None ] * 256
+        self.perm = [None] * 512
+        noise_tbl = [None] * 256
 
         self.PERSISTENCE = 2.1379201
         self.H = 0.836281
         self.OCTAVES = 9
-        self.weights = [ None ] * self.OCTAVES
+        self.weights = [None] * self.OCTAVES
         self.regen_weight = True
 
-        for i in range(0, 256):
+        for i in range(256):
             noise_tbl[i] = i
 
-        for i in range(0, 256):
+        for i in range(256):
             j = rand.randint() % 256
-            j = fast_abs(j)
+            j = abs(j)
 
             noise_tbl[i], noise_tbl[j] = noise_tbl[j], noise_tbl[i]
 
-        for i in range(0, 256):
+        for i in range(256):
             self.perm[i] = self.perm[i + 256] = noise_tbl[i]
 
-    def fade(self, t) :
-        return t * t * t * (t * (t * 6 - 15) + 10)
+    def fade(self, t):
+        return (t ** 3) * (t * (t * 6 - 15) + 10)
 
     # linear interpolate
     def lerp(self, t, a, b):
@@ -59,11 +57,11 @@ class PerlinNoise(object):
         u = x if h < 8 else y
         if h < 4:
             v = y
-        elif h == 12 or h ==14:
+        elif h in (12, 14):
             v = x
         else:
             v = z
-        return (u if (h & 1) == 0 else - u) + (v if (h & 2) == 0 else -v)
+        return (-u if h & 1 else u) + (-v if h & 2 else v)
 
     def noise(self, x, y, z):
         X = int(floor(x)) & 255
@@ -85,26 +83,31 @@ class PerlinNoise(object):
         BA = self.perm[B] + Z
         BB = self.perm[(B + 1)] + Z
 
-        return self.lerp(w, self.lerp(v, self.lerp(u, self.grad(self.perm[AA], x, y, z),
-                                self.grad(self.perm[BA], x - 1, y, z)),
-                            self.lerp(u, self.grad(self.perm[AB], x, y - 1, z),
-                                self.grad(self.perm[BB], x - 1, y - 1, z))),
-                            self.lerp(v, self.lerp(u, self.grad(self.perm[(AA + 1)], x, y, z - 1),
-                                self.grad(self.perm[(BA + 1)], x - 1, y, z - 1)),
-                            self.lerp(u, self.grad(self.perm[(AB + 1)], x, y - 1, z - 1),
-                                self.grad(self.perm[(BB + 1)], x - 1, y - 1, z - 1))))
+        return self.lerp(w,
+                    self.lerp(v, self.lerp(u,
+                                 self.grad(self.perm[AA], x,       y, z),
+                                 self.grad(self.perm[BA], x - 1.0, y, z)),
+                         self.lerp(u,
+                              self.grad(self.perm[AB], x,       y - 1.0, z),
+                              self.grad(self.perm[BB], x - 1.0, y - 1.0, z))),
+                    self.lerp(v, self.lerp(u,
+                                 self.grad(self.perm[(AA + 1)], x,       y, z - 1.0),
+                                 self.grad(self.perm[(BA + 1)], x - 1.0, y, z - 1.0)),
+                    self.lerp(u,
+                         self.grad(self.perm[(AB + 1)], x,       y - 1.0, z - 1.0),
+                         self.grad(self.perm[(BB + 1)], x - 1.0, y - 1.0, z - 1.0))))
 
     def fBm(self, x, y, z):
         total = 0.0
 
         if self.regen_weight:
-            self.weights = [ None ] * self.OCTAVES
-            for n in range(0, self.OCTAVES):
+            self.weights = [None] * self.OCTAVES
+            for n in range(self.OCTAVES):
                 self.weights[n] = self.PERSISTENCE ** (-self.H * n)
 
-            regen_weight = False
+            self.regen_weight = False
 
-        for n in range(0, self.OCTAVES):
+        for n in range(self.OCTAVES):
             total += self.noise(x, y, z) * self.weights[n]
 
             x *= self.PERSISTENCE
@@ -254,8 +257,8 @@ class TerrainGenerator(TerrainGeneratorBase):
         # interpolate the missing values
         self.tri_lerp_d_map(d_map)
 
-        for x in range(0, CHUNK_X_SIZE):
-            for z in range(0, CHUNK_Z_SIZE):
+        for x in range(CHUNK_X_SIZE):
+            for z in range(CHUNK_Z_SIZE):
                 biome_type = self.biome_gen.get_biome_type(x, z)
                 first_block = -1
                 for y in range(CHUNK_Y_SIZE - 1, 0, -1):
@@ -303,7 +306,6 @@ class TerrainGenerator(TerrainGeneratorBase):
 
         depth = int(first_block - y)
 
-
         if biome_type == G.PLAINS or biome_type == G.MOUNTAINS or biome_type == G.FOREST:
             if 28 <= y <= 34:
                 c.set_block(x, y, z, sand_block)
@@ -341,9 +343,9 @@ class TerrainGenerator(TerrainGeneratorBase):
         return self.lerp(z, z1, z2, u, v)
 
     def tri_lerp_d_map(self, d_map):
-        for x in range(0, CHUNK_X_SIZE):
-            for y in range(0, CHUNK_Y_SIZE):
-                for z in range(0, CHUNK_Z_SIZE):
+        for x in range(CHUNK_X_SIZE):
+            for y in range(CHUNK_Y_SIZE):
+                for z in range(CHUNK_Z_SIZE):
                     if not (x % SAMPLE_RATE_HOR == 0 and y % SAMPLE_RATE_VER == 0 and z % SAMPLE_RATE_HOR == 0):
                         offsetX = int((x / SAMPLE_RATE_HOR) * SAMPLE_RATE_HOR)
                         offsetY = int((y / SAMPLE_RATE_VER) * SAMPLE_RATE_VER)
@@ -380,7 +382,7 @@ class TerrainGenerator(TerrainGeneratorBase):
         return self._clamp(self.ocean_gen.fBm(0.0009 * x, 0, 0.0009 * z) * 8.0)
 
     def rive_terrain(self, x, z):
-        return self._clamp((sqrt(fast_abs(self.river_gen.fBm(0.0008 * x, 0, 0.0008 * z))) - 0.1) * 7.0)
+        return self._clamp((sqrt(abs(self.river_gen.fBm(0.0008 * x, 0, 0.0008 * z))) - 0.1) * 7.0)
 
     def mount_density(self, x, y, z):
         ret = self.mount_gen.fBm(x * 0.002, y * 0.001, z * 0.002)

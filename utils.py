@@ -44,15 +44,6 @@ class FastRandom(object):
         return (self.seed >> 16) & 0x7FFF
 
 
-def fast_floor(value):
-    i = int(value)
-    return (i - 1) if value < 0 and value != i else i
-
-
-def fast_abs(value):
-    return -value if value < 0 else value
-
-
 def init_resources():
     init_font('resources/fonts/Chunkfive.ttf', 'ChunkFive Roman')
 

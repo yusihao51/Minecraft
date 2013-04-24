@@ -51,7 +51,7 @@ cdef class World(dict):
 
     @cython.locals(other_position=tuple)
     cpdef bint has_neighbors(self, tuple position,
-                             tuple is_in=?,bint diagonals=?, tuple faces=?)
+                             set is_in=?,bint diagonals=?, tuple faces=?)
 
     @cython.locals(x=float, y=float, z=float, above_position=tuple)
     cpdef object check_spreading_mutable(self, tuple position, object block)
@@ -73,7 +73,7 @@ cdef class World(dict):
     @cython.locals(block=object)
     cpdef object show_block(self, tuple position, bint immediate=?)
 
-    @cython.locals(vertex_data=list, texture_data=list,
+    @cython.locals(vertex_data=tuple, texture_data=list,
                    count=int, batch=object)
     cpdef object _show_block(self, tuple position, object block)
 
