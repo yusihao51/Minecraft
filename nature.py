@@ -121,44 +121,52 @@ class Rose(SmallPlant):
     block = rose_block
 
 
-class Fern(SmallPlant):
+class TallGrass(SmallPlant):
     block = fern_block
 
-class WildGrass0(SmallPlant):
+
+class TallGrass0(SmallPlant):
     block = wildgrass0_block
     grows_on = grass_block, dirt_block
 
-class WildGrass1(SmallPlant):
+
+class TallGrass1(SmallPlant):
     block = wildgrass1_block
     grows_on = grass_block, dirt_block
 
-class WildGrass2(SmallPlant):
+
+class TallGrass2(SmallPlant):
     block = wildgrass2_block
     grows_on = grass_block, dirt_block
 
-class WildGrass3(SmallPlant):
+
+class TallGrass3(SmallPlant):
     block = wildgrass3_block
     grows_on = grass_block, dirt_block
 
-class WildGrass4(SmallPlant):
+
+class TallGrass4(SmallPlant):
     block = wildgrass4_block
     grows_on = grass_block, dirt_block
 
-class WildGrass5(SmallPlant):
+
+class TallGrass5(SmallPlant):
     block = wildgrass5_block
     grows_on = grass_block, dirt_block
 
 
-class WildGrass6(SmallPlant):
+class TallGrass6(SmallPlant):
     block = wildgrass6_block
     grows_on = grass_block, dirt_block
 
-class WildGrass7(SmallPlant):
+
+class TallGrass7(SmallPlant):
     block = wildgrass7_block
     grows_on = grass_block, dirt_block
 
-class DesertGrass(SmallPlant):
-    block = desertgrass_block
+
+class DeadBush(SmallPlant):
+    block = deadbush_block
     grows_on = sand_block, sandstone_block
 
 #
@@ -213,16 +221,16 @@ SMALL_PLANTS = set((
     Potato,
     Carrot,
     Rose,
-    Fern,
-    WildGrass0,
-    WildGrass1,
-    WildGrass2,
-    WildGrass3,
-    WildGrass4,
-    WildGrass5,
-    WildGrass6,
-    WildGrass7,
-    DesertGrass,
+    TallGrass,
+    TallGrass0,
+    TallGrass1,
+    TallGrass2,
+    TallGrass3,
+    TallGrass4,
+    TallGrass5,
+    TallGrass6,
+    TallGrass7,
+    DeadBush,
 ))
 
 TALL_PLANTS = set((
