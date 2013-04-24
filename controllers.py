@@ -10,7 +10,7 @@ import datetime
 from pyglet.gl import *
 
 # Modules from this project
-from blocks import Block, CRACK_LEVELS, crack_textures
+from blocks import *
 from cameras import *
 import globals as G
 from gui import *
