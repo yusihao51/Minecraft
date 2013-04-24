@@ -12,7 +12,7 @@ import globals as G
 
 
 __all__ = (
-    'load_image', 'image_sprite', 'hidden_image_sprite', 'FastRandom',
+    'load_image', 'image_sprite', 'hidden_image_sprite', 'vec', 'FastRandom',
     'init_resources', 'init_font', 'get_block_icon',
 )
 

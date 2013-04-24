@@ -14,7 +14,14 @@ import time
 from blocks import BlockID
 from debug import performance_info
 import globals as G
-from player import *
+from player import Player
+
+
+__all__ = (
+    'sector_to_filename', 'region_to_filename', 'sector_to_region',
+    'sector_to_offset', 'save_world', 'world_exists', 'remove_world',
+    'sector_exists', 'load_region', 'open_world',
+)
 
 
 structvec = struct.Struct("hhh")
