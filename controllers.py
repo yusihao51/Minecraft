@@ -15,7 +15,7 @@ from pyglet.gl import *
 
 # Modules from this project
 from blocks import *
-from cameras import *
+from cameras import Camera3D
 from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, CommandException
 import globals as G
 from gui import *
@@ -28,9 +28,11 @@ from utils import vec
 from views import *
 from world import sectorize, World, normalize
 
+
 __all__ = (
-    'vec', 'Controller', 'MainMenuController', 'GameController',
+    'Controller', 'MainMenuController', 'GameController',
 )
+
 
 class Controller(object):
     def __init__(self, window):
