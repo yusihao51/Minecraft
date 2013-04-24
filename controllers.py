@@ -18,7 +18,7 @@ from blocks import *
 from cameras import Camera3D
 from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, CommandException
 import globals as G
-from gui import *
+from gui import ItemSelector, InventorySelector, TextWidget
 from items import Tool
 from player import Player
 from savingsystem import world_exists, open_world, save_world, remove_world

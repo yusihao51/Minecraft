@@ -10,7 +10,8 @@ from pyglet.gl import *
 
 # Modules from this project
 import globals as G
-from gui import *
+from gui import frame_image, Rectangle, backdrop, Button, button_image, \
+    button_highlighted, ToggleButton
 from savingsystem import world_exists
 from utils import image_sprite
 
