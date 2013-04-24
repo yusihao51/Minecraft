@@ -53,10 +53,10 @@ def init_font(filename, fontname):
     pyglet.font.load(fontname)
 
 
-def get_block_icon(block, icon_size, model):
+def get_block_icon(block, icon_size, world):
     block_icon = load_image(G.ICONS_PATH,
                             block.id.filename() + ".png") \
-        or (block.group or model.group).texture.get_region(
+        or (block.group or world.group).texture.get_region(
             int(block.texture_data[2 * 8] * G.TILESET_SIZE) * icon_size,
             int(block.texture_data[2 * 8 + 1] * G.TILESET_SIZE) * icon_size,
             icon_size,

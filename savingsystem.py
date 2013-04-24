@@ -52,14 +52,14 @@ def save_world(window, game_dir, world=None):
     save = (4,window.player, window.time_of_day, G.SEED)
     pickle.dump(save, open(os.path.join(game_dir, world, "save.pkl"), "wb"))
 
-    #blocks and sectors (window.model and window.model.sectors)
+    #blocks and sectors (window.world and window.world.sectors)
     #Saves individual sectors in region files (4x4x4 sectors)
-    blocks = window.model
+    blocks = window.world
 
     while blocks.generation_queue: #This must be empty or it'll save queued sectors as all air
         blocks.dequeue_generation()
-    for secpos in window.model.sectors: #TODO: only save dirty sectors
-        if not window.model.sectors[secpos]:
+    for secpos in window.world.sectors: #TODO: only save dirty sectors
+        if not window.world.sectors[secpos]:
             continue #Skip writing empty sectors
         file = os.path.join(game_dir, world, sector_to_filename(secpos))
         if not os.path.exists(file):
@@ -97,10 +97,10 @@ def sector_exists(sector, world=None):
     if world is None: world = "world"
     return os.path.lexists(os.path.join(G.game_dir, world, sector_to_filename(sector)))
 
-def load_region(model, world=None, region=None, sector=None):
+def load_region(world, world=None, region=None, sector=None):
     if world is None: world = "world"
-    sectors = model.sectors
-    blocks = model
+    sectors = world.sectors
+    blocks = world
     SECTOR_SIZE = G.SECTOR_SIZE
     BLOCKS_DIR = G.BLOCKS_DIR
     if sector: region = sector_to_region(sector)
@@ -146,5 +146,5 @@ def open_world(gamecontroller, game_dir, world=None):
         random.seed(G.SEED)
         print('No seed in save, generated random seed: ' + G.SEED)
 
-    #blocks and sectors (window.model and window.model.sectors)
+    #blocks and sectors (window.world and window.world.sectors)
     #Are loaded on the fly

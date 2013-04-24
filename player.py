@@ -1,3 +1,8 @@
+__all__ = (
+    'Player',
+)
+
+
 # Imports, sorted alphabetically.
 
 # Python packages
@@ -174,16 +179,16 @@ class Player(Entity):
                     op = tuple(op)
                     # If there is no block or if the block is not a cube,
                     # we can walk there.
-                    if op not in parent.model \
-                            or parent.model[op].vertex_mode != G.VERTEX_CUBE:
+                    if op not in parent.world \
+                            or parent.world[op].vertex_mode != G.VERTEX_CUBE:
                         continue
                     # if density <= 1 then we can walk through it. (water)
-                    if parent.model[op].density < 1:
-                        self.current_density = parent.model[op].density
+                    if parent.world[op].density < 1:
+                        self.current_density = parent.world[op].density
                         continue
                     # if height <= 1 then we can walk on top of it. (carpet, half-blocks, etc...)
-                    if parent.model[op].height < 0.5:
-                        #current_height = parent.model[op].height
+                    if parent.world[op].height < 0.5:
+                        #current_height = parent.world[op].height
                         #x, y, z = self.position
                         #new_pos = (x, y + current_height, z)
                         #self.position = new_pos

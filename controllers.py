@@ -15,10 +15,12 @@ import globals as G
 from gui import *
 from player import *
 from savingsystem import *
-from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, CommandException, UnknownCommandException
+from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, CommandException
 from utils import init_resources
 from views import *
 from skydome import Skydome
+from world import sectorize, World
+
 
 def vec(*args):
     """Creates GLfloat arrays of floats"""
@@ -121,13 +123,13 @@ class GameController(Controller):
     def update(self, dt):
         sector = sectorize(self.player.position)
         if sector != self.sector:
-            self.model.change_sectors(sector)
+            self.world.change_sectors(sector)
             # When the world is loaded, show every visible sector.
             if self.sector is None:
-                self.model.process_entire_queue()
+                self.world.process_entire_queue()
             self.sector = sector
 
-        self.model.content_update(dt)
+        self.world.content_update(dt)
 
         m = 8
         df = min(dt, 0.2)
@@ -135,7 +137,7 @@ class GameController(Controller):
             self.player.update(df / m, self)
         if self.mouse_pressed:
             vector = self.player.get_sight_vector()
-            block, previous = self.model.hit_test(self.player.position, vector,
+            block, previous = self.world.hit_test(self.player.position, vector,
                                                   self.player.attack_range)
             if block:
                 if self.highlighted_block != block:
@@ -144,7 +146,7 @@ class GameController(Controller):
                 self.set_highlighted_block(None)
 
             if self.highlighted_block:
-                hit_block = self.model[self.highlighted_block]
+                hit_block = self.world[self.highlighted_block]
                 if hit_block.hardness >= 0:
 
                     multiplier = 1
@@ -156,7 +158,7 @@ class GameController(Controller):
 
                     self.block_damage += self.player.attack_power * dt * multiplier
                     if self.block_damage >= hit_block.hardness:
-                        self.model.remove_block(self.player,
+                        self.world.remove_block(self.player,
                                                 self.highlighted_block)
                         self.set_highlighted_block(None)
                         if hasattr(self.item_list.get_current_block_item(), 'durability') and self.item_list.get_current_block_item().durability != -1:
@@ -212,7 +214,7 @@ class GameController(Controller):
 
         if G.DISABLE_SAVE and world_exists(G.game_dir, G.SAVE_FILENAME):
             open_world(self, G.game_dir, G.SAVE_FILENAME)
-            self.model = World()
+            self.world = World()
         else:
             seed = G.LAUNCH_OPTIONS.seed
             if seed is None:
@@ -234,12 +236,12 @@ class GameController(Controller):
                     'Seed used the %d %m %Y at %H:%M:%S\n'))
                 seeds.write('%s\n\n' % seed)
 
-            self.model = World()
-            self.player = Player((0,self.model.terraingen.get_height(0,0)+2,0), (-20, 0),
+            self.world = World()
+            self.player = Player((0,self.world.terraingen.get_height(0,0)+2,0), (-20, 0),
                                  game_mode=G.GAME_MODE)
         print('Game mode: ' + self.player.game_mode)
-        self.item_list = ItemSelector(self, self.player, self.model)
-        self.inventory_list = InventorySelector(self, self.player, self.model)
+        self.item_list = ItemSelector(self, self.player, self.world)
+        self.inventory_list = InventorySelector(self, self.player, self.world)
         self.item_list.on_resize(self.window.width, self.window.height)
         self.inventory_list.on_resize(self.window.width, self.window.height)
         self.text_input = TextWidget(self.window, '',
@@ -261,7 +263,7 @@ class GameController(Controller):
             self.label = pyglet.text.Label(
                 '', font_name='Arial', font_size=8, x=10, y=self.window.height - 10,
                 anchor_x='left', anchor_y='top', color=(255, 255, 255, 255))
-        pyglet.clock.schedule_interval_soft(self.model.process_queue,
+        pyglet.clock.schedule_interval_soft(self.world.process_queue,
                                             1.0 / G.MAX_FPS)
 
     def update_time(self):
@@ -290,7 +292,7 @@ class GameController(Controller):
             self.time_of_day = 0.0
             time_of_day = 0.0
 
-        side = len(self.model.sectors) * 2.0
+        side = len(self.world.sectors) * 2.0
 
         self.light_y = 2.0 * side * sin(time_of_day * self.hour_deg
                                         * G.DEG_RAD)
@@ -328,14 +330,14 @@ class GameController(Controller):
     def on_mouse_press(self, x, y, button, modifiers):
         if self.window.exclusive:
             vector = self.player.get_sight_vector()
-            block, previous = self.model.hit_test(self.player.position, vector, self.player.attack_range)
+            block, previous = self.world.hit_test(self.player.position, vector, self.player.attack_range)
             if button == pyglet.window.mouse.LEFT:
                 if block:
                     self.mouse_pressed = True
                     self.set_highlighted_block(None)
             else:
                 if previous:
-                    hit_block = self.model[block]
+                    hit_block = self.world[block]
 
                     # show craft table gui
                     if hit_block.id == craft_block.id:
@@ -355,14 +357,14 @@ class GameController(Controller):
                             # if current block is an item,
                             # call its on_right_click() method to handle this event
                             if current_block.id >= G.ITEM_ID_MIN:
-                                if current_block.on_right_click(self.model, self.player):
+                                if current_block.on_right_click(self.world, self.player):
                                     self.item_list.get_current_block_item().change_amount(-1)
                                     self.item_list.update_health()
                                     self.item_list.update_items()
                             else:
                                 localx, localy, localz = map(operator.sub,previous,normalize(self.player.position))
                                 if localx != 0 or localz != 0 or (localy != 0 and localy != -1):
-                                    self.model.add_block(previous, current_block)
+                                    self.world.add_block(previous, current_block)
                                     self.item_list.remove_current_block()
                 elif self.item_list.get_current_block() and hasattr(self.item_list.get_current_block(), 'regenerated_health') and self.item_list.get_current_block().regenerated_health != 0 and self.player.health < self.player.max_health:
                     self.player.change_health(self.item_list.get_current_block().regenerated_health)
@@ -463,8 +465,8 @@ class GameController(Controller):
         #self.window.clear()
         self.set_3d()
         #glColor3d(1, 1, 1)
-        self.model.batch.draw()
-        self.model.transparency_batch.draw()
+        self.world.batch.draw()
+        self.world.transparency_batch.draw()
         self.crack_batch.draw()
         self.draw_focused_block()
         self.set_2d()
@@ -485,16 +487,16 @@ class GameController(Controller):
             count = len(texture_data) / 2
             if self.crack:
                 self.crack.delete()
-            self.crack = self.crack_batch.add(count, GL_QUADS, self.model.group,
+            self.crack = self.crack_batch.add(count, GL_QUADS, self.world.group,
                                               ('v3f/static', vertex_data),
                                               ('t2f/static', texture_data))
 
     def draw_focused_block(self):
         glDisable(GL_LIGHTING)
         vector = self.player.get_sight_vector()
-        position = self.model.hit_test(self.player.position, vector, self.player.attack_range)[0]
+        position = self.world.hit_test(self.player.position, vector, self.player.attack_range)[0]
         if position:
-            hit_block = self.model[position]
+            hit_block = self.world[position]
             if hit_block.density >= 1:
                 self.focus_block.width = hit_block.width * 1.05
                 self.focus_block.height = hit_block.height * 1.05
@@ -514,7 +516,7 @@ class GameController(Controller):
                           % (self.time_of_day if (self.time_of_day < 12.0)
                else (24.0 - self.time_of_day),
                pyglet.clock.get_fps(), x, y, z,
-               len(self.model._shown), len(self.model), len(self.model.sector_queue))
+               len(self.world._shown), len(self.world), len(self.world.sector_queue))
         self.label.draw()
 
     def write_line(self, text, **kwargs):
@@ -524,7 +526,7 @@ class GameController(Controller):
         if symbol == G.VALIDATE_KEY:
             txt = self.text_input.text.replace('\n', '')
             try:
-                ex = self.command_parser.execute(txt, controller=self, user=self.player, world=self.model)
+                ex = self.command_parser.execute(txt, controller=self, user=self.player, world=self.world)
                 if ex != COMMAND_HANDLED:
                     # Not a command
                     self.write_line("> %s" % txt, color=(255, 255, 255, 255))

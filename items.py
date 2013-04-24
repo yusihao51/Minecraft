@@ -53,7 +53,7 @@ class Item(object):
         self.id = BlockID(self.id)
         G.ITEMS_DIR[self.id] = self
 
-    def on_right_click(self, model, player):
+    def on_right_click(self, world, player):
         pass
 
 class ItemStack(object):
@@ -167,11 +167,11 @@ class SeedItem(Item):
     max_stack_size = 64
     name = "Seed"
 
-    def on_right_click(self, model, player):
-        block, previous = model.hit_test(player.position, player.get_sight_vector(), player.attack_range)
+    def on_right_click(self, world, player):
+        block, previous = world.hit_test(player.position, player.get_sight_vector(), player.attack_range)
         if previous:
-            if model[block].id == farm_block.id: # plant wheat
-                model.add_block(previous, wheat_crop_block)
+            if world[block].id == farm_block.id: # plant wheat
+                world.add_block(previous, wheat_crop_block)
                 return True # remove from inventory
 
 class WheatItem(Item):
@@ -389,11 +389,11 @@ class Hoe(Tool):
     def __init__(self):
         super(Hoe, self).__init__()
 
-    def on_right_click(self, model, player):
-        block, previous = model.hit_test(player.position, player.get_sight_vector(), player.attack_range)
+    def on_right_click(self, world, player):
+        block, previous = world.hit_test(player.position, player.get_sight_vector(), player.attack_range)
         if previous:
-            if model[block].id == dirt_block.id or model[block].id == grass_block.id:
-                model.add_block(block, farm_block)
+            if world[block].id == dirt_block.id or world[block].id == grass_block.id:
+                world.add_block(block, farm_block)
 
 class WoodHoe(Hoe):
     material = G.WOODEN_TOOL
