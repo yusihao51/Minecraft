@@ -11,7 +11,7 @@ from pyglet.gl import *
 # Modules from this project
 import globals as G
 from gui import *
-from savingsystem import *
+from savingsystem import world_exists
 from utils import image_sprite
 
 
