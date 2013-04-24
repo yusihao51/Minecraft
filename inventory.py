@@ -7,8 +7,12 @@ import sys
 # Nothing for now...
 
 # Modules from this project
-import globals as G
 from items import *
+
+
+__all__ = (
+    'Inventory',
+)
 
 
 class Inventory(object):

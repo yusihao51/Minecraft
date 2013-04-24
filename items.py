@@ -7,7 +7,7 @@
 # Nothing for now...
 
 # Modules from this project
-from blocks import *
+from blocks import BlockID
 import globals as G
 
 

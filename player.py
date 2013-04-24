@@ -1,23 +1,24 @@
-__all__ = (
-    'Player',
-)
-
-
 # Imports, sorted alphabetically.
 
 # Python packages
 from math import cos, sin, atan2, radians
 import random
 
-
 # Third-party packages
 # Nothing for now...
 
 # Modules from this project
-from entity import *
+from blocks import torch_block
+from entity import Entity
 import globals as G
+from items import stick_item
 from inventory import *
 from world import *
+
+
+__all__ = (
+    'Player',
+)
 
 
 class Player(Entity):

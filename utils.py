@@ -11,6 +11,12 @@ from pyglet.gl import *
 import globals as G
 
 
+__all__ = (
+    'load_image', 'image_sprite', 'hidden_image_sprite', 'FastRandom',
+    'init_resources', 'init_font', 'get_block_icon',
+)
+
+
 def load_image(*args):
     path = os.path.join(*args)
     return pyglet.image.load(os.path.join(*args)) if os.path.isfile(
@@ -18,7 +24,7 @@ def load_image(*args):
 
 
 def image_sprite(image, batch, group, x=0, y=0, width=None, height=None):
-    if image == None or batch == None or group == None:
+    if image is None or batch is None or group is None:
         return None
     width = width or image.width
     height = height or image.height

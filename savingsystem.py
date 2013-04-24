@@ -2,10 +2,9 @@
 
 # Python packages
 import cPickle as pickle
-import cStringIO as StringIO
 import os
+import random
 import struct
-import zlib
 import time
 
 # Third-party packages

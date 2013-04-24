@@ -10,6 +10,11 @@ import time
 import globals as G
 
 
+__all__ = (
+    'performance_info',
+)
+
+
 def performance_info(func):
     def inner(*args, **kwargs):
         if not G.DEBUG:

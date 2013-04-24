@@ -2,6 +2,7 @@
 Terrain generating algorithm
 """
 
+
 # Imports, sorted alphabetically.
 
 # Python packages
@@ -17,6 +18,11 @@ from utils import FastRandom
 from nature import *
 import globals as G
 
+
+__all__ = (
+    'PerlinNoise', 'Chunk', 'BiomeGenerator', 'TerrainGeneratorBase',
+    'TerrainGenerator', 'TerrainGeneratorSimple',
+)
 
 
 # Improved Perlin Noise based on Improved Noise reference implementation by Ken Perlin

@@ -4,7 +4,6 @@
 import datetime
 import os
 import re
-import random
 
 # Third-party packages
 import pyglet
@@ -13,6 +12,17 @@ import pyglet
 from blocks import BlockID
 from items import get_item
 import globals as G
+
+
+__all__ = (
+    'COMMAND_HANDLED', 'COMMAND_NOT_HANDLED', 'COMMAND_INFO_COLOR',
+    'COMMAND_ERROR_COLOR', 'set_terrain', 'next_terrain', 'CommandException',
+    'UnknownCommandException', 'CommandParser', 'Command', 'HelpCommand',
+    'GiveBlockCommand', 'SetTimeCommand', 'GetIDCommand', 'SetSnowCommand',
+    'SetPlainsCommand', 'SetDesertCommand', 'SetMountainsCommand',
+    'TakeScreencapCommand',
+)
+
 
 COMMAND_HANDLED = True
 COMMAND_NOT_HANDLED = None

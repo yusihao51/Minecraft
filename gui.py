@@ -5,15 +5,26 @@ import random
 from math import floor, ceil
 
 # Third-party packages
+from items import ItemStack
 from pyglet.gl import *
 from pyglet.text import Label
 from pyglet.window import key
 
 # Modules from this project
+from blocks import air_block
+# FIXME: Initialize crafting in a proper way, other than by importing.
+import crafting
 import globals as G
 from inventory import *
-from crafting import *  # import for G.recipes
 from utils import load_image, image_sprite, hidden_image_sprite, get_block_icon
+
+
+__all__ = (
+    'Rectangle', 'Button', 'ToggleButton', 'Control', 'AbstractInventory',
+    'ItemSelector', 'InventorySelector', 'TextWidget', 'ProgressBarWidget',
+    'frame_image', 'button_image', 'button_highlighted', 'background_image',
+    'backdrop_images', 'rnd_backdrops', 'backdrop',
+)
 
 
 class Rectangle(object):
@@ -974,14 +985,14 @@ class ProgressBarWidget(Control):
 
     def set_progress(self, progress):
         self.progress = progress
-        self.update_progress
+        self.update_progress()
 
     def update_progress(self):
         if self.progress_updater is not None:
             self.progress = self.progress_updater()
 
         self.progress_pic = image_sprite(self.foreground_pic, self.batch, self.group, x=0, y=0,
-                width=floor(self.width * progress), height=self.height)
+                width=floor(self.width * self.progress), height=self.height)
 
     def _on_draw(self):
         self.update_progress()

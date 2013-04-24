@@ -9,6 +9,12 @@ __version__ = '$Id: perlin.py 521 2008-12-15 03:03:52Z casey.duncan $'
 from math import floor, fmod, sqrt
 from random import randint
 
+
+__all__ = (
+    'BaseNoise', 'SimplexNoise', 'TileableNoise',
+)
+
+
 # 3D Gradient vectors
 _GRAD3 = (
     (1, 1, 0), (-1, 1, 0), (1, -1, 0), (-1, -1, 0),

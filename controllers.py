@@ -12,9 +12,11 @@ import datetime
 from pyglet.gl import *
 
 # Modules from this project
+from blocks import *
 from cameras import *
 import globals as G
 from gui import *
+from items import Tool
 from player import *
 from savingsystem import *
 from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, CommandException
@@ -23,6 +25,10 @@ import utils
 from views import *
 from skydome import Skydome
 from world import sectorize, World, normalize
+
+__all__ = (
+    'vec', 'Controller', 'MainMenuController', 'GameController',
+)
 
 class Controller(object):
     def __init__(self, window):
