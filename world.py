@@ -202,7 +202,7 @@ class World(dict):
             return
         if block in self.spreading_mutations and self.has_neighbors(
                 position,
-                is_in=set((self.spreading_mutations[block],)),
+                is_in={self.spreading_mutations[block]},
                 diagonals=True):
             self.spreading_mutable_blocks.appendleft(position)
 
@@ -218,7 +218,9 @@ class World(dict):
         return False
 
     def is_exposed(self, position):
-        for other_position in self.neighbors_iterator(position):
+        x, y, z = position
+        for fx,fy,fz in FACES:
+            other_position = (fx+x, fy+y, fz+z)
             if other_position not in self or self[other_position].transparent:
                 return True
         return False
