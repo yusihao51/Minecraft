@@ -18,6 +18,7 @@ from utils import load_image
 import globals as G
 from random import randint
 import sounds
+from entity import WheatCropEntity
 
 BLOCK_TEXTURE_DIR = {}
 
@@ -1429,46 +1430,24 @@ class WheatCropBlock(Block):
     max_stack_size = 16
     amount_label_color = 0, 0, 0, 255
 
-    # used to update texture
-    position = None
-    world = None
-
     growth_stage = 0
     # FIXME: A class attribute should never be mutable.
     texture_list = []
-    # second per stage
-    grow_time = 10
-    grow_task = None
+    entity_type = WheatCropEntity
+    entity = None
 
     # FIXME: This constructor contains many heresies.  The parent class
     # constructor is not called and it contains hard-coded values.
-    def __init__(self, grow=True):
+    def __init__(self):
         self.top_texture = get_texture_coordinates(-1, -1)
         self.bottom_texture = get_texture_coordinates(-1, -1)
         for i in range(0, 8):
             self.side_texture = get_texture_coordinates(14, i)
             self.texture_list.append(self.get_texture_data())
-        # start to grow
-        if grow:
-            self.grow_task = G.main_timer.add_task(self.grow_time, self.grow_callback)
 
     def __del__(self):
-        if self.grow_task is not None:
-            G.main_timer.remove_task(self.grow_task)
-        if self.world is None:
-            return
-        if self.position in self.world:
-            self.world.hide_block(self.position)
-
-    def grow_callback(self):
-        self.growth_stage = self.growth_stage + 1
-        if self.position in self.world:
-            self.world.hide_block(self.position)
-            self.world.show_block(self.position)
-        if self.growth_stage < 7:
-            self.grow_task = G.main_timer.add_task(self.grow_time, self.grow_callback)
-        else:
-            self.grow_task = None
+        if self.entity is not None:
+            del self.entity
 
     # special hack to return different texture, which depends on the growth stage
     @property
@@ -1779,7 +1758,7 @@ lapisore_block = LapisOreBlock()
 rubyore_block = RubyOreBlock()
 sapphireore_block = SapphireOreBlock()
 fern_block = TallGrassBlock()
-wheat_crop_block = WheatCropBlock(False)
+wheat_crop_block = WheatCropBlock()
 #wild grass of different heights
 wildgrass0_block = Grass0Block()
 wildgrass1_block = Grass1Block()

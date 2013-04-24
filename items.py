@@ -7,7 +7,7 @@
 # Nothing for now...
 
 # Modules from this project
-from blocks import BlockID
+from blocks import BlockID, dirt_block, farm_block, grass_block, wheat_crop_block
 import globals as G
 
 

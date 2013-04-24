@@ -149,10 +149,8 @@ class World(dict):
         for blk in data_blocks:
             if block.id == blk.id:
                 self[position] = blk()
-                # some blocks keep their own position so that they can update themselves 
-                if hasattr(self[position], 'position'):
-                    self[position].world = self
-                    self[position].position = position
+                if hasattr(self[position], 'entity_type'):
+                    self[position].entity = self[position].entity_type(self, position)
                 block_set = True
         if not block_set:
             self[position] = block
