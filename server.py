@@ -15,6 +15,7 @@ try:  # Python 3
     import socketserver
 except ImportError:  # Python 2
     import SocketServer as socketserver
+from collections import defaultdict
 import cPickle as pickle
 from random import randint
 import socket
@@ -27,14 +28,17 @@ from world import World
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     def handle(self):
+        world = self.server.world
         data = self.request.recv(16384)
         sector = pickle.loads(data)
 
-        if sector not in self.server.world.sectors:
-            self.server.world.terraingen.generate_sector(sector)
+        if sector not in world.sectors:
+            world.terraingen.generate_sector(sector)
 
-        response = dict((pos, self.server.world[pos])
-                        for pos in self.server.world.sectors[sector])
+        response = defaultdict(list)
+        for position in world.sectors[sector]:
+            response[world[position].id].append(position)
+
         self.request.sendall(pickle.dumps(response))
 
 
@@ -75,7 +79,7 @@ if __name__ == '__main__':
     ip, port = server.server_address
 
     for i in range(10):
-        sector = (randint(-20, 20), 0, randint(-20, 20))
+        sector = (randint(-20, 20), 3, randint(-20, 20))
         # Requests this sector
         client(ip, port, pickle.dumps(sector))
 
