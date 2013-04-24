@@ -97,8 +97,8 @@ def sector_exists(sector, world=None):
     if world is None: world = "world"
     return os.path.lexists(os.path.join(G.game_dir, world, sector_to_filename(sector)))
 
-def load_region(world, world=None, region=None, sector=None):
-    if world is None: world = "world"
+def load_region(world, world_name=None, region=None, sector=None):
+    if world_name is None: world_name = "world"
     sectors = world.sectors
     blocks = world
     SECTOR_SIZE = G.SECTOR_SIZE
@@ -106,7 +106,7 @@ def load_region(world, world=None, region=None, sector=None):
     if sector: region = sector_to_region(sector)
     rx,ry,rz = region
     rx,ry,rz = rx*32, ry*32, rz*32
-    with open(os.path.join(G.game_dir, world, region_to_filename(region)), "rb") as f:
+    with open(os.path.join(G.game_dir, world_name, region_to_filename(region)), "rb") as f:
         #Load every chunk in this region (4x4x4)
         for cx in xrange(rx, rx+32, 8):
             for cy in xrange(ry, ry+32, 8):
