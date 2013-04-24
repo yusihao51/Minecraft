@@ -86,7 +86,8 @@ class Tree(object):
                     # the least leaves we can find.
                     if random.uniform(0, dx + dz) > 0.6:
                         continue
-                    world.add_block((xl, yl, zl), cls.leaf_block, force=False)
+                    world.add_block((xl, yl, zl), cls.leaf_block, force=False,
+                                    sync=sync)
 
 
 #
@@ -169,7 +170,7 @@ class BirchTree(Tree):
     trunk_height_range = 5, 7
 
 
-SMALL_PLANTS = (
+SMALL_PLANTS = set((
     WaterMelon,
     Pumpkin,
     YFlowers,
@@ -177,24 +178,24 @@ SMALL_PLANTS = (
     Carrot,
     Rose,
     Fern,
-)
+))
 
-TALL_PLANTS = (
+TALL_PLANTS = set((
     Cactus,
     TallCactus,
     Reed,
-)
+))
 
-PLANTS = SMALL_PLANTS = TALL_PLANTS
+PLANTS = SMALL_PLANTS | TALL_PLANTS
 
-TREES = (
+TREES = set((
     OakTree,
     JungleTree,
     BirchTree,
-)
+))
 
 
-VEGETATION = PLANTS + TREES
+VEGETATION = PLANTS | TREES
 
 TREE_BLOCKS = tuple(tree.trunk_block for tree in TREES)
 
