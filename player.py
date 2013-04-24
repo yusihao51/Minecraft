@@ -11,8 +11,8 @@ import random
 from blocks import torch_block
 from entity import Entity
 import globals as G
+from inventory import Inventory
 from items import stick_item
-from inventory import *
 from world import *
 
 

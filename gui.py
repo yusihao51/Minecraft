@@ -5,7 +5,6 @@ import random
 from math import floor, ceil
 
 # Third-party packages
-from items import ItemStack
 from pyglet.gl import *
 from pyglet.text import Label
 from pyglet.window import key
@@ -15,7 +14,8 @@ from blocks import air_block
 # FIXME: Initialize crafting in a proper way, other than by importing.
 import crafting
 import globals as G
-from inventory import *
+from inventory import Inventory
+from items import ItemStack
 from utils import load_image, image_sprite, hidden_image_sprite, get_block_icon
 
 
