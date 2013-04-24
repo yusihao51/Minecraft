@@ -9,3 +9,5 @@
 *.pyd
 *.exp
 *.obj
+screencaptures*
+.idea*
