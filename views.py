@@ -10,8 +10,9 @@ from pyglet.gl import *
 
 # Modules from this project
 import globals as G
-from gui import *
-from savingsystem import *
+from gui import frame_image, Rectangle, backdrop, Button, button_image, \
+    button_highlighted, ToggleButton
+from savingsystem import world_exists
 from utils import image_sprite
 
 
@@ -86,17 +87,17 @@ class MainMenuView(View):
         if G.DISABLE_SAVE \
                 and world_exists(G.game_dir, G.SAVE_FILENAME):
             self.continue_game = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Continue...", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-            self.continue_game.push_handlers(on_click=self.controller.start_game_func)
+            self.continue_game.push_handlers(on_click=self.controller.start_game)
             self.buttons.append(self.continue_game)
             
         self.new_game = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="New game", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.new_game.push_handlers(on_click=self.controller.new_game_func)
+        self.new_game.push_handlers(on_click=self.controller.new_game)
         self.buttons.append(self.new_game)
         self.game_options = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Options...", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.game_options.push_handlers(on_click=self.controller.game_options_func)
+        self.game_options.push_handlers(on_click=self.controller.game_options)
         self.buttons.append(self.game_options)
         self.exit_game = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Exit game", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.exit_game.push_handlers(on_click=self.controller.exit_game_func)
+        self.exit_game.push_handlers(on_click=self.controller.exit_game)
         self.buttons.append(self.exit_game)
         self.label = Label(G.APP_NAME, font_name='ChunkFive Roman', font_size=50, x=width/2, y=self.frame.y + self.frame.height,
             anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
@@ -131,11 +132,11 @@ class OptionsView(View):
         self.background.scale = max(float(self.controller.window.get_size()[0]) / self.background.width, float(self.controller.window.get_size()[1]) / self.background.height)
         self.frame = image_sprite(image, self.batch, 1)
         self.button_return = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Done", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.button_return.push_handlers(on_click=self.controller.main_menu_func)
+        self.button_return.push_handlers(on_click=self.controller.main_menu)
         self.controls_button = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Controls...", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.controls_button.push_handlers(on_click=self.controller.controls_func)
+        self.controls_button.push_handlers(on_click=self.controller.controls)
         self.textures_button = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Textures", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.textures_button.push_handlers(on_click=self.controller.textures_func)
+        self.textures_button.push_handlers(on_click=self.controller.textures)
         self.buttons = [self.controls_button, self.textures_button, self.button_return]
             
         self.on_resize(width, height)
@@ -175,7 +176,7 @@ class ControlsView(View):
             self.buttons.append(button)
             self.key_buttons.append(button)
         self.button_return = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Done", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.button_return.push_handlers(on_click=self.controller.game_options_func)
+        self.button_return.push_handlers(on_click=self.controller.game_options)
         self.buttons.append(self.button_return)
             
         self.on_resize(width, height)
@@ -249,7 +250,7 @@ class TexturesView(View):
             self.buttons.append(button)
             self.texture_buttons.append(button)
         self.button_return = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Done", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.button_return.push_handlers(on_click=self.controller.game_options_func)
+        self.button_return.push_handlers(on_click=self.controller.game_options)
         self.buttons.append(self.button_return)
             
         self.on_resize(width, height)

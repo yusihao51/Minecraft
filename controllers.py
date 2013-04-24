@@ -1,44 +1,44 @@
 # Imports, sorted alphabetically.
 
 # Python packages
-from math import cos, sin, pi, fmod
-import operator
 from binascii import hexlify
 import datetime
+from functools import partial
+from itertools import imap
+from math import cos, sin, pi, fmod
+import operator
+import os
+import random
 
 # Third-party packages
 from pyglet.gl import *
 
 # Modules from this project
-from blocks import Block, CRACK_LEVELS, crack_textures, furnace_block, craft_block
-from cameras import *
-import globals as G
-from gui import *
-from items import Tool
-from player import *
-from savingsystem import *
+from blocks import *
+from cameras import Camera3D
 from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, CommandException
-from utils import init_resources
-from views import *
+import globals as G
+from gui import ItemSelector, InventorySelector, TextWidget
+from items import Tool
+from player import Player
+from savingsystem import world_exists, open_world, save_world, remove_world
 from skydome import Skydome
+import utils
+from utils import vec
+from views import MainMenuView, OptionsView, ControlsView, TexturesView
 from world import sectorize, World, normalize
 
 
 __all__ = (
-    'vec', 'Controller', 'MainMenuController', 'GameController',
+    'Controller', 'MainMenuController', 'GameController',
 )
-
-
-def vec(*args):
-    """Creates GLfloat arrays of floats"""
-    return (GLfloat * len(args))(*args)
 
 
 class Controller(object):
     def __init__(self, window):
         self.window = window
         self.current_view = None
-        init_resources()
+        utils.init_resources()
 
     def setup(self):
         pass
@@ -53,6 +53,20 @@ class Controller(object):
             self.current_view = None
         self.current_view = new_view
         self.current_view.add_handlers()
+        return pyglet.event.EVENT_HANDLED
+
+    def switch_view_class(self, new_view_class):
+        self.switch_view(new_view_class(self))
+        return pyglet.event.EVENT_HANDLED
+
+    def switch_controller(self, controller):
+        self.window.switch_controller(controller)
+        return pyglet.event.EVENT_HANDLED
+
+    def switch_controller_class(self, controller_class):
+        self.switch_controller(controller_class(self.window))
+        return pyglet.event.EVENT_HANDLED
+
 
     def set_2d(self):
         width, height = self.window.get_size()
@@ -74,60 +88,42 @@ class Controller(object):
         self.window.pop_handlers()
 
 class MainMenuController(Controller):
-    def setup(self):
-        self.switch_view(MainMenuView(self))
 
-    def start_game_func(self):
-        self.window.switch_controller(GameController(self.window))
-        return pyglet.event.EVENT_HANDLED
+    def __init__(self, *args, **kwargs):
+        super(MainMenuController, self).__init__(*args, **kwargs)
+        self.setup = partial(self.switch_view_class, MainMenuView)
+        self.game_options = partial(self.switch_view_class, OptionsView)
+        self.main_menu = partial(self.switch_view_class, MainMenuView)
+        self.controls = partial(self.switch_view_class, ControlsView)
+        self.textures = partial(self.switch_view_class, TexturesView)
+        self.start_game = partial(self.switch_controller_class, GameController)
+        self.exit_game = pyglet.app.exit
 
-    def new_game_func(self):
+    def new_game(self):
         if G.DISABLE_SAVE:
             remove_world(G.game_dir, G.SAVE_FILENAME)
-        self.window.switch_controller(GameController(self.window))
-        return pyglet.event.EVENT_HANDLED
-
-    def exit_game_func(self):
-        pyglet.app.exit()
-        return pyglet.event.EVENT_HANDLED
-
-    def game_options_func(self):
-        self.switch_view(OptionsView(self))
-        return pyglet.event.EVENT_HANDLED
-
-    def main_menu_func(self):
-        self.switch_view(MainMenuView(self))
-        return pyglet.event.EVENT_HANDLED
-
-    def controls_func(self):
-        self.switch_view(ControlsView(self))
-        return pyglet.event.EVENT_HANDLED
-
-    def textures_func(self):
-        self.switch_view(TexturesView(self))
-        return pyglet.event.EVENT_HANDLED
+        return self.switch_controller_class(GameController) 
 
 class GameController(Controller):
     def __init__(self, window):
         super(GameController, self).__init__(window)
-        self.sector = None
+        self.sector, self.highlighted_block, self.crack, self.last_key = (None,) * 4
+        self.bg_red, self.bg_green, self.bg_blue = (0.0,) * 3
+        self.mouse_pressed, self.sorted = (False,) * 2
+        self.count, self.block_damage = (0,) * 2
+        self.light_y, self.light_z = (1.0,) * 2
         self.time_of_day = 0.0
-        self.count = 0
-        self.clock = 6
-        self.light_y = 1.0
-        self.light_z = 1.0
-        self.bg_red = 0.0
-        self.bg_green = 0.0
-        self.bg_blue = 0.0
         self.hour_deg = 15.0
-        self.highlighted_block = None
-        self.block_damage = 0
-        self.crack = None
-        self.mouse_pressed = False
-        self.last_key = None
-        self.sorted = False
+        self.clock = 6
 
     def update(self, dt):
+        self.update_sector(dt)
+        self.update_player(dt)
+        self.update_mouse(dt)
+        self.update_time()
+        self.camera.update(dt)
+
+    def update_sector(self, dt):
         sector = sectorize(self.player.position)
         if sector != self.sector:
             self.world.change_sectors(sector)
@@ -138,48 +134,50 @@ class GameController(Controller):
 
         self.world.content_update(dt)
 
+    def update_player(self, dt):
         m = 8
         df = min(dt, 0.2)
         for _ in xrange(m):
             self.player.update(df / m, self)
+
+    def update_mouse(self, dt):
         if self.mouse_pressed:
             vector = self.player.get_sight_vector()
             block, previous = self.world.hit_test(self.player.position, vector,
                                                   self.player.attack_range)
-            if block:
-                if self.highlighted_block != block:
-                    self.set_highlighted_block(block)
-            else:
-                self.set_highlighted_block(None)
+            self.set_highlighted_block(block)
 
             if self.highlighted_block:
                 hit_block = self.world[self.highlighted_block]
                 if hit_block.hardness >= 0:
+                    self.update_block_damage(dt, hit_block)
+                    self.update_block_remove(dt, hit_block)
 
-                    multiplier = 1
-                    current_item = self.item_list.get_current_block()
-                    if current_item is not None:
-                        if isinstance(current_item, Tool):  # tool
-                            if current_item.tool_type == hit_block.digging_tool:
-                                multiplier = current_item.multiplier
+    def update_block_damage(self, dt, hit_block):
+        multiplier = 1
+        current_item = self.item_list.get_current_block()
+        if current_item is not None:
+            if isinstance(current_item, Tool):  # tool
+                if current_item.tool_type == hit_block.digging_tool:
+                    multiplier = current_item.multiplier
 
-                    self.block_damage += self.player.attack_power * dt * multiplier
-                    if self.block_damage >= hit_block.hardness:
-                        self.world.remove_block(self.player,
-                                                self.highlighted_block)
-                        self.set_highlighted_block(None)
-                        if hasattr(self.item_list.get_current_block_item(), 'durability') and self.item_list.get_current_block_item().durability != -1:
-                            self.item_list.get_current_block_item().durability -= 1
-                            if self.item_list.get_current_block_item().durability <= 0:
-                                self.item_list.remove_current_block()
-                                self.item_list.update_items()
-                        if hit_block.drop_id is not None \
-                                and self.player.add_item(hit_block.drop_id):
-                            self.item_list.update_items()
-                            self.inventory_list.update_items()
-        self.update_time()
-        self.camera.update(dt)
-        
+        self.block_damage += self.player.attack_power * dt * multiplier
+
+    def update_block_remove(self, dt, hit_block):
+        if self.block_damage >= hit_block.hardness:
+            self.world.remove_block(self.player,
+                                    self.highlighted_block)
+            self.set_highlighted_block(None)
+            if getattr(self.item_list.get_current_block_item(), 'durability', -1) != -1:
+                self.item_list.get_current_block_item().durability -= 1
+                if self.item_list.get_current_block_item().durability <= 0:
+                    self.item_list.remove_current_block()
+                    self.item_list.update_items()
+            if hit_block.drop_id is not None \
+                    and self.player.add_item(hit_block.drop_id):
+                self.item_list.update_items()
+                self.inventory_list.update_items()
+
     def init_gl(self):
         glEnable(GL_ALPHA_TEST)
         glAlphaFunc(GL_GREATER, 0.1)
@@ -324,6 +322,8 @@ class GameController(Controller):
                 self.clock += 1
 
     def set_highlighted_block(self, block):
+        if self.highlighted_block == block:
+            return
         self.highlighted_block = block
         self.block_damage = 0
         if self.crack:
@@ -339,47 +339,53 @@ class GameController(Controller):
             vector = self.player.get_sight_vector()
             block, previous = self.world.hit_test(self.player.position, vector, self.player.attack_range)
             if button == pyglet.window.mouse.LEFT:
-                if block:
-                    self.mouse_pressed = True
-                    self.set_highlighted_block(None)
+                self.on_mouse_press_left(block, x, y, button, modifiers)
             else:
-                if previous:
-                    hit_block = self.world[block]
+                self.on_mouse_press_right(block, previous, x, y, button, modifiers)
+        else:
+            self.window.set_exclusive_mouse(True)
 
-                    # show craft table gui
-                    if hit_block.id == craft_block.id:
-                        self.inventory_list.mode = 1
-                        self.inventory_list.toggle(False)
-                        return
+    def on_mouse_press_left(self, block, x, y, button, modifiers):
+        if block:
+            self.mouse_pressed = True
+            self.set_highlighted_block(None)
 
-                    if hit_block.id == furnace_block.id:
-                        self.inventory_list.mode = 2
-                        self.inventory_list.set_furnace(hit_block)
-                        self.inventory_list.toggle(False)
-                        return
+    def on_mouse_press_right(self, block, previous, x, y, button, modifiers):
+        if previous:
+            hit_block = self.world[block]
+            if hit_block.id == craft_block.id:
+                self.inventory_list.mode = 1
+                self.inventory_list.toggle(False)
+            elif hit_block.id == furnace_block.id:
+                self.inventory_list.mode = 2
+                self.inventory_list.set_furnace(hit_block)
+                self.inventory_list.toggle(False)
+            elif hit_block.density >= 1:
+               self.put_block(previous)
+        elif self.item_list.get_current_block() and getattr(self.item_list.get_current_block(), 'regenerated_health', 0) != 0 and self.player.health < self.player.max_health:
+            self.eat_item()
 
-                    if hit_block.density >= 1:
-                        current_block = self.item_list.get_current_block()
-                        if current_block is not None:
-                            # if current block is an item,
-                            # call its on_right_click() method to handle this event
-                            if current_block.id >= G.ITEM_ID_MIN:
-                                if current_block.on_right_click(self.world, self.player):
-                                    self.item_list.get_current_block_item().change_amount(-1)
-                                    self.item_list.update_health()
-                                    self.item_list.update_items()
-                            else:
-                                localx, localy, localz = map(operator.sub,previous,normalize(self.player.position))
-                                if localx != 0 or localz != 0 or (localy != 0 and localy != -1):
-                                    self.world.add_block(previous, current_block)
-                                    self.item_list.remove_current_block()
-                elif self.item_list.get_current_block() and hasattr(self.item_list.get_current_block(), 'regenerated_health') and self.item_list.get_current_block().regenerated_health != 0 and self.player.health < self.player.max_health:
-                    self.player.change_health(self.item_list.get_current_block().regenerated_health)
+    def put_block(self, previous): # FIXME - Better name...
+        current_block = self.item_list.get_current_block()
+        if current_block is not None:
+            # if current block is an item,
+            # call its on_right_click() method to handle this event
+            if current_block.id >= G.ITEM_ID_MIN:
+                if current_block.on_right_click(self.world, self.player):
                     self.item_list.get_current_block_item().change_amount(-1)
                     self.item_list.update_health()
                     self.item_list.update_items()
-        else:
-            self.window.set_exclusive_mouse(True)
+            else:
+                localx, localy, localz = imap(operator.sub,previous,normalize(self.player.position))
+                if localx != 0 or localz != 0 or (localy != 0 and localy != -1):
+                    self.world.add_block(previous, current_block)
+                    self.item_list.remove_current_block()
+
+    def eat_item(self): # FIXME - Better name (2)...
+        self.player.change_health(self.item_list.get_current_block().regenerated_health)
+        self.item_list.get_current_block_item().change_amount(-1)
+        self.item_list.update_health()
+        self.item_list.update_items()
 
     def on_mouse_release(self, x, y, button, modifiers):
         if self.window.exclusive:

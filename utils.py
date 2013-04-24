@@ -5,13 +5,14 @@ import os
 
 # Third-party packages
 import pyglet
+from pyglet.gl import *
 
 # Modules from this project
 import globals as G
 
 
 __all__ = (
-    'load_image', 'image_sprite', 'hidden_image_sprite', 'FastRandom',
+    'load_image', 'image_sprite', 'hidden_image_sprite', 'vec', 'FastRandom',
     'init_resources', 'init_font', 'get_block_icon',
 )
 
@@ -38,6 +39,10 @@ def hidden_image_sprite(*args, **kwargs):
     if sprite:
         sprite.visible = False
     return sprite
+
+def vec(*args):
+    """Creates GLfloat arrays of floats"""
+    return (GLfloat * len(args))(*args)
 
 
 # fast math algorithms
