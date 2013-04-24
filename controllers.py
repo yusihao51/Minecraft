@@ -2,6 +2,8 @@
 
 # Python packages
 from math import cos, sin, pi, fmod
+from itertools import imap
+from functools import partial
 import operator
 from binascii import hexlify
 import datetime
@@ -16,22 +18,17 @@ from gui import *
 from player import *
 from savingsystem import *
 from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, CommandException
-from utils import init_resources
+from utils import vec
+import utils
 from views import *
 from skydome import Skydome
 from world import sectorize, World, normalize
-
-
-def vec(*args):
-    """Creates GLfloat arrays of floats"""
-    return (GLfloat * len(args))(*args)
-
 
 class Controller(object):
     def __init__(self, window):
         self.window = window
         self.current_view = None
-        init_resources()
+        utils.init_resources()
 
     def setup(self):
         pass
@@ -46,6 +43,11 @@ class Controller(object):
             self.current_view = None
         self.current_view = new_view
         self.current_view.add_handlers()
+        return pyglet.event.EVENT_HANDLED
+
+    def switch_view_class(self, new_view_class):
+        self.switch_view(new_view_class(self))
+        return pyglet.event.EVENT_HANDLED
 
     def set_2d(self):
         width, height = self.window.get_size()
@@ -67,37 +69,27 @@ class Controller(object):
         self.window.pop_handlers()
 
 class MainMenuController(Controller):
-    def setup(self):
-        self.switch_view(MainMenuView(self))
 
-    def start_game_func(self):
+    def __init__(self, *args, **kwargs):
+        super(MainMenuController, self).__init__(*args, **kwargs)
+        self.setup = partial(self.switch_view_class, MainMenuView)
+        self.game_options = partial(self.switch_view_class, OptionsView)
+        self.main_menu = partial(self.switch_view_class, MainMenuView)
+        self.controls = partial(self.switch_view_class, ControlsView)
+        self.textures = partial(self.switch_view_class, TexturesView)
+
+    def start_game(self):
         self.window.switch_controller(GameController(self.window))
         return pyglet.event.EVENT_HANDLED
 
-    def new_game_func(self):
+    def new_game(self):
         if G.DISABLE_SAVE:
             remove_world(G.game_dir, G.SAVE_FILENAME)
         self.window.switch_controller(GameController(self.window))
         return pyglet.event.EVENT_HANDLED
 
-    def exit_game_func(self):
+    def exit_game(self):
         pyglet.app.exit()
-        return pyglet.event.EVENT_HANDLED
-
-    def game_options_func(self):
-        self.switch_view(OptionsView(self))
-        return pyglet.event.EVENT_HANDLED
-
-    def main_menu_func(self):
-        self.switch_view(MainMenuView(self))
-        return pyglet.event.EVENT_HANDLED
-
-    def controls_func(self):
-        self.switch_view(ControlsView(self))
-        return pyglet.event.EVENT_HANDLED
-
-    def textures_func(self):
-        self.switch_view(TexturesView(self))
         return pyglet.event.EVENT_HANDLED
 
 class GameController(Controller):
@@ -362,7 +354,7 @@ class GameController(Controller):
                                     self.item_list.update_health()
                                     self.item_list.update_items()
                             else:
-                                localx, localy, localz = map(operator.sub,previous,normalize(self.player.position))
+                                localx, localy, localz = imap(operator.sub,previous,normalize(self.player.position))
                                 if localx != 0 or localz != 0 or (localy != 0 and localy != -1):
                                     self.world.add_block(previous, current_block)
                                     self.item_list.remove_current_block()
