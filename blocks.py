@@ -1589,9 +1589,6 @@ class CrackTextureBlock(object):
 
 crack_textures = CrackTextureBlock()
 
-# blocks that have their own data
-data_blocks = [FurnaceBlock, WheatCropBlock]
-
 air_block = AirBlock()
 grass_block = GrassBlock()
 sand_block = SandBlock()

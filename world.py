@@ -145,14 +145,10 @@ class World(dict):
             if not force:
                 return
             self.remove_block(None, position, sync=sync)
-        block_set = False
-        for blk in data_blocks:
-            if block.id == blk.id:
-                self[position] = blk()
-                if hasattr(self[position], 'entity_type'):
-                    self[position].entity = self[position].entity_type(self, position)
-                block_set = True
-        if not block_set:
+        if hasattr(block, 'entity_type'):
+            self[position] = type(block)()
+            self[position].entity = self[position].entity_type(self, position)
+        else:
             self[position] = block
         self.sectors[sectorize(position)].append(position)
         if sync:
