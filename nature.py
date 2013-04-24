@@ -124,6 +124,42 @@ class Rose(SmallPlant):
 class Fern(SmallPlant):
     block = fern_block
 
+class WildGrass0(SmallPlant):
+    block = wildgrass0_block
+    grows_on = grass_block, dirt_block
+
+class WildGrass1(SmallPlant):
+    block = wildgrass1_block
+    grows_on = grass_block, dirt_block
+
+class WildGrass2(SmallPlant):
+    block = wildgrass2_block
+    grows_on = grass_block, dirt_block
+
+class WildGrass3(SmallPlant):
+    block = wildgrass3_block
+    grows_on = grass_block, dirt_block
+
+class WildGrass4(SmallPlant):
+    block = wildgrass4_block
+    grows_on = grass_block, dirt_block
+
+class WildGrass5(SmallPlant):
+    block = wildgrass5_block
+    grows_on = grass_block, dirt_block
+
+
+class WildGrass6(SmallPlant):
+    block = wildgrass6_block
+    grows_on = grass_block, dirt_block
+
+class WildGrass7(SmallPlant):
+    block = wildgrass7_block
+    grows_on = grass_block, dirt_block
+
+class DesertGrass(SmallPlant):
+    block = desertgrass_block
+    grows_on = sand_block, sandstone_block
 
 #
 # Tall plants
@@ -178,6 +214,15 @@ SMALL_PLANTS = set((
     Carrot,
     Rose,
     Fern,
+    WildGrass0,
+    WildGrass1,
+    WildGrass2,
+    WildGrass3,
+    WildGrass4,
+    WildGrass5,
+    WildGrass6,
+    WildGrass7,
+    DesertGrass,
 ))
 
 TALL_PLANTS = set((
