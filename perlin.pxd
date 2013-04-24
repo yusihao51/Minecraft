@@ -1,18 +1,23 @@
 import cython
 
+
 #cython: boundscheck=False
 #cython: wraparound=False
 #cython: cdivision=True
 
+
 cdef tuple _GRAD3, _GRAD4, _SIMPLEX
 cdef double _F2, _G2, _F3, _G3
 
-cdef class BaseNoise:
-    cdef tuple permutation
-    cdef int period
+
+cdef class BaseNoise(object):
+    cdef public:
+        tuple permutation
+        int period
 
     @cython.locals(perm=list, perm_right=int, i=int, j=int)
     cpdef object randomize(self, object period=?)
+
 
 cdef class SimplexNoise(BaseNoise):
 
