@@ -10,6 +10,11 @@
 # Nothing for now...
 
 
+__all__ = (
+    'Entity',
+)
+
+
 class Entity(object):
     """
     Base class for players, mobs, TNT and so on.

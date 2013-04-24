@@ -1,7 +1,20 @@
+# Imports, sorted alphabetically.
+
+# Python packages
 from math import sin, cos, pi
 
-from pyglet.gl import *
+# Third-party packages
 import pyglet
+from pyglet.gl import *
+
+# Modules from this project
+# Nothing for now...
+
+
+__all__ = (
+    'Skydome',
+)
+
 
 class Skydome(object):
     def __init__(self, filename, brightness=1.0, size=1.0, direction=0):

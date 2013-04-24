@@ -14,6 +14,11 @@ from inventory import Inventory
 from items import ItemStack
 
 
+__all__ = (
+    'InventoryTests', 'CraftingTests',
+)
+
+
 class InventoryTests(unittest.TestCase):
 
     def test_init(self):

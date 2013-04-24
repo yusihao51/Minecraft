@@ -1,9 +1,3 @@
-__all__ = (
-    'FACES', 'FACES_WITH_DIAGONALS', 'normalize_float', 'normalize',
-    'sectorize', 'TextureGroup', 'World',
-)
-
-
 # Imports, sorted alphabetically.
 
 # Python packages
@@ -18,9 +12,15 @@ from pyglet.gl import *
 
 # Modules from this project
 from blocks import *
-from nature import TREES, TREE_BLOCKS
 import globals as G
+from nature import TREES, TREE_BLOCKS
 import terrain
+
+
+__all__ = (
+    'FACES', 'FACES_WITH_DIAGONALS', 'normalize_float', 'normalize',
+    'sectorize', 'TextureGroup', 'World',
+)
 
 
 FACES = (

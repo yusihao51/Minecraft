@@ -10,6 +10,12 @@ import pyglet.media
 import globals as G
 
 
+__all__ = (
+    'wood_break', 'water_break', 'leaves_break', 'glass_break', 'dirt_break',
+    'gravel_break', 'stone_break', 'melon_break', 'sand_break', 'play_sound',
+)
+
+
 # Note: Pyglet uses /'s regardless of OS
 pyglet.resource.path = [".", "resources/sounds"]
 pyglet.resource.reindex()

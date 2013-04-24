@@ -10,6 +10,11 @@ from pyglet.gl import *
 # Nothing for now...
 
 
+__all__ = (
+    'Camera3D',
+)
+
+
 class Camera3D(object):
     def __init__(self, target=None):
         self.target = target

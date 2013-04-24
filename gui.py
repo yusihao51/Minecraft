@@ -12,8 +12,15 @@ from pyglet.window import key
 # Modules from this project
 import globals as G
 from inventory import *
-from crafting import *  # import for G.recipes
 from utils import load_image, image_sprite, hidden_image_sprite, get_block_icon
+
+
+__all__ = (
+    'Rectangle', 'Button', 'ToggleButton', 'Control', 'AbstractInventory',
+    'ItemSelector', 'InventorySelector', 'TextWidget', 'ProgressBarWidget',
+    'frame_image', 'button_image', 'button_highlighted', 'background_image',
+    'backdrop_images', 'rnd_backdrops', 'backdrop',
+)
 
 
 class Rectangle(object):

@@ -12,6 +12,11 @@ import globals as G
 from items import *
 
 
+__all__ = (
+    'Recipe', 'Recipes', 'SmeltingRecipe', 'SmeltingRecipes',
+)
+
+
 class Recipe(object):
     # ingre is a list that contains the ids of the ingredients
     # e.g. [[2, 2], [1, 1]]

@@ -10,6 +10,7 @@ import datetime
 from pyglet.gl import *
 
 # Modules from this project
+from blocks import Block
 from cameras import *
 import globals as G
 from gui import *
@@ -20,6 +21,11 @@ from utils import init_resources
 from views import *
 from skydome import Skydome
 from world import sectorize, World, normalize
+
+
+__all__ = (
+    'vec', 'Controller', 'MainMenuController', 'GameController',
+)
 
 
 def vec(*args):

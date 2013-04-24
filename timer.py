@@ -10,6 +10,11 @@
 # Nothing for now...
 
 
+__all__ = (
+    'TimerTask', 'Timer',
+)
+
+
 class TimerTask(object):
     def __init__(self, ticks, callback, speed):
         self.ticks = self.expire = ticks
