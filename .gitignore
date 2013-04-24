@@ -10,4 +10,5 @@
 *.exp
 *.obj
 screencaptures*
+texturepacks*
 .idea*
