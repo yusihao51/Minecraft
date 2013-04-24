@@ -1442,55 +1442,71 @@ class Grass0Block(TallGrassBlock):
     side_texture = 13, 0
     density = 0.0
     id = 31, 1
+    texture_name = 'wg_grass_06'
 
 
 class Grass1Block(TallGrassBlock):
     side_texture = 13, 1
     density = 0.1
     id = 31, 2
+    texture_name = 'wg_grass_00'
 
 
 class Grass2Block(TallGrassBlock):
     side_texture = 13, 2
     density = 0.2
     id = 31, 3
+    texture_name = 'wg_grass_01'
 
 
 class Grass3Block(TallGrassBlock):
     side_texture = 13, 3
     density = 0.3
     id = 31, 4
+    texture_name = 'wg_grass_03'
 
 
 class Grass4Block(TallGrassBlock):
     side_texture = 13, 4
     density = 0.4
     id = 31, 5
+    texture_name = 'wg_grass_02'
 
 
 class Grass5Block(TallGrassBlock):
     side_texture = 13, 5
     density = 0.5
     id = 31, 6
+    texture_name = 'wg_grass_04'
 
 
 class Grass6Block(TallGrassBlock):
     side_texture = 13, 6
     density = 0.6
     id = 31, 7
+    texture_name = 'wg_grass_05'
 
 
 class Grass7Block(TallGrassBlock):
     side_texture = 13, 7
     density = 0.7
     id = 31, 8
+    texture_name = 'wg_grass_07'
 
 
-class DeadBushBlock(TallGrassBlock):
+class DesertGrassBlock(TallGrassBlock):
     side_texture = 10, 6
     density = 0.3
-    id = 31
+    id = 31,1
+    name = "Desert Grass"
+    texture_name = 'deadbush'
+
+class DeadBushBlock(TallGrassBlock):
+    side_texture = 10, 7
+    density = 0.3
+    id = 31,0
     name = "Dead bush"
+    texture_name = 'wg_red_desert'
 
 
 class DiamondBlock(HardBlock):
@@ -1700,4 +1716,5 @@ wildgrass4_block = Grass4Block()
 wildgrass5_block = Grass5Block()
 wildgrass6_block = Grass6Block()
 wildgrass7_block = Grass7Block()
+desertgrass_block = DesertGrassBlock()
 deadbush_block = DeadBushBlock()

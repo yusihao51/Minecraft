@@ -169,6 +169,10 @@ class DeadBush(SmallPlant):
     block = deadbush_block
     grows_on = sand_block, sandstone_block
 
+class DesertGrass(SmallPlant):
+    block = desertgrass_block
+    grows_on = sand_block, sandstone_block
+
 #
 # Tall plants
 #
@@ -231,6 +235,7 @@ SMALL_PLANTS = set((
     TallGrass6,
     TallGrass7,
     DeadBush,
+    DesertGrass,
 ))
 
 TALL_PLANTS = set((

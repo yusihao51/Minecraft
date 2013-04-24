@@ -149,7 +149,7 @@ TERRAIN_CHOICES = {  # hill_height & max_trees mandatory for the moment.
         'max_trees': 1500,
     }
 }
-DEFAULT_TERRAIN_CHOICE = 'plains'
+DEFAULT_TERRAIN_CHOICE = 'island'  # was 'plains', makes more sense for islands, player stranded on an island
 TERRAIN_CHOICE = DEFAULT_TERRAIN_CHOICE
 TERRAIN = TERRAIN_CHOICES[DEFAULT_TERRAIN_CHOICE]
 
