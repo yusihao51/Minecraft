@@ -19,7 +19,7 @@ from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, Comman
 from utils import init_resources
 from views import *
 from skydome import Skydome
-from world import sectorize, World
+from world import sectorize, World, normalize
 
 
 def vec(*args):
