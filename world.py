@@ -282,7 +282,7 @@ class World(dict):
             self.enqueue_sector(True, sector)
 
     def _show_sector(self, sector):
-        if not sector in self.sectors and G.SAVE_MODE == G.REGION_SAVE_MODE:
+        if not sector in self.sectors:
             #The sector is not in memory, load or create it
             if self.savingsystem.sector_exists(sector):
                 #If its on disk, load it

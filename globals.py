@@ -90,15 +90,6 @@ KEY_BINDINGS = dict(
 DISABLE_SAVE = True
 SAVE_FILENAME = None
 
-PICKLE_SAVE_MODE = 'pickle'
-PICKLE_COMPRESSED_SAVE_MODE = 'pickle_compressed'
-FLATFILE_SAVE_MODE = 'flatfile'
-REGION_SAVE_MODE = 'region'
-SAVE_MODES = (
-    PICKLE_SAVE_MODE, PICKLE_COMPRESSED_SAVE_MODE, FLATFILE_SAVE_MODE, REGION_SAVE_MODE
-)
-SAVE_MODE = REGION_SAVE_MODE
-
 
 #
 # Game engine
@@ -322,9 +313,6 @@ def initialize_config():
 
     DEBUG = get_or_update_config(
         general, 'debug', DEBUG, conv=bool)
-
-    get_or_update_config(
-        general, 'save_mode', SAVE_MODE, choices=SAVE_MODES)
 
     #
     # Graphics
