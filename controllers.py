@@ -24,9 +24,9 @@ from player import Player
 from savingsystem import world_exists, open_world, save_world, remove_world
 from skydome import Skydome
 import utils
-from utils import vec
+from utils import vec, sectorize, normalize
 from views import MainMenuView, OptionsView, ControlsView, TexturesView
-from world import sectorize, World, normalize
+from world import World
 
 
 __all__ = (

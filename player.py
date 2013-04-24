@@ -13,7 +13,7 @@ from entity import Entity
 import globals as G
 from inventory import Inventory
 from items import stick_item
-from world import normalize, FACES
+from utils import normalize, FACES
 
 
 __all__ = (
