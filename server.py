@@ -29,7 +29,7 @@ from world import World
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     def handle(self):
         world = self.server.world
-        data = self.request.recv(16384)
+        data = self.request.recv(128)
         sector = pickle.loads(data)
 
         if sector not in world.sectors:
@@ -39,7 +39,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         for position in world.sectors[sector]:
             response[world[position].id].append(position)
 
-        self.request.sendall(pickle.dumps(response))
+        self.request.sendall(pickle.dumps(response, pickle.HIGHEST_PROTOCOL))
 
 
 class Server(socketserver.ThreadingTCPServer):
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     for i in range(10):
         sector = (randint(-20, 20), 3, randint(-20, 20))
         # Requests this sector
-        client(ip, port, pickle.dumps(sector))
+        client(ip, port, pickle.dumps(sector, pickle.HIGHEST_PROTOCOL))
 
     server.shutdown()
     print('Server closed')
