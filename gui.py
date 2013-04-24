@@ -492,7 +492,7 @@ class InventorySelector(AbstractInventory):
             elif self.crafting_outcome:
                 self.remove_crafting_outcome()
         elif len(crafting_ingredients) > 0 and self.mode == 2:
-            outcome = self.furnace_panel.smelt_outcome
+            outcome = self.furnace_panel.get_smelt_outcome()
             if outcome:
                 self.set_crafting_outcome(outcome)
             elif self.crafting_outcome:
@@ -601,15 +601,15 @@ class InventorySelector(AbstractInventory):
     def set_furnace(self, furnace):
         self.furnace_panel = furnace
         # install callback
-        self.furnace_panel.outcome_callback = self.update_items
-        self.furnace_panel.fuel_callback = self.update_items
+        self.furnace_panel.set_outcome_callback(self.update_items)
+        self.furnace_panel.set_fuel_callback(self.update_items)
 
     def reset_furnace(self):
         # remove callback
         if self.furnace_panel is None:
             return
-        self.furnace_panel.outcome_callback = None
-        self.furnace_panel.fuel_callback = None
+        self.furnace_panel.set_outcome_callback(None)
+        self.furnace_panel.set_fuel_callback(None)
         self.furnace_panel = None
 
     def set_crafting_outcome(self, item):

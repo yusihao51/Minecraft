@@ -12,7 +12,7 @@ import globals as G
 
 
 __all__ = (
-    'Entity', 'TileEntity', 'WheatCropEntity',
+    'Entity', 'TileEntity', 'WheatCropEntity', 'FurnaceEntity',
 )
 
 
@@ -73,4 +73,93 @@ class WheatCropEntity(TileEntity):
         else:
             self.grow_task = None
 
-# TODO: furnace entity
+class FurnaceEntity(TileEntity):
+    fuel = None
+    smelt_stack = None
+    outcome_item = None
+    smelt_outcome = None # output slot
+
+    fuel_task = None
+    smelt_task = None
+
+    outcome_callback = None
+    fuel_callback = None
+
+    def __del__(self):
+        if self.fuel_task is not None:
+            G.main_timer.remove_task(self.fuel_task)
+        if self.smelt_task is not None:
+            G.main_timer.remove_task(self.smelt_task)
+
+    def full(self, reserve=0):
+        if self.smelt_outcome is None:
+            return False
+
+        return self.smelt_outcome.get_object().max_stack_size < self.smelt_outcome.amount + reserve
+
+    def full(self, reserve=0):
+        if self.smelt_outcome is None:
+            return False
+
+        return self.smelt_outcome.get_object().max_stack_size < self.smelt_outcome.amount + reserve
+
+
+    def smelt_done(self):
+        self.smelt_task = None
+        # outcome
+        if self.smelt_outcome is None:
+            self.smelt_outcome = self.outcome_item
+        else:
+            self.smelt_outcome.change_amount(self.outcome_item.amount)
+        # cost
+        self.smelt_stack.change_amount(-1)
+        # input slot has been empty
+        if self.smelt_stack.amount <= 0:
+            self.smelt_stack = None
+            self.outcome_item = None
+        if self.outcome_callback is not None:
+            if callable(self.outcome_callback):
+                self.outcome_callback()
+        # stop
+        if self.smelt_stack is None:
+            return
+        if self.full(self.outcome_item.amount):
+            return
+        if self.fuel is None or self.fuel_task is None:
+            return
+        # smelting task
+        self.smelt_task = G.main_timer.add_task(self.smelt_stack.get_object().smelting_time, self.smelt_done)
+
+    def remove_fuel(self):
+        if self.fuel_callback is not None:
+            if callable(self.fuel_callback):
+                self.fuel_callback()
+        self.fuel_task = None
+        self.fuel.change_amount(-1)
+        if self.fuel.amount <= 0:
+            self.fuel = None
+            # stop smelting task
+            if self.smelt_task is not None:
+                G.main_timer.remove_task(self.smelt_task)
+            self.smelt_task = None
+            return
+
+        # continue
+        if self.smelt_task is not None:
+            self.fuel_task = G.main_timer.add_task(self.fuel.get_object().burning_time, self.remove_fuel)
+
+    def smelt(self):
+        if self.fuel is None or self.smelt_stack is None:
+            return
+        # smelting
+        if self.fuel_task is not None or self.smelt_task is not None:
+            return
+        if self.full():
+            return
+
+        burning_time = self.fuel.get_object().burning_time
+        smelting_time = self.smelt_stack.get_object().smelting_time
+        # fuel task: remove fuel
+        self.fuel_task = G.main_timer.add_task(burning_time, self.remove_fuel)
+        # smelting task
+        self.smelt_task = G.main_timer.add_task(smelting_time, self.smelt_done)

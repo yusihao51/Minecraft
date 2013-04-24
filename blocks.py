@@ -18,7 +18,7 @@ from utils import load_image
 import globals as G
 from random import randint
 import sounds
-from entity import WheatCropEntity
+from entity import WheatCropEntity, FurnaceEntity
 
 BLOCK_TEXTURE_DIR = {}
 
@@ -884,8 +884,14 @@ class FurnaceBlock(HardBlock):
     id = 61
     name = "Furnace"
 
-    fuel = None
-    smelt_stack = None
+    entity_type = FurnaceEntity
+    entity = None
+
+    slot_count = 2
+
+    def __del__(self):
+        if self.entity is not None:
+            del self.entity
 
     # compatible with inventory
     def set_slot(self, index, value):
@@ -901,129 +907,58 @@ class FurnaceBlock(HardBlock):
         i = int(index)
         if i < 0 or i >= 2:
             return None
-        return self.fuel if i == 1 else self.smelt_stack
+        return self.entity.fuel if i == 1 else self.entity.smelt_stack
 
     def remove_all_by_index(self, index):
         i = int(index)
         if i < 0 or i >= 2:
             return None
         if i == 0:
-            self.smelt_stack = None
+            self.entity.smelt_stack = None
         else:
-            self.fuel = None
+            self.entity.fuel = None
 
     def get_items(self):
-        return [self.smelt_stack, self.fuel]
+        return [self.entity.smelt_stack, self.entity.fuel]
 
     def remove_unnecessary_stacks(self):
-        if self.fuel is not None:
-            if self.fuel.amount == 0:
-                self.fuel = None
-        if self.smelt_stack is not None:
-            if self.smelt_stack.amount == 0:
-                self.smelt_stack = None
+        if self.entity.fuel is not None:
+            if self.entity.fuel.amount == 0:
+                self.entity.fuel = None
+        if self.entity.smelt_stack is not None:
+            if self.entity.smelt_stack.amount == 0:
+                self.entity.smelt_stack = None
 
-    slot_count = 2
-
-    outcome_item = None
-    smelt_outcome = None # output slot
-
-    fuel_task = None
-    smelt_task = None
-
-    outcome_callback = None
-    fuel_callback = None
 
     def set_smelting_item(self, item):
         if item is None:
             return
-        self.smelt_stack = item
-        self.outcome_item = G.smelting_recipes.smelt(self.smelt_stack.get_object())
+        self.entity.smelt_stack = item
+        self.entity.outcome_item = G.smelting_recipes.smelt(self.entity.smelt_stack.get_object())
         # no such recipe
-        if self.outcome_item is None:
+        if self.entity.outcome_item is None:
             return
         else:
-            self.smelt()
+            self.entity.smelt()
 
     def set_fuel(self, fuel):
         if fuel is None:
             return
-        self.fuel = fuel
+        self.entity.fuel = fuel
         # invalid fuel
-        if self.fuel.get_object().burning_time == -1:
+        if self.entity.fuel.get_object().burning_time == -1:
             return
         else:
-            self.smelt()
+            self.entity.smelt()
 
-    def full(self, reserve=0):
-        if self.smelt_outcome is None:
-            return False
+    def set_outcome_callback(self, callback):
+        self.entity.outcome_callback = callback
 
-        return self.smelt_outcome.get_object().max_stack_size < self.smelt_outcome.amount + reserve
+    def set_fuel_callback(self, callback):
+        self.entity.fuel_callback = callback
 
-
-    def smelt_done(self):
-        print('outcome')
-        self.smelt_task = None
-        # outcome
-        if self.smelt_outcome is None:
-            self.smelt_outcome = self.outcome_item
-        else:
-            self.smelt_outcome.change_amount(self.outcome_item.amount)
-        # cost
-        self.smelt_stack.change_amount(-1)
-        # input slot has been empty
-        if self.smelt_stack.amount <= 0:
-            self.smelt_stack = None
-            self.outcome_item = None
-        if self.outcome_callback is not None:
-            if callable(self.outcome_callback):
-                self.outcome_callback()
-        # stop
-        if self.smelt_stack is None:
-            return
-        if self.full(self.outcome_item.amount):
-            return
-        if self.fuel is None or self.fuel_task is None:
-            return
-        # smelting task
-        self.smelt_task = G.main_timer.add_task(self.smelt_stack.get_object().smelting_time, self.smelt_done)
-
-    def remove_fuel(self):
-        print('remove fuel')
-        if self.fuel_callback is not None:
-            if callable(self.fuel_callback):
-                self.fuel_callback()
-        self.fuel_task = None
-        self.fuel.change_amount(-1)
-        if self.fuel.amount <= 0:
-            self.fuel = None
-            # stop smelting task
-            if self.smelt_task is not None:
-                G.main_timer.remove_task(self.smelt_task)
-            self.smelt_task = None
-            return
-
-        # continue
-        if self.smelt_task is not None:
-            self.fuel_task = G.main_timer.add_task(self.fuel.get_object().burning_time, self.remove_fuel)
-
-    def smelt(self):
-        if self.fuel is None or self.smelt_stack is None:
-            return
-        # smelting
-        if self.fuel_task is not None or self.smelt_task is not None:
-            return
-        if self.full():
-            return
-
-        print('start smelting')
-        burning_time = self.fuel.get_object().burning_time
-        smelting_time = self.smelt_stack.get_object().smelting_time
-        # fuel task: remove fuel
-        self.fuel_task = G.main_timer.add_task(burning_time, self.remove_fuel)
-        # smelting task
-        self.smelt_task = G.main_timer.add_task(smelting_time, self.smelt_done)
+    def get_smelt_outcome(self):
+        return self.entity.smelt_outcome
 
 class FarmBlock(Block):
     top_texture = 5, 3
