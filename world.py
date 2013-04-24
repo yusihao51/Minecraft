@@ -155,6 +155,9 @@ class World(dict):
                 self.show_block(position)
             self.check_neighbors(position)
 
+    def init_block(self, position, block):
+        self.add_block(position, block, sync=False, force=False)
+
     def remove_block(self, player, position, sync=True, sound=True):
         if sound and player is not None:
             self[position].play_break_sound(player, position)
@@ -394,3 +397,19 @@ class World(dict):
                 position = self.spreading_mutable_blocks.pop()
                 self.add_block(position,
                                self.spreading_mutations[self[position]])
+
+    def generate_vegetation(self, position, vegetation_class):
+        if position in self:
+            return
+
+        # Avoids a tree from touching another.
+        if vegetation_class in TREES and self.has_neighbors(position, is_in=TREE_BLOCKS, diagonals=True):
+            return
+
+        x, y, z = position
+
+        # Vegetation can't grow on anything.
+        if self[(x, y - 1, z)] not in vegetation_class.grows_on:
+            return
+
+        vegetation_class.add_to_world(self, position)
