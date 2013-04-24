@@ -25,7 +25,7 @@ from savingsystem import world_exists, open_world, save_world, remove_world
 from skydome import Skydome
 import utils
 from utils import vec
-from views import *
+from views import MainMenuView, OptionsView, ControlsView, TexturesView
 from world import sectorize, World, normalize
 
 
