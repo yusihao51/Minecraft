@@ -13,7 +13,6 @@ from pyglet.gl import *
 from cameras import *
 import globals as G
 from gui import *
-from model import *
 from player import *
 from savingsystem import *
 from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, CommandException, UnknownCommandException
@@ -213,7 +212,7 @@ class GameController(Controller):
 
         if G.DISABLE_SAVE and world_exists(G.game_dir, G.SAVE_FILENAME):
             open_world(self, G.game_dir, G.SAVE_FILENAME)
-            self.model = Model()
+            self.model = World()
         else:
             seed = G.LAUNCH_OPTIONS.seed
             if seed is None:
@@ -235,7 +234,7 @@ class GameController(Controller):
                     'Seed used the %d %m %Y at %H:%M:%S\n'))
                 seeds.write('%s\n\n' % seed)
 
-            self.model = Model()
+            self.model = World()
             self.player = Player((0,self.model.terraingen.get_height(0,0)+2,0), (-20, 0),
                                  game_mode=G.GAME_MODE)
         print('Game mode: ' + self.player.game_mode)

@@ -12,6 +12,7 @@ from pyglet.gl import *
 
 # Modules from this project
 from blocks import *
+from nature import TREES, TREE_BLOCKS
 import globals as G
 import terrain
 
