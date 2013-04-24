@@ -55,6 +55,15 @@ class Controller(object):
         self.switch_view(new_view_class(self))
         return pyglet.event.EVENT_HANDLED
 
+    def switch_controller(self, controller):
+        self.window.switch_controller(controller)
+        return pyglet.event.EVENT_HANDLED
+
+    def switch_controller_class(self, controller_class):
+        self.switch_controller(controller_class(self.window))
+        return pyglet.event.EVENT_HANDLED
+
+
     def set_2d(self):
         width, height = self.window.get_size()
         glDisable(GL_DEPTH_TEST)
@@ -83,40 +92,25 @@ class MainMenuController(Controller):
         self.main_menu = partial(self.switch_view_class, MainMenuView)
         self.controls = partial(self.switch_view_class, ControlsView)
         self.textures = partial(self.switch_view_class, TexturesView)
-
-    def start_game(self):
-        self.window.switch_controller(GameController(self.window))
-        return pyglet.event.EVENT_HANDLED
+        self.start_game = partial(self.switch_controller_class, GameController)
+        self.exit_game = pyglet.app.exit
 
     def new_game(self):
         if G.DISABLE_SAVE:
             remove_world(G.game_dir, G.SAVE_FILENAME)
-        self.window.switch_controller(GameController(self.window))
-        return pyglet.event.EVENT_HANDLED
-
-    def exit_game(self):
-        pyglet.app.exit()
-        return pyglet.event.EVENT_HANDLED
+        return self.switch_controller_class(GameController) 
 
 class GameController(Controller):
     def __init__(self, window):
         super(GameController, self).__init__(window)
-        self.sector = None
+        self.sector, self.highlighted_block, self.crack, self.last_key = (None,) * 4
+        self.bg_red, self.bg_green, self.bg_blue = (0.0,) * 3
+        self.mouse_pressed, self.sorted = (False,) * 2
+        self.count, self.block_damage = (0,) * 2
+        self.light_y, self.light_z = (1.0,) * 2
         self.time_of_day = 0.0
-        self.count = 0
-        self.clock = 6
-        self.light_y = 1.0
-        self.light_z = 1.0
-        self.bg_red = 0.0
-        self.bg_green = 0.0
-        self.bg_blue = 0.0
         self.hour_deg = 15.0
-        self.highlighted_block = None
-        self.block_damage = 0
-        self.crack = None
-        self.mouse_pressed = False
-        self.last_key = None
-        self.sorted = False
+        self.clock = 6
 
     def update(self, dt):
         sector = sectorize(self.player.position)
