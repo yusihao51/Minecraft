@@ -12,6 +12,7 @@ import threading
 import globals as G
 from savingsystem import save_sector_to_string, save_blocks
 from world_server import WorldServer
+import blocks
 
 world_server_lock = threading.Lock()
 
@@ -42,6 +43,25 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 else:
                     msg = struct.pack("iii",*sector) + save_sector_to_string(world, sector) + world.get_exposed_sector(sector)
                     self.sendpacket(len(msg), "\1" + msg)
+            elif packettype == 3:  # Add block
+                positionbytes = self.request.recv(4*3)
+                blockbytes = self.request.recv(2)
+
+                position = struct.unpack("iii", positionbytes)
+                blockid = G.BLOCKS_DIR[blocks.BlockID(struct.unpack("bb", blockbytes))]
+                world.add_block(position, blockid, sync=True)
+
+                for address in players:
+                    if address is self.client_address: continue  # He told us, we don't need to tell him
+                    players[address].sendpacket(14, "\3" + positionbytes + blockbytes)
+            elif packettype == 4:  # Remove block
+                positionbytes = self.request.recv(4*3)
+
+                world.remove_block(struct.unpack("iii", positionbytes), sync=True)
+
+                for address in players:
+                    if address is self.client_address: continue  # He told us, we don't need to tell him
+                    players[address].sendpacket(12, "\4" + positionbytes)
             else:
                 print "Received unknown packettype", packettype
     def finish(self):

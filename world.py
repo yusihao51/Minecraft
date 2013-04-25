@@ -46,28 +46,29 @@ class World(dict):
         self.sector_packets = deque()
         self.packetreceiver.start()
 
+    # Add the block clientside, then tell the server about the new block
     def add_block(self, position, block, sync=True, force=True):
-        #TODO: Ask server
-        pass
+        self._add_block(position, block)  # For Prediction
+        self.packetreceiver.add_block(position, block)
 
     # Clientside, add the block
-    #def _add_block(self, position, block):
-    #    if position in self:
-    #        self._remove_block(position, sync=True)
-    #    if hasattr(block, 'entity_type'):
-    #        self[position] = type(block)()
-    #        self[position].entity = self[position].entity_type(self, position)
-    #    else:
-    #        self[position] = block
-    #    self.sectors[sectorize(position)].append(position)
-    #    if self.is_exposed(position):
-    #        self.show_block(position)
+    def _add_block(self, position, block):
+        if position in self:
+            self._remove_block(position, sync=True)
+        #if hasattr(block, 'entity_type'):
+        #    self[position] = type(block)()
+        #    self[position].entity = self[position].entity_type(self, position)
+        #else:
+        self[position] = block
+        self.sectors[sectorize(position)].append(position)
+        if self.is_exposed(position):
+            self.show_block(position)
 
     def remove_block(self, player, position, sync=True, sound=True):
         if sound and player is not None:
             self[position].play_break_sound(player, position)
-        #TODO: Ask server
-        pass
+        self._remove_block(position, sync=sync)
+        self.packetreceiver.remove_block(position)
 
     # Clientside, delete the block
     def _remove_block(self, position, sync=True):

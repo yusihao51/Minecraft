@@ -60,7 +60,7 @@ class WorldServer(dict):
         if position in self:
             if not force:
                 return
-            self.remove_block(None, position, sync=sync)
+            self.remove_block(position, sync=sync)
         if hasattr(block, 'entity_type'):
             self[position] = type(block)()
             self[position].entity = self[position].entity_type(self, position)
@@ -77,9 +77,7 @@ class WorldServer(dict):
     def init_block(self, position, block):
         self.add_block(position, block, sync=False, force=False)
 
-    def remove_block(self, player, position, sync=True, sound=True):
-        if sound and player is not None:
-            self[position].play_break_sound(player, position)
+    def remove_block(self, position, sync=True):
         del self[position]
         sector_position = sectorize(position)
         try:

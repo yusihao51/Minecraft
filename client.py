@@ -7,6 +7,7 @@ import struct
 
 # Modules from this project
 from warnings import warn
+import blocks
 from globals import BLOCKS_DIR, SECTOR_SIZE
 from savingsystem import null2, structuchar2, sector_to_blockpos
 
@@ -48,6 +49,14 @@ class PacketReceiver(Thread):
                 elif packetid == 2:  # Receiving blank sector
                     with self.lock:
                         main_thread((packetid, struct.unpack("iii", packet)))
+                elif packetid == 3:  # Add Block
+                    with self.lock:
+                        main_thread((packetid,
+                                     (struct.unpack("iii", packet[:12]),
+                                     BLOCKS_DIR[blocks.BlockID(struct.unpack("bb", packet[12:]))])))
+                elif packetid == 4:  # Remove Block
+                    with self.lock:
+                        main_thread((packetid, struct.unpack("iii", packet)))
                 else:
                     warn("Received unknown packetid %s" % packetid)
                 packetcache = packetcache[packetsize:]
@@ -81,9 +90,17 @@ class PacketReceiver(Thread):
                 del self.world.sector_queue[secpos] #Delete any hide sector orders
         elif packetid == 2:  # Blank Sector
             self.world.sectors[packet] = []
+        elif packetid == 3:  # Add Block
+            self.world._add_block(packet[0], packet[1])
+        elif packetid == 4:  # Remove Block
+            self.world._remove_block(packet)
 
     def request_sector(self, sector):
         self.sock.send("\1"+struct.pack("iii", *sector))
+    def add_block(self, position, block):
+        self.sock.send("\3"+struct.pack("iiibb", *(position+(block.id.main, block.id.sub))))
+    def remove_block(self, position):
+        self.sock.send("\4"+struct.pack("iii", *position))
 
     def stop(self):
         self._stop.set()
