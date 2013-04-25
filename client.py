@@ -6,6 +6,7 @@ import struct
 # Third-party packages
 
 # Modules from this project
+from warnings import warn
 from globals import BLOCKS_DIR, SECTOR_SIZE
 from savingsystem import null2, structuchar2, sector_to_blockpos
 
@@ -23,6 +24,8 @@ class PacketReceiver(Thread):
 
     def run(self):
         packetcache, packetsize = "", 0
+
+        main_thread = self.world.sector_packets.append
         while 1:
             resp = self.sock.recv(16384)
             if self._stop.isSet() or not resp:
@@ -33,25 +36,28 @@ class PacketReceiver(Thread):
             if not packetsize:
                 packetsize = struct.unpack("i", packetcache[:4])[0]
 
-            if len(packetcache) >= packetsize:
-                packetid = struct.unpack("b",packetcache[4])[0]
+            while packetsize and len(packetcache) >= packetsize:
+                #Once we've obtained the whole packet
+                packetid = struct.unpack("b",packetcache[4])[0]  # Server Packet Type
                 packet = packetcache[5:packetsize]
-                if packetid == 1: #Receiving sector
+
+                #Preprocess the packet as much as possible in this thread
+                if packetid == 1:    # Receiving sector
                     with self.lock:
-                        self.world.sector_packets.append((1,packet))
-                elif packetid == 2: #Receiving blank sector
+                        main_thread((packetid, packet))
+                elif packetid == 2:  # Receiving blank sector
                     with self.lock:
-                        self.world.sector_packets.append((2,struct.unpack("iii", packet)))
+                        main_thread((packetid, struct.unpack("iii", packet)))
                 else:
-                    print "Received unknown packetid", packetid
+                    warn("Received unknown packetid %s" % packetid)
                 packetcache = packetcache[packetsize:]
-                packetsize = 0
+                packetsize = struct.unpack("i", packetcache[:4])[0] if packetcache else 0
 
     #The following functions are run by the Main Thread
     def dequeue_packet(self):
         with self.lock:
             packetid, packet = self.world.sector_packets.popleft()
-        if packetid == 1: #Sector
+        if packetid == 1:  # Sector
             blocks, sectors = self.world, self.world.sectors
             secpos = struct.unpack("iii", packet[:12])
             sector = sectors[secpos]
@@ -73,7 +79,7 @@ class PacketReceiver(Thread):
                         exposed_pos += 1
             if secpos in self.world.sector_queue:
                 del self.world.sector_queue[secpos] #Delete any hide sector orders
-        elif packetid == 2: #Blank Sector
+        elif packetid == 2:  # Blank Sector
             self.world.sectors[packet] = []
 
     def request_sector(self, sector):
