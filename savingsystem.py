@@ -81,8 +81,6 @@ def save_blocks(blocks, world):
     if not os.path.exists(os.path.join(G.game_dir, world)):
         os.makedirs(os.path.join(G.game_dir, world))
 
-    while blocks.generation_queue: #This must be empty or it'll save queued sectors as all air
-        blocks.dequeue_generation()
     for secpos in blocks.sectors: #TODO: only save dirty sectors
         if not blocks.sectors[secpos]:
             continue #Skip writing empty sectors

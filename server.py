@@ -1,45 +1,44 @@
-"""
-Prototype of a socket server that could be used both to parallelize computation
-and for multiplayer.
-
-The server is multithreaded and run as a daemon.
-The main thread listens to connections while a new thread is started for every
-request.
-
-For the moment, this is only a demonstration to show how entire sectors could
-be exchanged via sockets.  The client requests for a random sector.
-The server generates then returns it.
-"""
-
+# Python packages
+from _socket import SHUT_RDWR
+import struct
 try:  # Python 3
     import socketserver
 except ImportError:  # Python 2
     import SocketServer as socketserver
-from collections import defaultdict
-import cPickle as pickle
-from random import randint
-import socket
-from sys import getsizeof
 import threading
+# Third-party packages
 
+# Modules from this project
 import globals as G
-from world import World
+from savingsystem import save_sector_to_string, save_blocks
+from world_server import WorldServer
 
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
+    def sendpacket(self, size, packet):
+        self.request.sendall(struct.pack("i", 5+size)+packet)
+
     def handle(self):
         world = self.server.world
-        data = self.request.recv(128)
-        sector = pickle.loads(data)
+        while 1:
+            packettype = struct.unpack("b",self.request.recv(1))[0]
+            if packettype == 1: #Sector request
+                sector = struct.unpack("iii", self.request.recv(4*3))
+                #print "Received packet load",sector
 
-        if sector not in world.sectors:
-            world.terraingen.generate_sector(sector)
+                if sector not in world.sectors:
+                    world.open_sector(sector)
 
-        response = defaultdict(list)
-        for position in world.sectors[sector]:
-            response[world[position].id].append(position)
-
-        self.request.sendall(pickle.dumps(response, pickle.HIGHEST_PROTOCOL))
+                if not world.sectors[sector]:
+                    #Empty sector, send packet 2
+                    #print "Sending empty sector", sector
+                    self.sendpacket(12, "\2" + struct.pack("iii",*sector))
+                else:
+                    msg = struct.pack("iii",*sector) + save_sector_to_string(world, sector) + world.get_exposed_sector(sector)
+                    #print "sendding sector info",sector,len(msg)
+                    self.sendpacket(len(msg), "\1" + msg)
+            else:
+                print "Received unknown packettype", packettype
 
 
 class Server(socketserver.ThreadingTCPServer):
@@ -48,26 +47,11 @@ class Server(socketserver.ThreadingTCPServer):
     def __init__(self, *args, **kwargs):
         socketserver.ThreadingTCPServer.__init__(self, *args, **kwargs)
         G.SEED = 'choose a seed here'
-        self.world = World()
-
-
-def client(ip, port, message):
-    sock = socket.socket()
-    sock.connect((ip, port))
-    try:
-        sock.sendall(message)
-        print('Sent %d bits' % getsizeof(message))
-        response = sock.recv(16384)
-        print('Received %d bits: %s' % (getsizeof(response),
-                                        pickle.loads(response)))
-    finally:
-        sock.close()
-
+        self.world = WorldServer()
 
 def start_server():
     server = Server(('127.0.0.1', 1486), ThreadedTCPRequestHandler)
     server_thread = threading.Thread(target=server.serve_forever)
-    server_thread.daemon = True
     server_thread.start()
     return server, server_thread
 
@@ -77,11 +61,16 @@ if __name__ == '__main__':
     print('Server loop running in thread: ' + server_thread.name)
 
     ip, port = server.server_address
+    print "Listening on",ip,port
 
-    for i in range(10):
-        sector = (randint(-20, 20), 3, randint(-20, 20))
-        # Requests this sector
-        client(ip, port, pickle.dumps(sector, pickle.HIGHEST_PROTOCOL))
-
-    server.shutdown()
-    print('Server closed')
+    while 1:
+        cmd = raw_input()
+        if cmd == "stop":
+            print "Shutting down socket..."
+            server.shutdown(SHUT_RDWR)
+            print "Saving..."
+            save_blocks(server.world, "world")
+            print "Goodbye"
+            break
+        else:
+            print "Unknown command. Have you considered running 'stop'?"

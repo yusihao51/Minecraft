@@ -132,7 +132,8 @@ class GameController(Controller):
                 self.world.process_entire_queue()
             self.sector = sector
 
-        self.world.content_update(dt)
+        # TODO: Make the server do this
+        # self.world.content_update(dt)
 
     def update_player(self, dt):
         m = 8
@@ -217,33 +218,13 @@ class GameController(Controller):
         self.polished = GLfloat(100.0)
         self.crack_batch = pyglet.graphics.Batch()
 
-        if G.DISABLE_SAVE and world_exists(G.game_dir, G.SAVE_FILENAME):
-            open_world(self, G.game_dir, G.SAVE_FILENAME)
-            self.world = World()
-        else:
-            seed = G.LAUNCH_OPTIONS.seed
-            if seed is None:
-                # Generates pseudo-random number.
-                try:
-                    seed = long(hexlify(os.urandom(16)), 16)
-                except NotImplementedError:
-                    import time
-                    seed = long(time.time() * 256)  # use fractional seconds
-                # Then convert it to a string so all seeds have the same type.
-                seed = str(seed)
-
-                print('No seed set, generated random seed: ' + seed)
-            G.SEED = seed
-            random.seed(seed)
-
-            with open(os.path.join(G.game_dir, 'seeds.txt'), 'a') as seeds:
-                seeds.write(datetime.datetime.now().strftime(
-                    'Seed used the %d %m %Y at %H:%M:%S\n'))
-                seeds.write('%s\n\n' % seed)
-
-            self.world = World()
-            self.player = Player((0,self.world.terraingen.get_height(0,0)+2,0), (-20, 0),
-                                 game_mode=G.GAME_MODE)
+        #if G.DISABLE_SAVE and world_exists(G.game_dir, G.SAVE_FILENAME):
+        #    open_world(self, G.game_dir, G.SAVE_FILENAME)
+        self.world = World()
+        #TODO: Get our position from the server
+        #self.player = Player((0,self.world.terraingen.get_height(0,0)+2,0), (-20, 0),
+        self.player = Player((0,50,0), (-20, 0),
+                                game_mode=G.GAME_MODE)
         print('Game mode: ' + self.player.game_mode)
         self.item_list = ItemSelector(self, self.player, self.world)
         self.inventory_list = InventorySelector(self, self.player, self.world)
@@ -270,6 +251,7 @@ class GameController(Controller):
                 anchor_x='left', anchor_y='top', color=(255, 255, 255, 255))
         pyglet.clock.schedule_interval_soft(self.world.process_queue,
                                             1.0 / G.MAX_FPS)
+        pyglet.clock.schedule_interval_soft(self.world.hide_sectors, 1.0, self.player)
 
     def update_time(self):
         """
@@ -525,11 +507,11 @@ class GameController(Controller):
 
     def draw_label(self):
         x, y, z = self.player.position
-        self.label.text = 'Time:%.1f Inaccurate FPS:%02d (%.2f, %.2f, %.2f) Blocks Shown: %d / %d sector_queue:%d'\
+        self.label.text = 'Time:%.1f Inaccurate FPS:%02d (%.2f, %.2f, %.2f) Blocks Shown: %d / %d sector_packets:%d'\
                           % (self.time_of_day if (self.time_of_day < 12.0)
                else (24.0 - self.time_of_day),
                pyglet.clock.get_fps(), x, y, z,
-               len(self.world._shown), len(self.world), len(self.world.sector_queue))
+               len(self.world._shown), len(self.world), len(self.world.sector_packets))
         self.label.draw()
 
     def write_line(self, text, **kwargs):
@@ -584,4 +566,4 @@ class GameController(Controller):
         self.window.pop_handlers()
 
     def on_close(self):
-        self.save_to_file()
+        self.world.packetreceiver.stop()  # Disconnect from the server so the process can close

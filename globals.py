@@ -179,7 +179,7 @@ MAX_FPS = 60  # Maximum frames per second.
 QUEUE_PROCESS_SPEED = 0.3 / MAX_FPS #Try shrinking this if chunk loading is laggy, higher loads chunks faster
 
 VISIBLE_SECTORS_RADIUS = 8
-DELOAD_SECTORS_RADIUS = 16
+DELOAD_SECTORS_RADIUS = 12
 
 DRAW_DISTANCE_CHOICES = {
     'short': 60.0,
