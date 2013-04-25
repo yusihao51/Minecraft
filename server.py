@@ -13,41 +13,48 @@ import globals as G
 from savingsystem import save_sector_to_string, save_blocks
 from world_server import WorldServer
 
+world_server_lock = threading.Lock()
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     def sendpacket(self, size, packet):
         self.request.sendall(struct.pack("i", 5+size)+packet)
 
     def handle(self):
-        world = self.server.world
+        print "Client connected,", self.client_address
+        self.server.players[self.client_address] = self
+
+        world, players = self.server.world, self.server.players
         while 1:
-            packettype = struct.unpack("b",self.request.recv(1))[0]
-            if packettype == 1: #Sector request
+            byte = self.request.recv(1)
+            if not byte: return
+
+            packettype = struct.unpack("b", byte)[0]  # Client Packet Type
+            if packettype == 1:  # Sector request
                 sector = struct.unpack("iii", self.request.recv(4*3))
-                #print "Received packet load",sector
 
                 if sector not in world.sectors:
-                    world.open_sector(sector)
+                    with world_server_lock:
+                        world.open_sector(sector)
 
                 if not world.sectors[sector]:
                     #Empty sector, send packet 2
-                    #print "Sending empty sector", sector
                     self.sendpacket(12, "\2" + struct.pack("iii",*sector))
                 else:
                     msg = struct.pack("iii",*sector) + save_sector_to_string(world, sector) + world.get_exposed_sector(sector)
-                    #print "sendding sector info",sector,len(msg)
                     self.sendpacket(len(msg), "\1" + msg)
             else:
                 print "Received unknown packettype", packettype
-
+    def finish(self):
+        print "Client disconnected,", self.client_address
+        del self.server.players[self.client_address]
 
 class Server(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
 
     def __init__(self, *args, **kwargs):
         socketserver.ThreadingTCPServer.__init__(self, *args, **kwargs)
-        G.SEED = 'choose a seed here'
         self.world = WorldServer()
+        self.players = {}  # List of all players connected. {ipaddress: requesthandler,}
 
 def start_server():
     server = Server(('127.0.0.1', 1486), ThreadedTCPRequestHandler)
@@ -57,6 +64,8 @@ def start_server():
 
 
 if __name__ == '__main__':
+    setattr(G.LAUNCH_OPTIONS, "SEED", "world")
+
     server, server_thread = start_server()
     print('Server loop running in thread: ' + server_thread.name)
 
@@ -67,7 +76,7 @@ if __name__ == '__main__':
         cmd = raw_input()
         if cmd == "stop":
             print "Shutting down socket..."
-            server.shutdown(SHUT_RDWR)
+            server.shutdown()
             print "Saving..."
             save_blocks(server.world, "world")
             print "Goodbye"
