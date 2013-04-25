@@ -84,7 +84,10 @@ def start_server():
 
 
 if __name__ == '__main__':
-    setattr(G.LAUNCH_OPTIONS, "SEED", "world")
+    #TODO: Enable server launch options
+    #In the mean time, manually set
+    setattr(G.LAUNCH_OPTIONS, "seed", None)
+    G.SAVE_FILENAME = "world"
 
     server, server_thread = start_server()
     print('Server loop running in thread: ' + server_thread.name)
