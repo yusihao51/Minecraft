@@ -42,6 +42,7 @@ def hidden_image_sprite(*args, **kwargs):
         sprite.visible = False
     return sprite
 
+
 def vec(*args):
     """Creates GLfloat arrays of floats"""
     return (GLfloat * len(args))(*args)
@@ -75,6 +76,7 @@ def get_block_icon(block, icon_size, world):
             icon_size,
             icon_size)
     return block_icon
+
 
 FACES = (
     ( 0,  1,  0),

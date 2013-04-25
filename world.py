@@ -290,9 +290,9 @@ class World(dict):
             self.lazy_queue.remove(opposite_task)
 
     def process_queue(self, dt):
-        stoptime=time() + G.QUEUE_PROCESS_SPEED
+        stoptime = time() + G.QUEUE_PROCESS_SPEED
         while time() < stoptime:
-            #Process as much of the queues as we can
+            # Process as much of the queues as we can
             if self.generation_queue:
                 self.dequeue_generation()
             elif self.sector_queue:

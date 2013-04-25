@@ -5,18 +5,6 @@ import cython
 #cython: cdivision=True
 
 
-@cython.locals(int_f=int)
-cpdef int normalize_float(float f)
-
-
-@cython.locals(x=float, y=float, z=float)
-cpdef tuple normalize(tuple position)
-
-
-@cython.locals(x=int, y=int, z=int)
-cpdef tuple sectorize(tuple position)
-
-
 @cython.locals(spreading_mutations=dict)
 cdef class World(dict):
     cdef public:
@@ -29,6 +17,7 @@ cdef class World(dict):
         sectors
         urgent_queue, lazy_queue
         sector_queue
+        generation_queue
         terraingen
         set before_set
         spreading_mutable_blocks
@@ -38,7 +27,8 @@ cdef class World(dict):
                            bint sync=?, bint force=?)
 
     @cython.locals(sector_position=tuple)
-    cpdef object remove_block(self, object player, tuple position, bint sync=?, bint sound=?)
+    cpdef object remove_block(self, object player, tuple position,
+                              bint sync=?, bint sound=?)
 
     # Generators are not handled by Cython for the moment.
     # @cython.locals(x=float, y=float, z=float,
@@ -101,6 +91,7 @@ cdef class World(dict):
     @cython.locals(queue=object)
     cpdef object dequeue(self)
 
+    @cython.locals(stoptime=double)
     cpdef object process_queue(self, double dt)
 
     cpdef object process_entire_queue(self)
@@ -108,5 +99,6 @@ cdef class World(dict):
     @cython.locals(position=tuple)
     cpdef object content_update(self, double dt)
 
-    @cython.locals(stoptime=double)
-    cpdef object process_queue(self, double dt)
+    @cython.locals(x=int, y=int, z=int)
+    cpdef object generate_vegetation(self, tuple position,
+                                     type vegetation_class)
