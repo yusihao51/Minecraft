@@ -111,10 +111,7 @@ class MainMenuView(MenuView):
     def setup(self):
         MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
-        if G.DISABLE_SAVE and world_exists(G.game_dir, G.SAVE_FILENAME):
-            self.buttons.append(self.Button(caption="Continue...",on_click=self.controller.start_game))
-
-        self.buttons.append(self.Button(caption="New game",on_click=self.controller.new_game))
+        self.buttons.append(self.Button(caption="Connect to Server",on_click=self.controller.start_game))
         self.buttons.append(self.Button(caption="Options...",on_click=self.controller.game_options))
         self.buttons.append(self.Button(caption="Exit game",on_click=self.controller.exit_game))
         self.label = Label(G.APP_NAME, font_name='ChunkFive Roman', font_size=50, x=width/2, y=self.frame.y + self.frame.height,
