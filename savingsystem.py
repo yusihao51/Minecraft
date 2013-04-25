@@ -48,6 +48,21 @@ def sector_to_blockpos(secpos):
     x,y,z = secpos
     return x*8, y*8, z*8
 
+def save_sector_to_string(blocks, secpos):
+    cx, cy, cz = sector_to_blockpos(secpos)
+    fstr = ""
+    for x in xrange(cx, cx+8):
+        for y in xrange(cy, cy+8):
+            for z in xrange(cz, cz+8):
+                blk = blocks.get((x,y,z), air).id
+                if blk:
+                    if isinstance(blk, int):
+                        blk = BlockID(blk)
+                    fstr += structuchar2.pack(blk.main, blk.sub)
+                else:
+                    fstr += null2
+    return fstr
+
 @performance_info
 def save_world(window, game_dir, world=None):
     if world is None: world = "world"
@@ -58,34 +73,26 @@ def save_world(window, game_dir, world=None):
     save = (4,window.player, window.time_of_day, G.SEED)
     pickle.dump(save, open(os.path.join(game_dir, world, "save.pkl"), "wb"))
 
+    save_blocks(window.world, world)
+
+def save_blocks(blocks, world):
     #blocks and sectors (window.world and window.world.sectors)
     #Saves individual sectors in region files (4x4x4 sectors)
-    blocks = window.world
+    if not os.path.exists(os.path.join(G.game_dir, world)):
+        os.makedirs(os.path.join(G.game_dir, world))
 
     while blocks.generation_queue: #This must be empty or it'll save queued sectors as all air
         blocks.dequeue_generation()
-    for secpos in window.world.sectors: #TODO: only save dirty sectors
-        if not window.world.sectors[secpos]:
+    for secpos in blocks.sectors: #TODO: only save dirty sectors
+        if not blocks.sectors[secpos]:
             continue #Skip writing empty sectors
-        file = os.path.join(game_dir, world, sector_to_filename(secpos))
+        file = os.path.join(G.game_dir, world, sector_to_filename(secpos))
         if not os.path.exists(file):
             with open(file, "w") as f:
                 f.truncate(64*1024) #Preallocate the file to be 64kb
         with open(file, "rb+") as f: #Load up the region file
             f.seek(sector_to_offset(secpos)) #Seek to the sector offset
-            cx, cy, cz = sector_to_blockpos(secpos)
-            fstr = ""
-            for x in xrange(cx, cx+8):
-                for y in xrange(cy, cy+8):
-                    for z in xrange(cz, cz+8):
-                        blk = blocks.get((x,y,z), air).id
-                        if blk:
-                            if isinstance(blk, int):
-                                blk = BlockID(blk)
-                            fstr += structuchar2.pack(blk.main, blk.sub)
-                        else:
-                            fstr += null2
-            f.write(fstr)
+            f.write(save_sector_to_string(blocks, secpos))
 
 
 def world_exists(game_dir, world=None):
