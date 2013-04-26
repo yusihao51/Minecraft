@@ -34,6 +34,44 @@ class Entity(object):
         # it to check if monsters can see player
         self.sight_range = sight_range
         self.attack_range = attack_range
+        self.entity_id = None
+
+    def can_handle(self, msg_type):
+        return False
+
+    def handle_message(self, msg_type, *args, **kwargs):
+        pass
+
+#
+# Message type
+#
+MSG_PICKUP, \
+MSG_REDSTONE_ACTIVATE, MSG_REDSTONE_DEACTIVATE, \
+    = range(3)
+
+class EntityManager(object):
+    def __init__(self):
+        self.last_id = 0
+        self.entities = {}
+
+    def add_entity(self, entity):
+        self.last_id = self.last_id + 1
+        self.entities[self.last_id] = entity
+        self.entities[self.last_id].entity_id = self.last_id
+
+    def remove_entity(self, entity_id):
+        del self.entities[entity_id]
+
+    def broadcast(self, msg_type, *args, **kwargs):
+        for entity in self.entities:
+            if entity.can_handle(msg_type):
+                entity.handle_message(msg_type, *args, **kwargs)
+
+    def send_message(self, receiver, msg_type, *args, **kwargs):
+        if self.entities[receiver].can_handle(msg_type):
+                self.entities[receiver].handle_message(msg_type, *args, **kwargs)
+
+entity_manager = EntityManager()
 
 class TileEntity(Entity):
     """
@@ -163,3 +201,32 @@ class FurnaceEntity(TileEntity):
         self.fuel_task = G.main_timer.add_task(burning_time, self.remove_fuel)
         # smelting task
         self.smelt_task = G.main_timer.add_task(smelting_time, self.smelt_done)
+
+class RedstoneTorchEntity(TileEntity):
+    def __init__(self, world, position):
+        super(RedstoneTorchEntity, self).__init__(world, position)
+        self.activated = True
+
+        entity_manager.broadcast(MSG_REDSTONE_ACTIVATE, position=self.position)
+
+    def can_handle(self, msg_type):
+        return msg_type == MSG_REDSTONE_ACTIVATE or msg_type == MSG_REDSTONE_DEACTIVATE
+
+    def handle_message(self, msg_type, *args, **kwargs):
+        pass
+
+class DroppedBlockEntity(Entity):
+    def __init__(self, world, position, item):
+        super(TileEntity, self).__init__(position, rotation=(0,0))
+        self.world = world
+        self.item_stack = item
+
+    def can_handle(self, msg_type):
+        return msg_type == MSG_PICKUP
+
+    # argument: player
+    def handle_message(self, msg_type, *args, **kwargs):
+        if msg_type == MSG_PICKUP:
+            pass
+            # entity_manager.remove_entity(self.entity_id)
+
