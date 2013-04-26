@@ -24,9 +24,10 @@ __all__ = (
 class View(pyglet.event.EventDispatcher):
     def __init__(self, controller):
         super(View, self).__init__()
-        
+
         self.controller = controller
         self.batch = pyglet.graphics.Batch()
+        self.buttons = []
 
     def setup(self):
         pass
@@ -38,7 +39,7 @@ class View(pyglet.event.EventDispatcher):
     def pop_handlers(self):
         self.controller.window.set_mouse_cursor(None)
         self.controller.window.pop_handlers()
-    
+
     def update(self, dt):
         pass
 
@@ -66,119 +67,93 @@ class View(pyglet.event.EventDispatcher):
         glColor3d(1, 1, 1)
         self.controller.set_2d()
         self.batch.draw()
-        
+
 View.register_event_type('on_mouse_click')
-        
-        
-class MainMenuView(View):
+
+
+class MenuView(View):
     def setup(self):
         self.group = pyglet.graphics.OrderedGroup(2)
         self.labels_group = pyglet.graphics.OrderedGroup(3)
-
-        width, height = self.controller.window.width, self.controller.window.height
 
         image = frame_image
         self.frame_rect = Rectangle(0, 0, image.width, image.height)
         self.background = image_sprite(backdrop, self.batch, 0)
         self.background.scale = max(float(self.controller.window.get_size()[0]) / self.background.width, float(self.controller.window.get_size()[1]) / self.background.height)
         self.frame = image_sprite(image, self.batch, 1)
-#            open_world(self, G.game_dir, G.SAVE_FILENAME)
-        self.buttons = []
-        if G.DISABLE_SAVE \
-                and world_exists(G.game_dir, G.SAVE_FILENAME):
-            self.continue_game = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Continue...", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-            self.continue_game.push_handlers(on_click=self.controller.start_game)
-            self.buttons.append(self.continue_game)
-            
-        self.new_game = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="New game", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.new_game.push_handlers(on_click=self.controller.new_game)
-        self.buttons.append(self.new_game)
-        self.game_options = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Options...", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.game_options.push_handlers(on_click=self.controller.game_options)
-        self.buttons.append(self.game_options)
-        self.exit_game = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Exit game", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.exit_game.push_handlers(on_click=self.controller.exit_game)
-        self.buttons.append(self.exit_game)
-        self.label = Label(G.APP_NAME, font_name='ChunkFive Roman', font_size=50, x=width/2, y=self.frame.y + self.frame.height,
-            anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
-            group=self.labels_group)
-            
-        self.on_resize(width, height)
+
+    def Button(self, x=0, y=0, width=160, height=50, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None):
+        button = Button(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name)
+        if on_click:
+            button.push_handlers(on_click=on_click)
+        return button
+
+    def ToggleButton(self, x=0, y=0, width=160, height=50, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None):
+        button = ToggleButton(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name)
+        if on_click:
+            button.push_handlers(on_click=on_click)
+        return button
 
     def on_resize(self, width, height):
         self.background.scale = 1.0
         self.background.scale = max(float(width) / self.background.width, float(height) / self.background.height)
         self.background.x, self.background.y = 0, 0
         self.frame.x, self.frame.y = (width - self.frame.width) / 2, (height - self.frame.height) / 2
-        self.label.y = self.frame.y + self.frame.height - 55
-        self.label.x = width / 2
         button_x, button_y = 0, self.frame.y + (self.frame.height) / 2 + 10
         for button in self.buttons:
             button_x = self.frame.x + (self.frame.width - button.width) / 2
             button.position = button_x, button_y
             button_y -= button.height + 10
-        
-        
-class OptionsView(View):
+
+
+class MainMenuView(MenuView):
     def setup(self):
-        self.group = pyglet.graphics.OrderedGroup(2)
-        self.labels_group = pyglet.graphics.OrderedGroup(3)
-
+        MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
+        if G.DISABLE_SAVE and world_exists(G.game_dir, G.SAVE_FILENAME):
+            self.buttons.append(self.Button(caption="Continue...",on_click=self.controller.start_game))
 
-        image = frame_image
-        self.frame_rect = Rectangle(0, 0, image.width, image.height)
-        self.background = image_sprite(backdrop, self.batch, 0)
-        self.background.scale = max(float(self.controller.window.get_size()[0]) / self.background.width, float(self.controller.window.get_size()[1]) / self.background.height)
-        self.frame = image_sprite(image, self.batch, 1)
-        self.button_return = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Done", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.button_return.push_handlers(on_click=self.controller.main_menu)
-        self.controls_button = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Controls...", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.controls_button.push_handlers(on_click=self.controller.controls)
-        self.textures_button = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Textures", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.textures_button.push_handlers(on_click=self.controller.textures)
-        self.buttons = [self.controls_button, self.textures_button, self.button_return]
-            
+        self.buttons.append(self.Button(caption="New game",on_click=self.controller.new_game))
+        self.buttons.append(self.Button(caption="Options...",on_click=self.controller.game_options))
+        self.buttons.append(self.Button(caption="Exit game",on_click=self.controller.exit_game))
+        self.label = Label(G.APP_NAME, font_name='ChunkFive Roman', font_size=50, x=width/2, y=self.frame.y + self.frame.height,
+            anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
+            group=self.labels_group)
+
         self.on_resize(width, height)
 
     def on_resize(self, width, height):
-        self.background.scale = 1.0
-        self.background.scale = max(float(width) / self.background.width, float(height) / self.background.height)
-        self.background.x, self.background.y = 0, 0
-        self.frame.x, self.frame.y = (width - self.frame.width) / 2, (height - self.frame.height) / 2
-        button_x = self.frame.x + (self.frame.width - self.controls_button.width) / 2
-        button_y = self.frame.y + (self.frame.height - self.controls_button.height) / 2 + 10
-        self.controls_button.position = button_x, button_y
-        button_y -= self.controls_button.height + 20
-        self.textures_button.position = button_x, button_y
-        button_y -= self.textures_button.height + 20
-        self.button_return.position = button_x, button_y
-        
-        
-class ControlsView(View):
-    def setup(self):
-        self.group = pyglet.graphics.OrderedGroup(2)
-        self.labels_group = pyglet.graphics.OrderedGroup(3)
+        MenuView.on_resize(self, width, height)
+        self.label.y = self.frame.y + self.frame.height - 55
+        self.label.x = width / 2
 
+
+class OptionsView(MenuView):
+    def setup(self):
+        MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
 
-        image = frame_image
-        self.frame_rect = Rectangle(0, 0, image.width, image.height)
-        self.background = image_sprite(backdrop, self.batch, 0)
-        self.background.scale = max(float(self.controller.window.get_size()[0]) / self.background.width, float(self.controller.window.get_size()[1]) / self.background.height)
-        self.frame = image_sprite(image, self.batch, 1)
-        self.buttons = []
+        self.buttons.append(self.Button(caption="Controls...",on_click=self.controller.controls))
+        self.buttons.append(self.Button(caption="Textures",on_click=self.controller.textures))
+        self.buttons.append(self.Button(caption="Done",on_click=self.controller.main_menu))
+
+        self.on_resize(width, height)
+
+
+class ControlsView(MenuView):
+    def setup(self):
+        MenuView.setup(self)
+        width, height = self.controller.window.width, self.controller.window.height
+
         self.key_buttons = []
-        key_buttons = ['move_backward', 'move_forward', 'move_left', 'move_right']
-        for identifier in key_buttons:
-            button = ToggleButton(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption=pyglet.window.key.symbol_string(getattr(G, identifier.upper() + '_KEY')), batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
+        for identifier in ('move_backward', 'move_forward', 'move_left', 'move_right'):
+            button = self.ToggleButton(caption=pyglet.window.key.symbol_string(getattr(G, identifier.upper() + '_KEY')))
             button.id = identifier
             self.buttons.append(button)
             self.key_buttons.append(button)
-        self.button_return = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Done", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.button_return.push_handlers(on_click=self.controller.game_options)
+        self.button_return = self.Button(caption="Done",on_click=self.controller.game_options)
         self.buttons.append(self.button_return)
-            
+
         self.on_resize(width, height)
 
     def on_resize(self, width, height):
@@ -206,10 +181,10 @@ class ControlsView(View):
             if isinstance(button, ToggleButton) and button.toggled:
                 active_button = button
                 break
-                
+
         if not active_button:
             return
-            
+
         active_button.caption = pyglet.window.key.symbol_string(symbol)
         active_button.toggled = False
 
@@ -217,42 +192,33 @@ class ControlsView(View):
 
         with open(G.config_file, 'wb') as handle:
             G.config.write(handle)
-        
-        
-class TexturesView(View):
-    def setup(self):
-        self.group = pyglet.graphics.OrderedGroup(2)
-        self.labels_group = pyglet.graphics.OrderedGroup(3)
 
+
+class TexturesView(MenuView):
+    def setup(self):
+        MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
 
-        image = frame_image
-        self.frame_rect = Rectangle(0, 0, image.width, image.height)
-        self.background = image_sprite(backdrop, self.batch, 0)
-        self.background.scale = max(float(self.controller.window.get_size()[0]) / self.background.width, float(self.controller.window.get_size()[1]) / self.background.height)
-        self.frame = image_sprite(image, self.batch, 1)
-        self.buttons = []
         self.texture_buttons = []
-        
-        button = ToggleButton(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption='Default', batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
+
+        button = self.ToggleButton(caption='Default')
         button.id = 'default'
         self.buttons.append(button)
         self.texture_buttons.append(button)
-            
+
         texturepacks_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'texturepacks')
-        
-        for directories in os.listdir(texturepacks_dir): 
+
+        for directories in os.listdir(texturepacks_dir):
             dir = os.path.join(texturepacks_dir, directories)
             pack_name = os.path.basename(dir)
-        
-            button = ToggleButton(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption=pack_name, batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
+
+            button = self.ToggleButton(caption=pack_name)
             button.id = pack_name
             self.buttons.append(button)
             self.texture_buttons.append(button)
-        self.button_return = Button(self, 0, 0, 160, 50, image=button_image, image_highlighted=button_highlighted, caption="Done", batch=self.batch, group=self.group, label_group=self.labels_group, font_name='ChunkFive Roman')
-        self.button_return.push_handlers(on_click=self.controller.game_options)
+        self.button_return = self.Button(caption="Done",on_click=self.controller.game_options)
         self.buttons.append(self.button_return)
-            
+
         self.on_resize(width, height)
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -266,17 +232,4 @@ class TexturesView(View):
 
                 with open(G.config_file, 'wb') as handle:
                     G.config.write(handle)
-                    
                 button.toggled = False
-
-    def on_resize(self, width, height):
-        self.background.scale = 1.0
-        self.background.scale = max(float(width) / self.background.width, float(height) / self.background.height)
-        self.background.x, self.background.y = 0, 0
-        self.frame.x, self.frame.y = (width - self.frame.width) / 2, (height - self.frame.height) / 2
-        button_x = button_x = self.frame.x + (self.frame.width - self.texture_buttons[0].width) / 2
-        button_y = self.frame.y + (self.frame.height) / 2 + 10
-        for button in self.texture_buttons:
-            button.position = button_x, button_y
-            button_y -= button.height + 20
-        self.button_return.position = button_x, button_y
