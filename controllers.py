@@ -11,6 +11,7 @@ import os
 import random
 
 # Third-party packages
+import threading
 from pyglet.gl import *
 
 # Modules from this project
@@ -117,7 +118,12 @@ class GameController(Controller):
         self.hour_deg = 15.0
         self.clock = 6
 
+        self.back_to_main_menu = threading.Event()
+
     def update(self, dt):
+        if self.back_to_main_menu.isSet():
+            self.switch_controller_class(MainMenuController)
+            return
         self.update_sector(dt)
         self.update_player(dt)
         self.update_mouse(dt)
@@ -525,7 +531,8 @@ class GameController(Controller):
         if symbol == G.VALIDATE_KEY:
             txt = self.text_input.text.replace('\n', '')
             self.text_input.clear()
-            self.world.packetreceiver.send_chat(txt)
+            if txt:
+                self.world.packetreceiver.send_chat(txt)
             return pyglet.event.EVENT_HANDLED
 
     def on_text_input_toggled(self):

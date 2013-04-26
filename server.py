@@ -2,6 +2,7 @@
 from _socket import SHUT_RDWR
 import socket
 import struct
+import time
 from commands import CommandParser, COMMAND_HANDLED, CommandException, COMMAND_ERROR_COLOR
 
 try:  # Python 3
@@ -17,27 +18,40 @@ from savingsystem import save_sector_to_string, save_blocks
 from world_server import WorldServer
 import blocks
 
-world_server_lock = threading.Lock()
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     def sendpacket(self, size, packet):
         self.request.sendall(struct.pack("i", 5+size)+packet)
+    def sendchat(self, txt, color=(255,255,255,255)):
+        self.sendpacket(len(txt) + 4, "\5" + txt + struct.pack("BBBB", *color))
 
     def handle(self):
         print "Client connected,", self.client_address
+        for player in self.server.players.itervalues():
+            player.sendchat("%s has connected." % self.client_address[0])
         self.server.players[self.client_address] = self
+        try:
+            self.loop()
+        except socket.error as e:
+            if self.server._stop.isSet():
+                return  # Socket error while shutting down doesn't matter
+            if e[0] in (10053, 10054):
+                print "Client (%s %s) crashed." % self.client_address
+            else:
+                raise e
 
+    def loop(self):
         world, players = self.server.world, self.server.players
         while 1:
             byte = self.request.recv(1)
-            if not byte: return
+            if not byte: return  # The client has disconnected intentionally
 
             packettype = struct.unpack("B", byte)[0]  # Client Packet Type
             if packettype == 1:  # Sector request
                 sector = struct.unpack("iii", self.request.recv(4*3))
 
                 if sector not in world.sectors:
-                    with world_server_lock:
+                    with world.server_lock:
                         world.open_sector(sector)
 
                 if not world.sectors[sector]:
@@ -52,7 +66,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
                 position = struct.unpack("iii", positionbytes)
                 blockid = G.BLOCKS_DIR[blocks.BlockID(struct.unpack("BB", blockbytes))]
-                world.add_block(position, blockid, sync=True)
+                with world.server_lock:
+                    world.add_block(position, blockid, sync=False)
 
                 for address in players:
                     if address is self.client_address: continue  # He told us, we don't need to tell him
@@ -60,7 +75,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             elif packettype == 4:  # Remove block
                 positionbytes = self.request.recv(4*3)
 
-                world.remove_block(struct.unpack("iii", positionbytes), sync=True)
+                with world.server_lock:
+                    world.remove_block(struct.unpack("iii", positionbytes), sync=False)
 
                 for address in players:
                     if address is self.client_address: continue  # He told us, we don't need to tell him
@@ -75,27 +91,40 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     if ex != COMMAND_HANDLED:
                         # Not a command, send the chat to all players
                         for address in players:
-                            players[address].sendpacket(len(txt) + 4, "\5" + txt + struct.pack("BBBB", 255, 255, 255, 255))
-                            #self.write_line("> %s" % txt, color=(255, 255, 255, 255))
+                            players[address].sendchat(txt)
                 except CommandException, e:
-                    error = str(e)
-                    self.sendpacket(len(error) + 4, "\5" + error + struct.pack("BBBB", *COMMAND_ERROR_COLOR))
-                    #self.write_line(error, color=COMMAND_ERROR_COLOR)
+                    self.sendchat(str(e), COMMAND_ERROR_COLOR)
             else:
                 print "Received unknown packettype", packettype
     def finish(self):
         print "Client disconnected,", self.client_address
-        del self.server.players[self.client_address]
+        try: del self.server.players[self.client_address]
+        except KeyError: pass
+        for player in self.server.players.itervalues():
+            player.sendchat("%s has disconnected." % self.client_address[0])
 
 class Server(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
 
     def __init__(self, *args, **kwargs):
         socketserver.ThreadingTCPServer.__init__(self, *args, **kwargs)
-        self.world = WorldServer()
+        self._stop = threading.Event()
+
+        self.world = WorldServer(self)
         self.players = {}  # List of all players connected. {ipaddress: requesthandler,}
 
         self.command_parser = CommandParser()
+
+    def show_block(self, position, block):
+        blockid = block.id
+        for player in server.players.itervalues():
+            #TODO: Only if they're in range
+            player.sendpacket(14, "\3" + struct.pack("iiiBB", *(position+(blockid.main, blockid.sub))))
+
+    def hide_block(self, position):
+        for player in server.players.itervalues():
+            #TODO: Only if they're in range
+            player.sendpacket(12, "\4" + struct.pack("iii", *position))
 
 
 def start_server():
@@ -103,6 +132,9 @@ def start_server():
     server = Server((localip, 1486), ThreadedTCPRequestHandler)
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.start()
+
+    threading.Thread(target=server.world.content_update, name="world_server.content_update").start()
+
     return server, server_thread
 
 
@@ -121,9 +153,11 @@ if __name__ == '__main__':
     while 1:
         cmd = raw_input()
         if cmd == "stop":
+            server._stop.set()
             print "Disconnecting clients..."
             for address in server.players:
                 server.players[address].request.shutdown(SHUT_RDWR)
+                server.players[address].request.close()
             print "Shutting down socket..."
             server.shutdown()
             print "Saving..."
@@ -132,3 +166,8 @@ if __name__ == '__main__':
             break
         else:
             print "Unknown command. Have you considered running 'stop'?"
+    while len(threading.enumerate()) > 1:
+        threads = threading.enumerate()
+        threads.remove(threading.current_thread())
+        print "Waiting on these threads to close:", threads
+        time.sleep(1)

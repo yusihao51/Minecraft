@@ -2,7 +2,8 @@
 from binascii import hexlify
 from collections import deque, defaultdict, OrderedDict
 import os
-from time import time
+import threading
+import time
 import warnings
 
 # Third-party packages
@@ -21,7 +22,7 @@ class WorldServer(dict):
     spreading_mutations = {
         dirt_block: grass_block,
     }
-    def __init__(self):
+    def __init__(self, server):
         super(WorldServer, self).__init__()
         import savingsystem #This module doesn't like being imported at modulescope
         self.savingsystem = savingsystem
@@ -33,7 +34,9 @@ class WorldServer(dict):
         self.sector_queue = OrderedDict()
         self.generation_queue = deque()
         self.spreading_mutable_blocks = deque()
-        self.spreading_time = 0.0
+
+        self.server_lock = threading.Lock()
+        self.server = server
 
         if os.path.exists(os.path.join(G.game_dir, G.SAVE_FILENAME, "seed")):
             with open(os.path.join(G.game_dir, G.SAVE_FILENAME, "seed"), "rb") as f:
@@ -56,11 +59,11 @@ class WorldServer(dict):
                               'spreading mutations; your save is probably '
                               'corrupted' % repr(position))
 
-    def add_block(self, position, block, sync=True, force=True):
+    def add_block(self, position, block, sync=True, force=True, check_spread=True):
         if position in self:
             if not force:
                 return
-            self.remove_block(position, sync=sync)
+            self.remove_block(position, sync=sync, check_spread=check_spread)
         if hasattr(block, 'entity_type'):
             self[position] = type(block)()
             self[position].entity = self[position].entity_type(self, position)
@@ -68,16 +71,16 @@ class WorldServer(dict):
             self[position] = block
         self.sectors[sectorize(position)].append(position)
         if sync:
-            #TODO: Send to all clients in view the new block
-            #if self.is_exposed(position):
-            #    self.show_block(position)
-            #self.check_neighbors(position)
-            pass
+            self.server.show_block(position, block)
+        if check_spread:
+            if self.is_exposed(position):
+                self.check_spreading_mutable(position, block)
+            self.check_neighbors(position)
 
     def init_block(self, position, block):
-        self.add_block(position, block, sync=False, force=False)
+        self.add_block(position, block, sync=False, force=False, check_spread=False)
 
-    def remove_block(self, position, sync=True):
+    def remove_block(self, position, sync=True, check_spread=True):
         del self[position]
         sector_position = sectorize(position)
         try:
@@ -87,11 +90,9 @@ class WorldServer(dict):
                           'your save is probably corrupted'
                           % (position, sector_position))
         if sync:
-            #TODO: Send to all clients in view that the block's gone
-            #if position in self.shown:
-            #    self.hide_block(position)
-            #self.check_neighbors(position)
-            pass
+            self.server.hide_block(position)
+        if check_spread:
+            self.check_neighbors(position)
 
     def is_exposed(self, position):
         x, y, z = position
@@ -164,7 +165,6 @@ class WorldServer(dict):
             try:
                 seed = long(hexlify(os.urandom(16)), 16)
             except NotImplementedError:
-                import time
                 seed = long(time.time() * 256)  # use fractional seconds
                 # Then convert it to a string so all seeds have the same type.
             seed = str(seed)
@@ -203,16 +203,19 @@ class WorldServer(dict):
         #        self.hide_block(position)
         pass
 
-    def content_update(self, dt):
+    #content_update is run in its own thread
+    def content_update(self):
         # Updates spreading
         # TODO: This is too simple
-        self.spreading_time += dt
-        if self.spreading_time >= G.SPREADING_MUTATION_DELAY:
-            self.spreading_time = 0.0
+        while 1:
+            time.sleep(G.SPREADING_MUTATION_DELAY)
+            if self.server._stop.isSet():
+                break  # Close the thread
             if self.spreading_mutable_blocks:
-                position = self.spreading_mutable_blocks.pop()
-                self.add_block(position,
-                    self.spreading_mutations[self[position]])
+                with self.server_lock:
+                    position = self.spreading_mutable_blocks.pop()
+                    self.add_block(position,
+                        self.spreading_mutations[self[position]], check_spread=False)
 
     def generate_vegetation(self, position, vegetation_class):
         if position in self:

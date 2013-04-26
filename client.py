@@ -3,10 +3,10 @@ from _socket import SHUT_RDWR
 import socket
 from threading import Thread, Event, Lock
 import struct
+from warnings import warn
 # Third-party packages
 
 # Modules from this project
-from warnings import warn
 import blocks
 from globals import BLOCKS_DIR, SECTOR_SIZE
 from savingsystem import null2, structuchar2, sector_to_blockpos
@@ -25,6 +25,17 @@ class PacketReceiver(Thread):
             print "Socket Error:", e
 
     def run(self):
+        try:
+            self.loop()
+        except socket.error as e:
+            if e[0] in (10053, 10054):
+                #TODO: GUI tell the client they were disconnected
+                print "Disconnected from server."
+                self.controller.back_to_main_menu.set()
+            else:
+                raise e
+
+    def loop(self):
         packetcache, packetsize = "", 0
 
         main_thread = self.world.sector_packets.append
@@ -104,7 +115,7 @@ class PacketReceiver(Thread):
     def request_sector(self, sector):
         self.sock.send("\1"+struct.pack("iii", *sector))
     def add_block(self, position, block):
-        self.sock.send("\3"+struct.pack("iiibb", *(position+(block.id.main, block.id.sub))))
+        self.sock.send("\3"+struct.pack("iiiBB", *(position+(block.id.main, block.id.sub))))
     def remove_block(self, position):
         self.sock.send("\4"+struct.pack("iii", *position))
     def send_chat(self, msg):
