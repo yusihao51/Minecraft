@@ -16,6 +16,7 @@ from pyglet.gl import *
 # Modules from this project
 from blocks import *
 from cameras import Camera3D
+from client import PacketReceiver
 from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, CommandException
 import globals as G
 from gui import ItemSelector, InventorySelector, TextWidget
@@ -220,7 +221,11 @@ class GameController(Controller):
 
         #if G.DISABLE_SAVE and world_exists(G.game_dir, G.SAVE_FILENAME):
         #    open_world(self, G.game_dir, G.SAVE_FILENAME)
+
         self.world = World()
+        self.packetreceiver = PacketReceiver(self.world, self)
+        self.world.packetreceiver = self.packetreceiver
+        self.packetreceiver.start()
         #TODO: Get our position from the server
         #self.player = Player((0,self.world.terraingen.get_height(0,0)+2,0), (-20, 0),
         self.player = Player((0,50,0), (-20, 0),
@@ -243,7 +248,6 @@ class GameController(Controller):
                                    font_size=14,
                                    font_name='Arial',
                                    background_color=(64,64,64,200))
-        self.command_parser = CommandParser()
         self.camera = Camera3D(target=self.player)
         if G.HUD_ENABLED:
             self.label = pyglet.text.Label(
@@ -520,15 +524,8 @@ class GameController(Controller):
     def text_input_callback(self, symbol, modifier):
         if symbol == G.VALIDATE_KEY:
             txt = self.text_input.text.replace('\n', '')
-            try:
-                ex = self.command_parser.execute(txt, controller=self, user=self.player, world=self.world)
-                if ex != COMMAND_HANDLED:
-                    # Not a command
-                    self.write_line("> %s" % txt, color=(255, 255, 255, 255))
-                self.text_input.clear()
-            except CommandException, e:
-                error = str(e)
-                self.write_line(error, color=COMMAND_ERROR_COLOR)
+            self.text_input.clear()
+            self.world.packetreceiver.send_chat(txt)
             return pyglet.event.EVENT_HANDLED
 
     def on_text_input_toggled(self):

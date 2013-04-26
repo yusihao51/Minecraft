@@ -42,9 +42,7 @@ class World(dict):
         self.lazy_queue = deque()
         self.sector_queue = OrderedDict()
 
-        self.packetreceiver = PacketReceiver(self)
         self.sector_packets = deque()
-        self.packetreceiver.start()
 
     # Add the block clientside, then tell the server about the new block
     def add_block(self, position, block, sync=True, force=True):

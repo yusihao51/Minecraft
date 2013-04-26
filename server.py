@@ -1,6 +1,9 @@
 # Python packages
 from _socket import SHUT_RDWR
+import socket
 import struct
+from commands import CommandParser, COMMAND_HANDLED, CommandException, COMMAND_ERROR_COLOR
+
 try:  # Python 3
     import socketserver
 except ImportError:  # Python 2
@@ -29,7 +32,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             byte = self.request.recv(1)
             if not byte: return
 
-            packettype = struct.unpack("b", byte)[0]  # Client Packet Type
+            packettype = struct.unpack("B", byte)[0]  # Client Packet Type
             if packettype == 1:  # Sector request
                 sector = struct.unpack("iii", self.request.recv(4*3))
 
@@ -48,7 +51,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 blockbytes = self.request.recv(2)
 
                 position = struct.unpack("iii", positionbytes)
-                blockid = G.BLOCKS_DIR[blocks.BlockID(struct.unpack("bb", blockbytes))]
+                blockid = G.BLOCKS_DIR[blocks.BlockID(struct.unpack("BB", blockbytes))]
                 world.add_block(position, blockid, sync=True)
 
                 for address in players:
@@ -62,6 +65,22 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 for address in players:
                     if address is self.client_address: continue  # He told us, we don't need to tell him
                     players[address].sendpacket(12, "\4" + positionbytes)
+            elif packettype == 5:  # Receive chat text
+                txtlen = struct.unpack("i", self.request.recv(4))[0]
+                txt = "%s: %s" % (self.client_address[0], self.request.recv(txtlen))
+                try:
+                    #TODO: Enable the command parser again. This'll need some serverside controller object and player object
+                    #ex = self.command_parser.execute(txt, controller=self, user=self.player, world=self.world)
+                    ex = None
+                    if ex != COMMAND_HANDLED:
+                        # Not a command, send the chat to all players
+                        for address in players:
+                            players[address].sendpacket(len(txt) + 4, "\5" + txt + struct.pack("BBBB", 255, 255, 255, 255))
+                            #self.write_line("> %s" % txt, color=(255, 255, 255, 255))
+                except CommandException, e:
+                    error = str(e)
+                    self.sendpacket(len(error) + 4, "\5" + error + struct.pack("BBBB", *COMMAND_ERROR_COLOR))
+                    #self.write_line(error, color=COMMAND_ERROR_COLOR)
             else:
                 print "Received unknown packettype", packettype
     def finish(self):
@@ -76,8 +95,12 @@ class Server(socketserver.ThreadingTCPServer):
         self.world = WorldServer()
         self.players = {}  # List of all players connected. {ipaddress: requesthandler,}
 
+        self.command_parser = CommandParser()
+
+
 def start_server():
-    server = Server(('127.0.0.1', 1486), ThreadedTCPRequestHandler)
+    localip = [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][0]
+    server = Server((localip, 1486), ThreadedTCPRequestHandler)
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.start()
     return server, server_thread
@@ -98,6 +121,9 @@ if __name__ == '__main__':
     while 1:
         cmd = raw_input()
         if cmd == "stop":
+            print "Disconnecting clients..."
+            for address in server.players:
+                server.players[address].request.shutdown(SHUT_RDWR)
             print "Shutting down socket..."
             server.shutdown()
             print "Saving..."
