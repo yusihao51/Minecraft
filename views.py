@@ -11,7 +11,7 @@ from pyglet.gl import *
 # Modules from this project
 import globals as G
 from gui import frame_image, Rectangle, backdrop, Button, button_image, \
-    button_highlighted, ToggleButton
+    button_highlighted, ToggleButton, TextWidget
 from savingsystem import world_exists
 from utils import image_sprite
 
@@ -111,6 +111,15 @@ class MainMenuView(MenuView):
     def setup(self):
         MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
+
+        self.text_input = TextWidget(self.controller.window, '', 0, 0, width=160, height=20, font_name='Arial')
+        self.controller.window.push_handlers(self.text_input)
+        self.text_input.focus()
+        def text_input_callback(symbol, modifier):
+            G.IP_ADDRESS = self.text_input.text
+        self.text_input.push_handlers(key_released=text_input_callback)
+        self.text_input.text = G.IP_ADDRESS
+
         self.buttons.append(self.Button(caption="Connect to Server",on_click=self.controller.start_game))
         self.buttons.append(self.Button(caption="Options...",on_click=self.controller.game_options))
         self.buttons.append(self.Button(caption="Exit game",on_click=self.controller.exit_game))
@@ -122,8 +131,13 @@ class MainMenuView(MenuView):
 
     def on_resize(self, width, height):
         MenuView.on_resize(self, width, height)
-        self.label.y = self.frame.y + self.frame.height - 55
+        self.label.y = self.frame.y + self.frame.height - 15
         self.label.x = width / 2
+        self.text_input.resize(x=self.frame.x + (self.frame.width - self.text_input.width) / 2 + 5, y=self.frame.y + (self.frame.height) / 2 + 75, width=150)
+
+    def on_draw(self):
+        MenuView.on_draw(self)
+        self.text_input.batch.draw()
 
 
 class OptionsView(MenuView):

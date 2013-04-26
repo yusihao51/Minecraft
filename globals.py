@@ -26,6 +26,7 @@ APP_NAME = 'pyCraftr'  # should I stay or should I go?
 
 DEBUG = False
 
+IP_ADDRESS = "neb.nebtown.info"  # The IP Address to connect to
 
 #
 # Game modes

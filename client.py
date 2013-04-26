@@ -12,17 +12,13 @@ from globals import BLOCKS_DIR, SECTOR_SIZE
 from savingsystem import null2, structuchar2, sector_to_blockpos
 
 class PacketReceiver(Thread):
-    def __init__ (self, world, controller, ipport=("neb.nebtown.info", 1486)):
+    def __init__ (self, world, controller, sock):
         Thread.__init__(self)
         self.world = world
         self.controller = controller
         self._stop = Event()
         self.lock = Lock()
-        try:
-            self.sock = socket.socket()
-            self.sock.connect(ipport)
-        except socket.error as e:
-            print "Socket Error:", e
+        self.sock = sock
 
     def run(self):
         try:
