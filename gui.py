@@ -77,7 +77,6 @@ class Button(pyglet.event.EventDispatcher, Rectangle):
         self.sprite = image_sprite(image, self.batch, self.group)
         self.sprite_highlighted = hidden_image_sprite(image_highlighted, self.batch, self.group)
         self.highlighted = False
-        self.enabled = True
         self.label = Label(str(caption), font_name, 12, anchor_x='center', anchor_y='center',
             color=(255, 255, 255, 255), batch=self.batch, group=self.label_group) if caption else None
         self.position = x, y
@@ -192,6 +191,9 @@ class AbstractInventory(Control):
     def current_index(self, value):
         self._current_index = value % self.max_items
         self.update_current()
+
+    def update_current(self):
+        pass
 
 class ItemSelector(AbstractInventory):
     def __init__(self, parent, player, world, *args, **kwargs):
@@ -455,7 +457,6 @@ class InventorySelector(AbstractInventory):
                 group=self.amount_labels_group)
             self.amount_labels.append(amount_label)
             self.icons.append(icon)
-        self.update_current()
 
         crafting_y = inventory_y + inventory_height + (42 if self.mode == 0 else 14 if self.mode == 1 else 32)
         crafting_rows = (2 if self.mode == 0 else 3 if self.mode == 1 else 2)
@@ -509,11 +510,6 @@ class InventorySelector(AbstractInventory):
                 self.set_crafting_outcome(outcome)
             elif self.crafting_outcome:
                 self.remove_crafting_outcome()
-        self.update_current()
-
-    def update_current(self):
-        '''self.active.x = self.frame.x + ((self.current_index % 9) * self.icon_size * 0.5) + (self.current_index % 9) * 3
-        self.active.y = self.frame.y + floor(self.current_index / 9) * self.icon_size * 0.5 + floor(self.current_index / 9) * 6'''
 
     def get_current_block_item_and_amount(self):
         item = self.player.inventory.at(self.current_index)
@@ -606,8 +602,6 @@ class InventorySelector(AbstractInventory):
 
         col = x_offset // (self.icon_size * 0.5 + 3)
 
-        #print(row)
-        #print(col)
         return inventory, int(row * items_per_row + col)
 
     def set_furnace(self, furnace):
@@ -635,18 +629,19 @@ class InventorySelector(AbstractInventory):
         inventory_height = (inventory_rows * (self.icon_size * 0.5)) + (inventory_rows * 3)
         quick_slots_y = self.frame.y + 4
         inventory_y = quick_slots_y + (42 if self.mode == 0 else 14 if self.mode == 1 else 32)
+
+        x, y = 0, 0
         if self.mode == 0:
-            self.crafting_outcome_icon.scale = 0.5
-            self.crafting_outcome_icon.y = inventory_y + inventory_height + 62
-            self.crafting_outcome_icon.x = self.frame.x + 270
+            x, y = 270, 62
         elif self.mode == 1:
-            self.crafting_outcome_icon.scale = 0.5
-            self.crafting_outcome_icon.y = inventory_y + inventory_height + 80
-            self.crafting_outcome_icon.x = self.frame.x + 225
+            x, y = 225, 80
         elif self.mode == 2:
-            self.crafting_outcome_icon.scale = 0.5
-            self.crafting_outcome_icon.y = inventory_y + inventory_height + 67
-            self.crafting_outcome_icon.x = self.frame.x + 222
+            x, y = 222, 67
+
+        self.crafting_outcome_icon.scale = 0.5
+        self.crafting_outcome_icon.x = self.frame.x + x
+        self.crafting_outcome_icon.y = inventory_y + inventory_height + y
+
         self.crafting_outcome_label = pyglet.text.Label(
             str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
             x= self.crafting_outcome_icon.x + 3, y= self.crafting_outcome_icon.y, anchor_x='left', anchor_y='bottom',
@@ -770,7 +765,6 @@ class InventorySelector(AbstractInventory):
                 inventory.remove_all_by_index(index)
 
         self.update_items()
-        self.update_current()
         return pyglet.event.EVENT_HANDLED
 
     def on_mouse_motion(self, x, y, dx, dy):
@@ -798,7 +792,6 @@ class InventorySelector(AbstractInventory):
         self.frame.x = (width - self.frame.width) / 2
         self.frame.y = self.icon_size / 2 - 4
         if self.visible:
-            self.update_current()
             self.update_items()
 
     def _on_draw(self):
