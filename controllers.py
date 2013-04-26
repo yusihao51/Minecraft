@@ -245,9 +245,15 @@ class GameController(Controller):
         self.packetreceiver = PacketReceiver(self.world, self, sock)
         self.world.packetreceiver = self.packetreceiver
         self.packetreceiver.start()
-        #TODO: Get our position from the server
-        #self.player = Player((0,self.world.terraingen.get_height(0,0)+2,0), (-20, 0),
-        self.player = Player((0,50,0), (-20, 0),
+
+        #Get our position from the server
+        self.packetreceiver.request_spawnpos()
+        #Since we don't know it yet, lets disable self.update, or we'll load the wrong chunks and fall
+        self.update_disabled = self.update
+        self.update = lambda dt: None
+        #We'll re-enable it when the server tells us where we should be
+
+        self.player = Player((0,0,0), (-20, 0),
                                 game_mode=G.GAME_MODE)
         print('Game mode: ' + self.player.game_mode)
         self.item_list = ItemSelector(self, self.player, self.world)

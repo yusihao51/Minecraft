@@ -4,6 +4,7 @@ import socket
 import struct
 import time
 from commands import CommandParser, COMMAND_HANDLED, CommandException, COMMAND_ERROR_COLOR
+from utils import sectorize
 
 try:  # Python 3
     import socketserver
@@ -94,6 +95,19 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                             players[address].sendchat(txt)
                 except CommandException, e:
                     self.sendchat(str(e), COMMAND_ERROR_COLOR)
+            elif packettype == 255:  # Initial Login
+                position = (0,self.server.world.terraingen.get_height(0,0)+2,0)
+
+                #Send them the sector under their feet first so they don't fall
+                sector = sectorize(position)
+                if sector not in world.sectors:
+                    with world.server_lock:
+                        world.open_sector(sector)
+                msg = struct.pack("iii",*sector) + save_sector_to_string(world, sector) + world.get_exposed_sector(sector)
+                self.sendpacket(len(msg), "\1" + msg)
+
+                #Send them their spawn position
+                self.sendpacket(12, struct.pack("B",255) + struct.pack("iii", *position))
             else:
                 print "Received unknown packettype", packettype
     def finish(self):

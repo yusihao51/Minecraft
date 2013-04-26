@@ -68,6 +68,9 @@ class PacketReceiver(Thread):
                 elif packetid == 5:  # Print Chat
                     with self.lock:
                         main_thread((packetid, (packet[:-4], struct.unpack("BBBB", packet[-4:]))))
+                elif packetid == 255:  # Spawn Position
+                    with self.lock:
+                        main_thread((packetid, struct.unpack("iii", packet)))
                 else:
                     warn("Received unknown packetid %s" % packetid)
                 packetcache = packetcache[packetsize:]
@@ -107,15 +110,21 @@ class PacketReceiver(Thread):
             self.world._remove_block(packet)
         elif packetid == 5:  # Chat Print
             self.controller.write_line(packet[0], color=packet[1])
+        elif packetid == 255:  # Spawn Position
+            self.controller.player.position = packet
+            #Now that we know where the player should be, we can enable .update again
+            self.controller.update = self.controller.update_disabled
 
     def request_sector(self, sector):
-        self.sock.send("\1"+struct.pack("iii", *sector))
+        self.sock.sendall("\1"+struct.pack("iii", *sector))
     def add_block(self, position, block):
-        self.sock.send("\3"+struct.pack("iiiBB", *(position+(block.id.main, block.id.sub))))
+        self.sock.sendall("\3"+struct.pack("iiiBB", *(position+(block.id.main, block.id.sub))))
     def remove_block(self, position):
-        self.sock.send("\4"+struct.pack("iii", *position))
+        self.sock.sendall("\4"+struct.pack("iii", *position))
     def send_chat(self, msg):
-        self.sock.send("\5"+struct.pack("i", len(msg))+msg)
+        self.sock.sendall("\5"+struct.pack("i", len(msg))+msg)
+    def request_spawnpos(self):
+        self.sock.sendall(struct.pack("B", 255))
 
     def stop(self):
         self._stop.set()
