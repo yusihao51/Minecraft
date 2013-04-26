@@ -35,6 +35,7 @@ class Player(Entity):
         self.strafe = [0, 0]
         self.dy = 0
         self.current_density = 1 # Current density of the block we're colliding with
+        self.last_sector = None
 
         initial_items = [torch_block, stick_item]
 
