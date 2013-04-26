@@ -70,16 +70,29 @@ class Rectangle(object):
         return (self.x + self.width, self.y + self.height)
 
 class Button(pyglet.event.EventDispatcher, Rectangle):
-    def __init__(self, parent, x, y, width, height, image=None, image_highlighted=None, caption=None, batch=None, group=None, label_group=None, font_name=G.DEFAULT_FONT):
+    def __init__(self, parent, x, y, width, height, image=None, image_highlighted=None, caption=None, batch=None, group=None, label_group=None, font_name=G.DEFAULT_FONT, enabled=True):
         super(Button, self).__init__(x, y, width, height)
         parent.push_handlers(self)
         self.batch, self.group, self.label_group = batch, group, label_group
         self.sprite = image_sprite(image, self.batch, self.group)
         self.sprite_highlighted = hidden_image_sprite(image_highlighted, self.batch, self.group)
         self.highlighted = False
+        self.enabled = True
         self.label = Label(str(caption), font_name, 12, anchor_x='center', anchor_y='center',
             color=(255, 255, 255, 255), batch=self.batch, group=self.label_group) if caption else None
         self.position = x, y
+        self.enable(enabled)
+
+    def enable(self, enabled=True):
+        self.enabled = enabled
+        opacity = 255 if self.enabled else 100
+        self.sprite.opacity = opacity
+        self.sprite_highlighted.opacity = opacity
+        if self.label:
+            self.label.color = (255, 255, 255, opacity)        
+
+    def disable(self, enabled=False):
+        self.enable(enabled)
 
     @property
     def position(self):
@@ -120,21 +133,20 @@ class Button(pyglet.event.EventDispatcher, Rectangle):
             self.label.draw()
 
     def on_mouse_click(self, x, y, button, modifiers):
-        if self.hit_test(x, y):
+        if self.enabled and self.hit_test(x, y):
             self.dispatch_event('on_click')
 
 Button.register_event_type('on_click')
 
 
 class ToggleButton(Button):
-    def __init__(self, parent, x, y, width, height, image=None, image_highlighted=None, caption=None, batch=None, group=None, label_group=None, font_name=G.DEFAULT_FONT):
-        super(ToggleButton, self).__init__(parent, x, y, width, height, image=image, image_highlighted=image_highlighted, caption=caption, batch=batch, group=group, label_group=label_group, font_name=font_name)
+    def __init__(self, parent, x, y, width, height, image=None, image_highlighted=None, caption=None, batch=None, group=None, label_group=None, font_name=G.DEFAULT_FONT, enabled=True):
+        super(ToggleButton, self).__init__(parent, x, y, width, height, image=image, image_highlighted=image_highlighted, caption=caption, batch=batch, group=group, label_group=label_group, font_name=font_name, enabled=enabled)
         self.toggled = False
 
     def on_mouse_click(self, x, y, button, modifiers):
-        if self.hit_test(x, y):
+        if self.enabled and self.hit_test(x, y):
             self.toggled = not self.toggled
-        print self.toggled
         super(ToggleButton, self).on_mouse_click( x, y, button, modifiers)
 
 
