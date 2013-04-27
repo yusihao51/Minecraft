@@ -39,6 +39,7 @@ class PacketReceiver(Thread):
             resp = self.sock.recv(16384)
             if self._stop.isSet() or not resp:
                 print "Client PacketReceiver:",self._stop.isSet() and "Shutting down" or "We've been disconnected by the server"
+                self.sock.shutdown(SHUT_RDWR)
                 return
 
             packetcache += resp

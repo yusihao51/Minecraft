@@ -2,6 +2,9 @@
 
 # Python packages
 import os
+import socket
+import subprocess
+import sys
 
 # Third-party packages
 import pyglet
@@ -12,7 +15,6 @@ from pyglet.gl import *
 import globals as G
 from gui import frame_image, Rectangle, backdrop, Button, button_image, \
     button_highlighted, ToggleButton, TextWidget
-from savingsystem import world_exists
 from utils import image_sprite
 
 
@@ -121,6 +123,7 @@ class MainMenuView(MenuView):
         self.text_input.text = G.IP_ADDRESS
 
         self.buttons.append(self.Button(caption="Connect to Server",on_click=self.controller.start_game))
+        self.buttons.append(self.Button(caption="Launch Server",on_click=self.launch_server))
         self.buttons.append(self.Button(caption="Options...",on_click=self.controller.game_options))
         self.buttons.append(self.Button(caption="Exit game",on_click=self.controller.exit_game))
         self.label = Label(G.APP_NAME, font_name='ChunkFive Roman', font_size=50, x=width/2, y=self.frame.y + self.frame.height,
@@ -128,6 +131,12 @@ class MainMenuView(MenuView):
             group=self.labels_group)
 
         self.on_resize(width, height)
+
+    def launch_server(self):
+        subprocess.Popen([sys.executable, "server.py"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        localip = [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][0]
+        self.text_input.text = localip
+        G.IP_ADDRESS = localip
 
     def on_resize(self, width, height):
         MenuView.on_resize(self, width, height)
