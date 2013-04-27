@@ -93,6 +93,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                         # Not a command, send the chat to all players
                         for address in players:
                             players[address].sendchat(txt)
+                        print txt  # May as well let console see it too
                 except CommandException, e:
                     self.sendchat(str(e), COMMAND_ERROR_COLOR)
             elif packettype == 255:  # Initial Login
@@ -164,9 +165,18 @@ if __name__ == '__main__':
     ip, port = server.server_address
     print "Listening on",ip,port
 
+    helptext = "Available commands: " + ", ".join(["say", "stop"])
     while 1:
-        cmd = raw_input()
-        if cmd == "stop":
+        args = raw_input().replace(chr(13), "").split(" ")  # On some systems CR is appended, gotta remove that
+        cmd = args.pop(0)
+        if cmd == "say":
+            msg = "Server: %s" % " ".join(args)
+            print msg
+            for player in server.players.itervalues():
+                player.sendchat(msg, color=(180,180,180,255))
+        elif cmd == "help":
+            print helptext
+        elif cmd == "stop":
             server._stop.set()
             print "Disconnecting clients..."
             for address in server.players:
@@ -179,7 +189,7 @@ if __name__ == '__main__':
             print "Goodbye"
             break
         else:
-            print "Unknown command. Have you considered running 'stop'?"
+            print "Unknown command '%s'." % cmd, helptext
     while len(threading.enumerate()) > 1:
         threads = threading.enumerate()
         threads.remove(threading.current_thread())
