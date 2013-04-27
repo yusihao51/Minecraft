@@ -19,7 +19,7 @@ from savingsystem import save_sector_to_string, save_blocks
 from world_server import WorldServer
 import blocks
 
-
+#This class is effectively a serverside "Player" object
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     def sendpacket(self, size, packet):
         self.request.sendall(struct.pack("i", 5+size)+packet)
@@ -27,9 +27,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         self.sendpacket(len(txt) + 4, "\5" + txt + struct.pack("BBBB", *color))
 
     def handle(self):
-        print "Client connected,", self.client_address
-        for player in self.server.players.itervalues():
-            player.sendchat("%s has connected." % self.client_address[0])
+        self.username = str(self.client_address)
+        print "Client connecting...", self.client_address
         self.server.players[self.client_address] = self
         try:
             self.loop()
@@ -37,7 +36,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             if self.server._stop.isSet():
                 return  # Socket error while shutting down doesn't matter
             if e[0] in (10053, 10054):
-                print "Client (%s %s) crashed." % self.client_address
+                print "Client %s %s crashed." % (self.username, self.client_address)
             else:
                 raise e
 
@@ -84,7 +83,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     players[address].sendpacket(12, "\4" + positionbytes)
             elif packettype == 5:  # Receive chat text
                 txtlen = struct.unpack("i", self.request.recv(4))[0]
-                txt = "%s: %s" % (self.client_address[0], self.request.recv(txtlen))
+                txt = "%s: %s" % (self.username, self.request.recv(txtlen))
                 try:
                     #TODO: Enable the command parser again. This'll need some serverside controller object and player object
                     #ex = self.command_parser.execute(txt, controller=self, user=self.player, world=self.world)
@@ -97,6 +96,12 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 except CommandException, e:
                     self.sendchat(str(e), COMMAND_ERROR_COLOR)
             elif packettype == 255:  # Initial Login
+                txtlen = struct.unpack("i", self.request.recv(4))[0]
+                self.username = self.request.recv(txtlen)
+                for player in self.server.players.itervalues():
+                    player.sendchat("%s has connected." % self.username)
+                print "%s's username is %s" % (self.client_address, self.username)
+
                 position = (0,self.server.world.terraingen.get_height(0,0)+2,0)
 
                 #Send them the sector under their feet first so they don't fall
@@ -112,11 +117,11 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             else:
                 print "Received unknown packettype", packettype
     def finish(self):
-        print "Client disconnected,", self.client_address
+        print "Client disconnected,", self.client_address, self.username
         try: del self.server.players[self.client_address]
         except KeyError: pass
         for player in self.server.players.itervalues():
-            player.sendchat("%s has disconnected." % self.client_address[0])
+            player.sendchat("%s has disconnected." % self.username)
 
 class Server(socketserver.ThreadingTCPServer):
     allow_reuse_address = True

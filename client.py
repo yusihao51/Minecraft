@@ -8,6 +8,7 @@ from warnings import warn
 
 # Modules from this project
 import blocks
+import globals as G
 from globals import BLOCKS_DIR, SECTOR_SIZE
 from savingsystem import null2, structuchar2, sector_to_blockpos
 
@@ -125,7 +126,7 @@ class PacketReceiver(Thread):
     def send_chat(self, msg):
         self.sock.sendall("\5"+struct.pack("i", len(msg))+msg)
     def request_spawnpos(self):
-        self.sock.sendall(struct.pack("B", 255))
+        self.sock.sendall(struct.pack("B", 255)+struct.pack("i",len(G.USERNAME)) + G.USERNAME)
 
     def stop(self):
         self._stop.set()

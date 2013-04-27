@@ -151,11 +151,23 @@ class OptionsView(MenuView):
 
         texturepacks_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'texturepacks')
 
+        self.text_input = TextWidget(self.controller.window, G.USERNAME, 0, 0, width=160, height=20, font_name='Arial', batch=self.batch)
+        self.controller.window.push_handlers(self.text_input)
+        self.text_input.focus()
+        self.text_input.caret.mark = len(self.text_input.document.text)  # Don't select the whole text
+        def text_input_callback(symbol, modifier):
+            G.USERNAME = self.text_input.text
+        self.text_input.push_handlers(key_released=text_input_callback)
+
         self.buttons.append(self.Button(caption="Controls...", on_click=self.controller.controls))
         self.buttons.append(self.Button(caption="Textures", on_click=self.controller.textures, enabled=os.path.exists(texturepacks_dir)))
         self.buttons.append(self.Button(caption="Done", on_click=self.controller.main_menu))
 
         self.on_resize(width, height)
+
+    def on_resize(self, width, height):
+        MenuView.on_resize(self, width, height)
+        self.text_input.resize(x=self.frame.x + (self.frame.width - self.text_input.width) / 2 + 5, y=self.frame.y + (self.frame.height) / 2 + 75, width=150)
 
 
 class ControlsView(MenuView):

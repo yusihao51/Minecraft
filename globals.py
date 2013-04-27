@@ -11,6 +11,7 @@ would lead to unpredictable consequences.
 # Python packages
 from ConfigParser import ConfigParser, NoSectionError, NoOptionError
 import argparse
+import getpass
 from math import pi
 import os
 
@@ -90,7 +91,7 @@ KEY_BINDINGS = dict(
 
 DISABLE_SAVE = True
 SAVE_FILENAME = None
-
+USERNAME = getpass.getuser()  # Default to system username, TODO: Load from config
 
 #
 # Game engine
