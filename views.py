@@ -114,13 +114,12 @@ class MainMenuView(MenuView):
         MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
 
-        self.text_input = TextWidget(self.controller.window, '', 0, 0, width=160, height=20, font_name='Arial')
+        self.text_input = TextWidget(self.controller.window, G.IP_ADDRESS, 0, 0, width=160, height=20, font_name='Arial', batch=self.batch)
         self.controller.window.push_handlers(self.text_input)
         self.text_input.focus()
         def text_input_callback(symbol, modifier):
             G.IP_ADDRESS = self.text_input.text
         self.text_input.push_handlers(key_released=text_input_callback)
-        self.text_input.text = G.IP_ADDRESS
 
         self.buttons.append(self.Button(caption="Connect to Server",on_click=self.controller.start_game))
         self.buttons.append(self.Button(caption="Launch Server",on_click=self.launch_server))
@@ -144,10 +143,6 @@ class MainMenuView(MenuView):
         self.label.x = width / 2
         self.text_input.resize(x=self.frame.x + (self.frame.width - self.text_input.width) / 2 + 5, y=self.frame.y + (self.frame.height) / 2 + 75, width=150)
 
-    def on_draw(self):
-        MenuView.on_draw(self)
-        self.text_input.batch.draw()
-
 
 class OptionsView(MenuView):
     def setup(self):
@@ -157,7 +152,7 @@ class OptionsView(MenuView):
         texturepacks_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'texturepacks')
 
         self.buttons.append(self.Button(caption="Controls...", on_click=self.controller.controls))
-        self.buttons.append(self.Button(caption="Textures", on_click=self.controller.textures, enabled=os.path.exists(texturepacks_dir)))  
+        self.buttons.append(self.Button(caption="Textures", on_click=self.controller.textures, enabled=os.path.exists(texturepacks_dir)))
         self.buttons.append(self.Button(caption="Done", on_click=self.controller.main_menu))
 
         self.on_resize(width, height)

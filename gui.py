@@ -827,11 +827,12 @@ class TextWidget(Control):
                  text_color=(0, 0, 0, 255),
                  background_color=(200, 200, 200, 128),
                  readonly=False,
+                 batch = None,
                  *args, **kwargs):
         super(TextWidget, self).__init__(parent, *args, **kwargs)
-        self.batch = pyglet.graphics.Batch()
+        self.batch = pyglet.graphics.Batch() if not batch else batch
         self.vertex_list = None
-        blank_text = text or True
+        blank_text = not bool(text)
         self.document = pyglet.text.document.FormattedDocument(text if not blank_text else ' ')
         self.document.set_style(0, len(self.document.text),
                                 dict(color=text_color,
