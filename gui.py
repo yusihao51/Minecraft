@@ -158,9 +158,9 @@ class Control(pyglet.event.EventDispatcher):
         self.focused = False
         self.x, self.y, self.width, self.height = 0, 0, 0, 0
 
-    def toggle(self):
-        self.visible = not self.visible
-        self.focused = not self.focused
+    def toggle(self, state=None):
+        self.visible = not self.visible if state is None else state
+        self.focused = not self.focused if state is None else state
         self._on_toggled()
         self.dispatch_event('on_toggled')
 

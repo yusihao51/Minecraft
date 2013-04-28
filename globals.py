@@ -240,6 +240,8 @@ smelting_recipes = None
 TIMER_INTERVAL = 1
 main_timer = None
 
+CHAT_FADE_TIME = 8
+
 #
 # Global files & directories
 #

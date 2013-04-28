@@ -549,8 +549,12 @@ class GameController(Controller):
                 self.world.packetreceiver.send_chat(txt)
             return pyglet.event.EVENT_HANDLED
 
+    def hide_chat_box(self, dt):
+        if self.chat_box.disable_timer: self.chat_box.toggle(False)
+
     def on_text_input_toggled(self):
-        self.chat_box.toggle()
+        self.chat_box.disable_timer = None  # Disable the fade timer
+        self.chat_box.toggle(state=self.text_input.visible)  # Pass through the state incase chat_box was already visible
         if self.chat_box.visible:
             self.chat_box.focused = True # Allow scrolling
             self.window.push_handlers(self.chat_box)
