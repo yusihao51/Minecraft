@@ -85,10 +85,12 @@ class Button(pyglet.event.EventDispatcher, Rectangle):
     def enable(self, enabled=True):
         self.enabled = enabled
         opacity = 255 if self.enabled else 100
-        self.sprite.opacity = opacity
-        self.sprite_highlighted.opacity = opacity
+        if self.sprite:
+            self.sprite.opacity = opacity
+        if self.sprite_highlighted:    
+            self.sprite_highlighted.opacity = opacity
         if self.label:
-            self.label.color = (255, 255, 255, opacity)        
+            self.label.color = (255, 255, 255, opacity)    
 
     def disable(self, enabled=False):
         self.enable(enabled)
@@ -182,6 +184,9 @@ class AbstractInventory(Control):
     def __init__(self, parent, *args, **kwargs):
         super(AbstractInventory, self).__init__(parent, *args, **kwargs)
         self._current_index = 0
+        self.batch = pyglet.graphics.Batch()
+        self.group = pyglet.graphics.OrderedGroup(1)
+        self.labels_group = pyglet.graphics.OrderedGroup(2)
 
     @property
     def current_index(self):
@@ -198,9 +203,6 @@ class AbstractInventory(Control):
 class ItemSelector(AbstractInventory):
     def __init__(self, parent, player, world, *args, **kwargs):
         super(ItemSelector, self).__init__(parent, *args, **kwargs)
-        self.batch = pyglet.graphics.Batch()
-        self.group = pyglet.graphics.OrderedGroup(1)
-        self.labels_group = pyglet.graphics.OrderedGroup(2)
         self.amount_labels = []
         self.world = world
         self.player = player
@@ -343,9 +345,6 @@ class ItemSelector(AbstractInventory):
 class InventorySelector(AbstractInventory):
     def __init__(self, parent, player, world, *args, **kwargs):
         super(InventorySelector, self).__init__(parent, *args, **kwargs)
-        self.batch = pyglet.graphics.Batch()
-        self.group = pyglet.graphics.OrderedGroup(1)
-        self.amount_labels_group = pyglet.graphics.OrderedGroup(2)
         self.amount_labels = []
         self.parent = parent
         self.world = world
@@ -409,7 +408,7 @@ class InventorySelector(AbstractInventory):
                 str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
                 x=icon.x + 3, y=icon.y, anchor_x='left', anchor_y='bottom',
                 color=item.get_object().amount_label_color, batch=self.batch,
-                group=self.amount_labels_group)
+                group=self.labels_group)
             self.amount_labels.append(amount_label)
             self.icons.append(icon)
 
@@ -432,7 +431,7 @@ class InventorySelector(AbstractInventory):
                 str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
                 x=icon.x + 3, y=icon.y, anchor_x='left', anchor_y='bottom',
                 color=item.get_object().amount_label_color, batch=self.batch,
-                group=self.amount_labels_group)
+                group=self.labels_group)
             self.amount_labels.append(amount_label)
             self.icons.append(icon)
 
@@ -454,7 +453,7 @@ class InventorySelector(AbstractInventory):
                 str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
                 x=icon.x + 3, y=icon.y, anchor_x='left', anchor_y='bottom',
                 color=item.get_object().amount_label_color, batch=self.batch,
-                group=self.amount_labels_group)
+                group=self.labels_group)
             self.amount_labels.append(amount_label)
             self.icons.append(icon)
 
@@ -492,7 +491,7 @@ class InventorySelector(AbstractInventory):
                 str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
                 x=icon.x + 3, y=icon.y, anchor_x='left', anchor_y='bottom',
                 color=item.get_object().amount_label_color, batch=self.batch,
-                group=self.amount_labels_group)
+                group=self.labels_group)
             self.amount_labels.append(amount_label)
             self.icons.append(icon)
             if item.get_object().id > 0:
