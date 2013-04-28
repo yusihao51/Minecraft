@@ -220,8 +220,7 @@ class ControlsView(MenuView):
 
         G.config.set("Controls", active_button.id, pyglet.window.key.symbol_string(symbol))
 
-        with open(G.config_file, 'wb') as handle:
-            G.config.write(handle)
+        G.save_config()
 
 
 class TexturesView(MenuView):
@@ -260,6 +259,5 @@ class TexturesView(MenuView):
                 for block in G.BLOCKS_DIR.values():
                     block.__init__() #Reload textures
 
-                with open(G.config_file, 'wb') as handle:
-                    G.config.write(handle)
+                G.save_config()
                 button.toggled = False

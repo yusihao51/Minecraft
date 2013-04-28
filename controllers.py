@@ -1,7 +1,6 @@
 # Imports, sorted alphabetically.
 
 # Python packages
-from binascii import hexlify
 import socket
 import time
 import datetime
@@ -20,12 +19,10 @@ from pyglet.gl import *
 from blocks import *
 from cameras import Camera3D
 from client import PacketReceiver
-from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, CommandException
 import globals as G
 from gui import ItemSelector, InventorySelector, TextWidget
 from items import Tool
 from player import Player
-from savingsystem import world_exists, open_world, save_world, remove_world
 from skydome import Skydome
 import utils
 from utils import vec, sectorize, normalize
@@ -103,11 +100,6 @@ class MainMenuController(Controller):
         self.start_game = partial(self.switch_controller_class, GameController)
         self.exit_game = pyglet.app.exit
 
-    def new_game(self):
-        if G.DISABLE_SAVE:
-            remove_world(G.game_dir, G.SAVE_FILENAME)
-        return self.switch_controller_class(GameController) 
-
 class GameController(Controller):
     def __init__(self, window):
         super(GameController, self).__init__(window)
@@ -140,9 +132,6 @@ class GameController(Controller):
             if self.sector is None:
                 self.world.process_entire_queue()
             self.sector = sector
-
-        # TODO: Make the server do this
-        # self.world.content_update(dt)
 
     def update_player(self, dt):
         m = 8
@@ -587,4 +576,5 @@ class GameController(Controller):
             self.window.pop_handlers()
 
     def on_close(self):
+        G.save_config()
         self.world.packetreceiver.stop()  # Disconnect from the server so the process can close

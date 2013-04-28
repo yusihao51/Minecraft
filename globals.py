@@ -28,6 +28,7 @@ APP_NAME = 'pyCraftr'  # should I stay or should I go?
 DEBUG = False
 
 IP_ADDRESS = "neb.nebtown.info"  # The IP Address to connect to
+USERNAME = getpass.getuser()  # Default to system username
 
 #
 # Game modes
@@ -90,7 +91,6 @@ KEY_BINDINGS = dict(
 
 DISABLE_SAVE = True
 SAVE_FILENAME = None
-USERNAME = getpass.getuser()  # Default to system username
 
 #
 # Game engine
@@ -305,17 +305,26 @@ def get_or_update_config(section, option, default_value, conv=str, choices=()):
     config.set(section, option, str(user_value))
     return user_value
 
+def save_config():
+    config.set("General","username", USERNAME)
+    config.set("General","ip_address", IP_ADDRESS)
+    with open(config_file, 'wb') as handle:
+        config.write(handle)
 
 def initialize_config():
     #
     # General
     #
-    global DEBUG, FULLSCREEN, WINDOW_WIDTH, WINDOW_HEIGHT, DRAW_DISTANCE_CHOICE, DRAW_DISTANCE_CHOICES, DRAW_DISTANCE, MOTION_BLUR, TEXTURE_PACK
+    global DEBUG, FULLSCREEN, WINDOW_WIDTH, WINDOW_HEIGHT, DRAW_DISTANCE_CHOICE, DRAW_DISTANCE_CHOICES, DRAW_DISTANCE, MOTION_BLUR, TEXTURE_PACK, USERNAME, IP_ADDRESS
 
     general = 'General'
 
     DEBUG = get_or_update_config(
         general, 'debug', DEBUG, conv=bool)
+    USERNAME = get_or_update_config(
+        general, 'username', USERNAME, conv=str)
+    IP_ADDRESS = get_or_update_config(
+        general, 'ip_address', IP_ADDRESS, conv=str)
 
     #
     # Graphics
@@ -366,11 +375,6 @@ def initialize_config():
             config.set(controls, control, default_key_name)
         globals()[control.upper() + '_KEY'] = pyglet_key
 
-    #
-    # Save config file
-    #
-
-    with open(config_file, 'wb') as handle:
-        config.write(handle)
+    save_config()
 
 initialize_config()
