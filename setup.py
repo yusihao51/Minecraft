@@ -60,12 +60,7 @@ def download(url, local_file_name = None):
     local_name = url2name(url)
     req = urllib2.Request(url)
     r = urllib2.urlopen(req)
-    if r.info().has_key('Content-Disposition'):
-        # If the response has Content-Disposition, we take file name from it
-        local_name = r.info()['Content-Disposition'].split('filename=')[1]
-        if local_name[0] == '"' or local_name[0] == "'":
-            local_name = local_name[1:-1]
-    elif r.url != url:
+    if r.url != url:
         # if we were redirected, the real file name we take from the final URL
         local_name = url2name(r.url)
     if local_file_name:
@@ -75,7 +70,7 @@ def download(url, local_file_name = None):
     f.write(r.read())
     f.close()
 
-DEP_LIST_URL = ''
+DEP_LIST_URL = 'https://raw.github.com/boskee/Minecraft/master/dep_list'
 DEP_LIST_LOCAL = 'dep_list'
 PYGLET_LOCAL = 'pyglet.zip'
 AVBIN_LOCAL = 'avbin'
@@ -87,9 +82,9 @@ def fetch_dep_list():
 def install_dep():
     print('Downloading dependencies...')
     os.mkdir('downloads')
-    fetch_dep_list()
     top_dir = os.getcwd()
     os.chdir('downloads')
+    fetch_dep_list()
     dep_list = open(DEP_LIST_LOCAL)
     pyg_version = dep_list.readline().rstrip('\n')
     lib_url = dep_list.readline().rstrip('\n')
@@ -114,6 +109,7 @@ def install_dep():
         os.system('sudo sh ./' + AVBIN_LOCAL)
     else:
         os.system(AVBIN_LOCAL)
+    os.chdir(top_dir)
 
 install_dep()
 
