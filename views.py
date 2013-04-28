@@ -76,24 +76,23 @@ View.register_event_type('on_mouse_click')
 
 class MenuView(View):
     def setup(self):
-        self.group = pyglet.graphics.OrderedGroup(2)
-        self.buttons_group = pyglet.graphics.OrderedGroup(3)
+        self.group = pyglet.graphics.OrderedGroup(3)
         self.labels_group = pyglet.graphics.OrderedGroup(4)
 
         image = frame_image
         self.frame_rect = Rectangle(0, 0, image.width, image.height)
         self.background = image_sprite(backdrop, self.batch, 0)
         self.background.scale = max(float(self.controller.window.get_size()[0]) / self.background.width, float(self.controller.window.get_size()[1]) / self.background.height)
-        self.frame = image_sprite(image, self.batch, self.group)
+        self.frame = image_sprite(image, self.batch, 2)
 
     def Button(self, x=0, y=0, width=160, height=50, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, enabled=True):
-        button = Button(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.buttons_group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
+        button = Button(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
         if on_click:
             button.push_handlers(on_click=on_click)
         return button
 
     def ToggleButton(self, x=0, y=0, width=160, height=50, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, enabled=True):
-        button = ToggleButton(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.buttons_group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
+        button = ToggleButton(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
         if on_click:
             button.push_handlers(on_click=on_click)
         return button
