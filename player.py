@@ -27,7 +27,7 @@ class Player(Entity):
         super(Player, self).__init__(position, rotation, health=7,
                                      max_health=10, attack_power=2.0 / 3,
                                      attack_range=4)
-        self.inventory = Inventory()
+        self.inventory = Inventory(27)
         self.quick_slots = Inventory(9)
         self.armor = Inventory(4)
         self.flying = flying
@@ -35,6 +35,7 @@ class Player(Entity):
         self.strafe = [0, 0]
         self.dy = 0
         self.current_density = 1 # Current density of the block we're colliding with
+        self.last_sector = None
 
         initial_items = [torch_block, stick_item]
 

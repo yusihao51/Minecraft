@@ -63,26 +63,19 @@ def save_sector_to_string(blocks, secpos):
                     fstr += null2
     return fstr
 
-@performance_info
-def save_world(window, game_dir, world=None):
-    if world is None: world = "world"
-    if not os.path.exists(os.path.join(game_dir, world)):
-        os.makedirs(os.path.join(game_dir, world))
-
+def save_world(server, world):
     #Non block related data
-    save = (4,window.player, window.time_of_day, G.SEED)
-    pickle.dump(save, open(os.path.join(game_dir, world, "save.pkl"), "wb"))
+    #save = (4,window.player, window.time_of_day, G.SEED)
+    #pickle.dump(save, open(os.path.join(game_dir, world, "save.pkl"), "wb"))
+    for player in server.players:
+        save_player(player, world)
 
-    save_blocks(window.world, world)
+    save_blocks(server.world, world)
 
 def save_blocks(blocks, world):
     #blocks and sectors (window.world and window.world.sectors)
     #Saves individual sectors in region files (4x4x4 sectors)
-    if not os.path.exists(os.path.join(G.game_dir, world)):
-        os.makedirs(os.path.join(G.game_dir, world))
 
-    while blocks.generation_queue: #This must be empty or it'll save queued sectors as all air
-        blocks.dequeue_generation()
     for secpos in blocks.sectors: #TODO: only save dirty sectors
         if not blocks.sectors[secpos]:
             continue #Skip writing empty sectors
@@ -93,6 +86,11 @@ def save_blocks(blocks, world):
         with open(file, "rb+") as f: #Load up the region file
             f.seek(sector_to_offset(secpos)) #Seek to the sector offset
             f.write(save_sector_to_string(blocks, secpos))
+
+def save_player(player, world):
+    with open(os.path.join(G.game_dir, world, "players", player.username+".dat"), "wb") as f:
+        f.write("\1"+player.inventory)
+        #TODO: Save player position (and rotation?)
 
 
 def world_exists(game_dir, world=None):
@@ -138,6 +136,13 @@ def load_region(world, world_name=None, region=None, sector=None):
                                         position = x,y,z
                                         blocks[position] = BLOCKS_DIR[unpacked]
                                         sectors[(x/SECTOR_SIZE, y/SECTOR_SIZE, z/SECTOR_SIZE)].append(position)
+
+def load_player(player, world):
+    if os.path.lexists(os.path.join(G.game_dir, world, "players", player.username+".dat")):
+        with open(os.path.join(G.game_dir, world, "players", player.username+".dat"), "rb") as f:
+            version = struct.unpack("B", f.read(1))[0]
+            if version == 1:
+                player.inventory = f.read(4*40)
 
 @performance_info
 def open_world(gamecontroller, game_dir, world=None):

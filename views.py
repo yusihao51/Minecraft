@@ -2,6 +2,9 @@
 
 # Python packages
 import os
+import socket
+import subprocess
+import sys
 
 # Third-party packages
 import pyglet
@@ -11,8 +14,7 @@ from pyglet.gl import *
 # Modules from this project
 import globals as G
 from gui import frame_image, Rectangle, backdrop, Button, button_image, \
-    button_highlighted, ToggleButton
-from savingsystem import world_exists
+    button_highlighted, ToggleButton, TextWidget
 from utils import image_sprite
 
 
@@ -111,10 +113,16 @@ class MainMenuView(MenuView):
     def setup(self):
         MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
-        if G.DISABLE_SAVE and world_exists(G.game_dir, G.SAVE_FILENAME):
-            self.buttons.append(self.Button(caption="Continue...",on_click=self.controller.start_game))
 
-        self.buttons.append(self.Button(caption="New game",on_click=self.controller.new_game))
+        self.text_input = TextWidget(self.controller.window, G.IP_ADDRESS, 0, 0, width=160, height=20, font_name='Arial', batch=self.batch)
+        self.controller.window.push_handlers(self.text_input)
+        self.text_input.focus()
+        def text_input_callback(symbol, modifier):
+            G.IP_ADDRESS = self.text_input.text
+        self.text_input.push_handlers(key_released=text_input_callback)
+
+        self.buttons.append(self.Button(caption="Connect to Server",on_click=self.controller.start_game))
+        self.buttons.append(self.Button(caption="Launch Server",on_click=self.launch_server))
         self.buttons.append(self.Button(caption="Options...",on_click=self.controller.game_options))
         self.buttons.append(self.Button(caption="Exit game",on_click=self.controller.exit_game))
         self.label = Label(G.APP_NAME, font_name='ChunkFive Roman', font_size=50, x=width/2, y=self.frame.y + self.frame.height,
@@ -123,10 +131,17 @@ class MainMenuView(MenuView):
 
         self.on_resize(width, height)
 
+    def launch_server(self):
+        subprocess.Popen([sys.executable, "server.py"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        localip = [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][0]
+        self.text_input.text = localip
+        G.IP_ADDRESS = localip
+
     def on_resize(self, width, height):
         MenuView.on_resize(self, width, height)
-        self.label.y = self.frame.y + self.frame.height - 55
+        self.label.y = self.frame.y + self.frame.height - 15
         self.label.x = width / 2
+        self.text_input.resize(x=self.frame.x + (self.frame.width - self.text_input.width) / 2 + 5, y=self.frame.y + (self.frame.height) / 2 + 75, width=150)
 
 
 class OptionsView(MenuView):
@@ -136,11 +151,23 @@ class OptionsView(MenuView):
 
         texturepacks_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'texturepacks')
 
+        self.text_input = TextWidget(self.controller.window, G.USERNAME, 0, 0, width=160, height=20, font_name='Arial', batch=self.batch)
+        self.controller.window.push_handlers(self.text_input)
+        self.text_input.focus()
+        self.text_input.caret.mark = len(self.text_input.document.text)  # Don't select the whole text
+        def text_input_callback(symbol, modifier):
+            G.USERNAME = self.text_input.text
+        self.text_input.push_handlers(key_released=text_input_callback)
+
         self.buttons.append(self.Button(caption="Controls...", on_click=self.controller.controls))
-        self.buttons.append(self.Button(caption="Textures", on_click=self.controller.textures, enabled=os.path.exists(texturepacks_dir)))  
+        self.buttons.append(self.Button(caption="Textures", on_click=self.controller.textures, enabled=os.path.exists(texturepacks_dir)))
         self.buttons.append(self.Button(caption="Done", on_click=self.controller.main_menu))
 
         self.on_resize(width, height)
+
+    def on_resize(self, width, height):
+        MenuView.on_resize(self, width, height)
+        self.text_input.resize(x=self.frame.x + (self.frame.width - self.text_input.width) / 2 + 5, y=self.frame.y + (self.frame.height) / 2 + 75, width=150)
 
 
 class ControlsView(MenuView):

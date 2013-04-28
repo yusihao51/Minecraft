@@ -11,6 +11,7 @@ would lead to unpredictable consequences.
 # Python packages
 from ConfigParser import ConfigParser, NoSectionError, NoOptionError
 import argparse
+import getpass
 from math import pi
 import os
 
@@ -26,6 +27,7 @@ APP_NAME = 'pyCraftr'  # should I stay or should I go?
 
 DEBUG = False
 
+IP_ADDRESS = "neb.nebtown.info"  # The IP Address to connect to
 
 #
 # Game modes
@@ -75,7 +77,6 @@ TOGGLE_HUD_KEY = 'F3'
 SCREENCAP_KEY = 'F2'
 
 # Various
-SAVE_KEY = 'V'
 ESCAPE_KEY = 'ESCAPE'
 
 KEY_BINDINGS = dict(
@@ -89,7 +90,7 @@ KEY_BINDINGS = dict(
 
 DISABLE_SAVE = True
 SAVE_FILENAME = None
-
+USERNAME = getpass.getuser()  # Default to system username
 
 #
 # Game engine
@@ -179,7 +180,7 @@ MAX_FPS = 60  # Maximum frames per second.
 QUEUE_PROCESS_SPEED = 0.3 / MAX_FPS #Try shrinking this if chunk loading is laggy, higher loads chunks faster
 
 VISIBLE_SECTORS_RADIUS = 8
-DELOAD_SECTORS_RADIUS = 16
+DELOAD_SECTORS_RADIUS = 12
 
 DRAW_DISTANCE_CHOICES = {
     'short': 60.0,

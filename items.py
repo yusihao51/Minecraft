@@ -57,7 +57,7 @@ class Item(object):
         pass
 
 class ItemStack(object):
-    def __init__(self, type = 0, amount = 1, durability = -1, data = 0):
+    def __init__(self, type = 0, amount = 1, durability = -1):
         if amount < 1:
             amount = 1
         self.type = BlockID(type)
@@ -67,7 +67,6 @@ class ItemStack(object):
         else:
             self.durability = durability
         self.max_durability = get_item(type).durability if hasattr(get_item(type), 'durability') else -1
-        self.data = data
         self.max_stack_size = get_item(type).max_stack_size
 
     # for debugging

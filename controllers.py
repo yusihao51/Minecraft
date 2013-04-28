@@ -2,6 +2,8 @@
 
 # Python packages
 from binascii import hexlify
+import socket
+import time
 import datetime
 from functools import partial
 from itertools import imap
@@ -11,11 +13,13 @@ import os
 import random
 
 # Third-party packages
+import threading
 from pyglet.gl import *
 
 # Modules from this project
 from blocks import *
 from cameras import Camera3D
+from client import PacketReceiver
 from commands import CommandParser, COMMAND_HANDLED, COMMAND_ERROR_COLOR, CommandException
 import globals as G
 from gui import ItemSelector, InventorySelector, TextWidget
@@ -116,7 +120,12 @@ class GameController(Controller):
         self.hour_deg = 15.0
         self.clock = 6
 
+        self.back_to_main_menu = threading.Event()
+
     def update(self, dt):
+        if self.back_to_main_menu.isSet():
+            self.switch_controller_class(MainMenuController)
+            return
         self.update_sector(dt)
         self.update_player(dt)
         self.update_mouse(dt)
@@ -132,7 +141,8 @@ class GameController(Controller):
                 self.world.process_entire_queue()
             self.sector = sector
 
-        self.world.content_update(dt)
+        # TODO: Make the server do this
+        # self.world.content_update(dt)
 
     def update_player(self, dt):
         m = 8
@@ -197,8 +207,19 @@ class GameController(Controller):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     def setup(self):
+        try:
+            #Make sure the address they want to connect to works
+            ipport = G.IP_ADDRESS.split(":")
+            if len(ipport) == 1: ipport.append(1486)
+            sock = socket.socket()
+            sock.connect(tuple(ipport))
+        except socket.error as e:
+            print "Socket Error:", e
+            #Otherwise back to the main menu we go
+            return False
+
         self.init_gl()
-        
+
         sky_rotation = -20.0  # -20.0
         print 'loading sky'
         self.skydome = Skydome(
@@ -217,33 +238,23 @@ class GameController(Controller):
         self.polished = GLfloat(100.0)
         self.crack_batch = pyglet.graphics.Batch()
 
-        if G.DISABLE_SAVE and world_exists(G.game_dir, G.SAVE_FILENAME):
-            open_world(self, G.game_dir, G.SAVE_FILENAME)
-            self.world = World()
-        else:
-            seed = G.LAUNCH_OPTIONS.seed
-            if seed is None:
-                # Generates pseudo-random number.
-                try:
-                    seed = long(hexlify(os.urandom(16)), 16)
-                except NotImplementedError:
-                    import time
-                    seed = long(time.time() * 256)  # use fractional seconds
-                # Then convert it to a string so all seeds have the same type.
-                seed = str(seed)
+        #if G.DISABLE_SAVE and world_exists(G.game_dir, G.SAVE_FILENAME):
+        #    open_world(self, G.game_dir, G.SAVE_FILENAME)
 
-                print('No seed set, generated random seed: ' + seed)
-            G.SEED = seed
-            random.seed(seed)
+        self.world = World()
+        self.packetreceiver = PacketReceiver(self.world, self, sock)
+        self.world.packetreceiver = self.packetreceiver
+        self.packetreceiver.start()
 
-            with open(os.path.join(G.game_dir, 'seeds.txt'), 'a') as seeds:
-                seeds.write(datetime.datetime.now().strftime(
-                    'Seed used the %d %m %Y at %H:%M:%S\n'))
-                seeds.write('%s\n\n' % seed)
+        #Get our position from the server
+        self.packetreceiver.request_spawnpos()
+        #Since we don't know it yet, lets disable self.update, or we'll load the wrong chunks and fall
+        self.update_disabled = self.update
+        self.update = lambda dt: None
+        #We'll re-enable it when the server tells us where we should be
 
-            self.world = World()
-            self.player = Player((0,self.world.terraingen.get_height(0,0)+2,0), (-20, 0),
-                                 game_mode=G.GAME_MODE)
+        self.player = Player((0,0,0), (-20, 0),
+                                game_mode=G.GAME_MODE)
         print('Game mode: ' + self.player.game_mode)
         self.item_list = ItemSelector(self, self.player, self.world)
         self.inventory_list = InventorySelector(self, self.player, self.world)
@@ -262,7 +273,6 @@ class GameController(Controller):
                                    font_size=14,
                                    font_name='Arial',
                                    background_color=(64,64,64,200))
-        self.command_parser = CommandParser()
         self.camera = Camera3D(target=self.player)
         if G.HUD_ENABLED:
             self.label = pyglet.text.Label(
@@ -270,6 +280,8 @@ class GameController(Controller):
                 anchor_x='left', anchor_y='top', color=(255, 255, 255, 255))
         pyglet.clock.schedule_interval_soft(self.world.process_queue,
                                             1.0 / G.MAX_FPS)
+        pyglet.clock.schedule_interval_soft(self.world.hide_sectors, 1.0, self.player)
+        return True
 
     def update_time(self):
         """
@@ -329,10 +341,6 @@ class GameController(Controller):
         if self.crack:
             self.crack.delete()
         self.crack = None
-
-    def save_to_file(self):
-        if G.DISABLE_SAVE:
-            save_world(self, G.game_dir, G.SAVE_FILENAME)
 
     def on_mouse_press(self, x, y, button, modifiers):
         if self.window.exclusive:
@@ -408,8 +416,6 @@ class GameController(Controller):
     def on_key_press(self, symbol, modifiers):
         if symbol == G.TOGGLE_HUD_KEY:
             G.HUD_ENABLED = not G.HUD_ENABLED
-        elif symbol == G.SAVE_KEY:
-            self.save_to_file()
         elif symbol == G.INVENTORY_SORT_KEY:
             if self.last_key == symbol and not self.sorted:
                 self.player.quick_slots.sort()
@@ -525,11 +531,11 @@ class GameController(Controller):
 
     def draw_label(self):
         x, y, z = self.player.position
-        self.label.text = 'Time:%.1f Inaccurate FPS:%02d (%.2f, %.2f, %.2f) Blocks Shown: %d / %d sector_queue:%d'\
+        self.label.text = 'Time:%.1f Inaccurate FPS:%02d (%.2f, %.2f, %.2f) Blocks Shown: %d / %d sector_packets:%d'\
                           % (self.time_of_day if (self.time_of_day < 12.0)
                else (24.0 - self.time_of_day),
                pyglet.clock.get_fps(), x, y, z,
-               len(self.world._shown), len(self.world), len(self.world.sector_queue))
+               len(self.world._shown), len(self.world), len(self.world.sector_packets))
         self.label.draw()
 
     def write_line(self, text, **kwargs):
@@ -538,15 +544,9 @@ class GameController(Controller):
     def text_input_callback(self, symbol, modifier):
         if symbol == G.VALIDATE_KEY:
             txt = self.text_input.text.replace('\n', '')
-            try:
-                ex = self.command_parser.execute(txt, controller=self, user=self.player, world=self.world)
-                if ex != COMMAND_HANDLED:
-                    # Not a command
-                    self.write_line("> %s" % txt, color=(255, 255, 255, 255))
-                self.text_input.clear()
-            except CommandException, e:
-                error = str(e)
-                self.write_line(error, color=COMMAND_ERROR_COLOR)
+            self.text_input.clear()
+            if txt:
+                self.world.packetreceiver.send_chat(txt)
             return pyglet.event.EVENT_HANDLED
 
     def on_text_input_toggled(self):
@@ -569,19 +569,18 @@ class GameController(Controller):
             self.window.remove_handlers(self.text_input)
 
     def push_handlers(self):
-        self.setup()
-        self.window.push_handlers(self.camera)
-        self.window.push_handlers(self.player)
-        self.window.push_handlers(self)
-        self.window.push_handlers(self.item_list)
-        self.window.push_handlers(self.inventory_list)
+        if self.setup():
+            self.window.push_handlers(self.camera)
+            self.window.push_handlers(self.player)
+            self.window.push_handlers(self)
+            self.window.push_handlers(self.item_list)
+            self.window.push_handlers(self.inventory_list)
+        else:
+            self.switch_controller_class(MainMenuController)
 
     def pop_handlers(self):
-        self.window.pop_handlers()
-        self.window.pop_handlers()
-        self.window.pop_handlers()
-        self.window.pop_handlers()
-        self.window.pop_handlers()
+        while self.window._event_stack:
+            self.window.pop_handlers()
 
     def on_close(self):
-        self.save_to_file()
+        self.world.packetreceiver.stop()  # Disconnect from the server so the process can close

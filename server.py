@@ -1,45 +1,136 @@
-"""
-Prototype of a socket server that could be used both to parallelize computation
-and for multiplayer.
-
-The server is multithreaded and run as a daemon.
-The main thread listens to connections while a new thread is started for every
-request.
-
-For the moment, this is only a demonstration to show how entire sectors could
-be exchanged via sockets.  The client requests for a random sector.
-The server generates then returns it.
-"""
+# Python packages
+from _socket import SHUT_RDWR
+import socket
+import struct
+import time
 
 try:  # Python 3
     import socketserver
 except ImportError:  # Python 2
     import SocketServer as socketserver
-from collections import defaultdict
-import cPickle as pickle
-from random import randint
-import socket
-from sys import getsizeof
 import threading
+# Third-party packages
 
+# Modules from this project
 import globals as G
-from world import World
+from savingsystem import save_sector_to_string, save_blocks, save_world, load_player, save_player
+from world_server import WorldServer
+import blocks
+from commands import CommandParser, COMMAND_HANDLED, CommandException, COMMAND_ERROR_COLOR
+from utils import sectorize
 
-
+#This class is effectively a serverside "Player" object
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
+    inventory = "\0"*(4*40)  # Currently, is serialized to be 4 bytes * (27 inv + 9 quickbar + 4 armor) = 160 bytes
+    def sendpacket(self, size, packet):
+        self.request.sendall(struct.pack("i", 5+size)+packet)
+    def sendchat(self, txt, color=(255,255,255,255)):
+        self.sendpacket(len(txt) + 4, "\5" + txt + struct.pack("BBBB", *color))
+
     def handle(self):
-        world = self.server.world
-        data = self.request.recv(128)
-        sector = pickle.loads(data)
+        self.username = str(self.client_address)
+        print "Client connecting...", self.client_address
+        self.server.players[self.client_address] = self
+        try:
+            self.loop()
+        except socket.error as e:
+            if self.server._stop.isSet():
+                return  # Socket error while shutting down doesn't matter
+            if e[0] in (10053, 10054):
+                print "Client %s %s crashed." % (self.username, self.client_address)
+            else:
+                raise e
 
-        if sector not in world.sectors:
-            world.terraingen.generate_sector(sector)
+    def loop(self):
+        world, players = self.server.world, self.server.players
+        while 1:
+            byte = self.request.recv(1)
+            if not byte: return  # The client has disconnected intentionally
 
-        response = defaultdict(list)
-        for position in world.sectors[sector]:
-            response[world[position].id].append(position)
+            packettype = struct.unpack("B", byte)[0]  # Client Packet Type
+            if packettype == 1:  # Sector request
+                sector = struct.unpack("iii", self.request.recv(4*3))
 
-        self.request.sendall(pickle.dumps(response, pickle.HIGHEST_PROTOCOL))
+                if sector not in world.sectors:
+                    with world.server_lock:
+                        world.open_sector(sector)
+
+                if not world.sectors[sector]:
+                    #Empty sector, send packet 2
+                    self.sendpacket(12, "\2" + struct.pack("iii",*sector))
+                else:
+                    msg = struct.pack("iii",*sector) + save_sector_to_string(world, sector) + world.get_exposed_sector(sector)
+                    self.sendpacket(len(msg), "\1" + msg)
+            elif packettype == 3:  # Add block
+                positionbytes = self.request.recv(4*3)
+                blockbytes = self.request.recv(2)
+
+                position = struct.unpack("iii", positionbytes)
+                blockid = G.BLOCKS_DIR[blocks.BlockID(struct.unpack("BB", blockbytes))]
+                with world.server_lock:
+                    world.add_block(position, blockid, sync=False)
+
+                for address in players:
+                    if address is self.client_address: continue  # He told us, we don't need to tell him
+                    players[address].sendpacket(14, "\3" + positionbytes + blockbytes)
+            elif packettype == 4:  # Remove block
+                positionbytes = self.request.recv(4*3)
+
+                with world.server_lock:
+                    world.remove_block(struct.unpack("iii", positionbytes), sync=False)
+
+                for address in players:
+                    if address is self.client_address: continue  # He told us, we don't need to tell him
+                    players[address].sendpacket(12, "\4" + positionbytes)
+            elif packettype == 5:  # Receive chat text
+                txtlen = struct.unpack("i", self.request.recv(4))[0]
+                txt = "%s: %s" % (self.username, self.request.recv(txtlen))
+                try:
+                    #TODO: Enable the command parser again. This'll need some serverside controller object and player object
+                    #ex = self.command_parser.execute(txt, controller=self, user=self.player, world=self.world)
+                    ex = None
+                    if ex != COMMAND_HANDLED:
+                        # Not a command, send the chat to all players
+                        for address in players:
+                            players[address].sendchat(txt)
+                        print txt  # May as well let console see it too
+                except CommandException, e:
+                    self.sendchat(str(e), COMMAND_ERROR_COLOR)
+            elif packettype == 6:  # Player Inventory Update
+                self.inventory = self.request.recv(4*40)
+                #TODO: All player's inventories should be autosaved at a regular interval.
+            elif packettype == 255:  # Initial Login
+                txtlen = struct.unpack("i", self.request.recv(4))[0]
+                self.username = self.request.recv(txtlen)
+                load_player(self, "world")
+
+                for player in self.server.players.itervalues():
+                    player.sendchat("%s has connected." % self.username)
+                print "%s's username is %s" % (self.client_address, self.username)
+
+                position = (0,self.server.world.terraingen.get_height(0,0)+2,0)
+
+                #Send them the sector under their feet first so they don't fall
+                sector = sectorize(position)
+                if sector not in world.sectors:
+                    with world.server_lock:
+                        world.open_sector(sector)
+                msg = struct.pack("iii",*sector) + save_sector_to_string(world, sector) + world.get_exposed_sector(sector)
+                self.sendpacket(len(msg), "\1" + msg)
+
+                #Send them their spawn position
+                self.sendpacket(12, struct.pack("B",255) + struct.pack("iii", *position))
+                self.sendpacket(4*40, "\6" + self.inventory)
+            else:
+                print "Received unknown packettype", packettype
+    def finish(self):
+        print "Client disconnected,", self.client_address, self.username
+        try: del self.server.players[self.client_address]
+        except KeyError: pass
+        for player in self.server.players.itervalues():
+            player.sendchat("%s has disconnected." % self.username)
+
+        save_player(self, "world")
 
 
 class Server(socketserver.ThreadingTCPServer):
@@ -47,41 +138,79 @@ class Server(socketserver.ThreadingTCPServer):
 
     def __init__(self, *args, **kwargs):
         socketserver.ThreadingTCPServer.__init__(self, *args, **kwargs)
-        G.SEED = 'choose a seed here'
-        self.world = World()
+        self._stop = threading.Event()
 
+        self.world = WorldServer(self)
+        self.players = {}  # List of all players connected. {ipaddress: requesthandler,}
 
-def client(ip, port, message):
-    sock = socket.socket()
-    sock.connect((ip, port))
-    try:
-        sock.sendall(message)
-        print('Sent %d bits' % getsizeof(message))
-        response = sock.recv(16384)
-        print('Received %d bits: %s' % (getsizeof(response),
-                                        pickle.loads(response)))
-    finally:
-        sock.close()
+        self.command_parser = CommandParser()
+
+    def show_block(self, position, block):
+        blockid = block.id
+        for player in server.players.itervalues():
+            #TODO: Only if they're in range
+            player.sendpacket(14, "\3" + struct.pack("iiiBB", *(position+(blockid.main, blockid.sub))))
+
+    def hide_block(self, position):
+        for player in server.players.itervalues():
+            #TODO: Only if they're in range
+            player.sendpacket(12, "\4" + struct.pack("iii", *position))
 
 
 def start_server():
-    server = Server(('127.0.0.1', 1486), ThreadedTCPRequestHandler)
+    localip = [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][0]
+    server = Server((localip, 1486), ThreadedTCPRequestHandler)
     server_thread = threading.Thread(target=server.serve_forever)
-    server_thread.daemon = True
     server_thread.start()
+
+    threading.Thread(target=server.world.content_update, name="world_server.content_update").start()
+
     return server, server_thread
 
 
 if __name__ == '__main__':
+    #TODO: Enable server launch options
+    #In the mean time, manually set
+    setattr(G.LAUNCH_OPTIONS, "seed", None)
+    G.SAVE_FILENAME = "world"
+
     server, server_thread = start_server()
     print('Server loop running in thread: ' + server_thread.name)
 
     ip, port = server.server_address
+    print "Listening on",ip,port
 
-    for i in range(10):
-        sector = (randint(-20, 20), 3, randint(-20, 20))
-        # Requests this sector
-        client(ip, port, pickle.dumps(sector, pickle.HIGHEST_PROTOCOL))
-
-    server.shutdown()
-    print('Server closed')
+    helptext = "Available commands: " + ", ".join(["say", "stop", "save"])
+    while 1:
+        args = raw_input().replace(chr(13), "").split(" ")  # On some systems CR is appended, gotta remove that
+        cmd = args.pop(0)
+        if cmd == "say":
+            msg = "Server: %s" % " ".join(args)
+            print msg
+            for player in server.players.itervalues():
+                player.sendchat(msg, color=(180,180,180,255))
+        elif cmd == "help":
+            print helptext
+        elif cmd == "save":
+            print "Saving..."
+            save_world(server, "world")
+            print "Done saving"
+        elif cmd == "stop":
+            server._stop.set()
+            print "Disconnecting clients..."
+            for address in server.players:
+                server.players[address].request.shutdown(SHUT_RDWR)
+                server.players[address].request.close()
+            print "Shutting down socket..."
+            server.shutdown()
+            print "Saving..."
+            save_world(server, "world")
+            print "Goodbye"
+            break
+        else:
+            print "Unknown command '%s'." % cmd, helptext
+    while len(threading.enumerate()) > 1:
+        threads = threading.enumerate()
+        threads.remove(threading.current_thread())
+        print "Waiting on these threads to close:", threads
+        time.sleep(1)
