@@ -342,10 +342,6 @@ class GameController(Controller):
             self.crack.delete()
         self.crack = None
 
-    def save_to_file(self):
-        if G.DISABLE_SAVE:
-            save_world(self, G.game_dir, G.SAVE_FILENAME)
-
     def on_mouse_press(self, x, y, button, modifiers):
         if self.window.exclusive:
             vector = self.player.get_sight_vector()
@@ -420,8 +416,6 @@ class GameController(Controller):
     def on_key_press(self, symbol, modifiers):
         if symbol == G.TOGGLE_HUD_KEY:
             G.HUD_ENABLED = not G.HUD_ENABLED
-        elif symbol == G.SAVE_KEY:
-            self.save_to_file()
         elif symbol == G.INVENTORY_SORT_KEY:
             if self.last_key == symbol and not self.sorted:
                 self.player.quick_slots.sort()

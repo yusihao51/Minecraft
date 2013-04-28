@@ -7,9 +7,10 @@ from warnings import warn
 # Third-party packages
 
 # Modules from this project
-import blocks
+from blocks import BlockID
 import globals as G
 from globals import BLOCKS_DIR, SECTOR_SIZE
+from items import ItemStack
 from savingsystem import null2, structuchar2, sector_to_blockpos
 
 class PacketReceiver(Thread):
@@ -28,9 +29,9 @@ class PacketReceiver(Thread):
             if e[0] in (10053, 10054):
                 #TODO: GUI tell the client they were disconnected
                 print "Disconnected from server."
-                self.controller.back_to_main_menu.set()
             else:
                 raise e
+        self.controller.back_to_main_menu.set()
 
     def loop(self):
         packetcache, packetsize = "", 0
@@ -63,13 +64,16 @@ class PacketReceiver(Thread):
                     with self.lock:
                         main_thread((packetid,
                                      (struct.unpack("iii", packet[:12]),
-                                     BLOCKS_DIR[blocks.BlockID(struct.unpack("BB", packet[12:]))])))
+                                     BLOCKS_DIR[BlockID(struct.unpack("BB", packet[12:]))])))
                 elif packetid == 4:  # Remove Block
                     with self.lock:
                         main_thread((packetid, struct.unpack("iii", packet)))
                 elif packetid == 5:  # Print Chat
                     with self.lock:
                         main_thread((packetid, (packet[:-4], struct.unpack("BBBB", packet[-4:]))))
+                elif packetid == 6:  # Inventory
+                    with self.lock:
+                        main_thread((packetid, packet))
                 elif packetid == 255:  # Spawn Position
                     with self.lock:
                         main_thread((packetid, struct.unpack("iii", packet)))
@@ -112,6 +116,22 @@ class PacketReceiver(Thread):
             self.world._remove_block(packet)
         elif packetid == 5:  # Chat Print
             self.controller.write_line(packet[0], color=packet[1])
+        elif packetid == 6:  # Inventory
+            player = self.controller.player
+            caret = 0
+            for inventory in (player.quick_slots.slots, player.inventory.slots, player.armor.slots):
+                for i in xrange(len(inventory)):
+                    id_main, id_sub, amount = struct.unpack("HBB", packet[caret:caret+4])
+                    caret += 4
+                    if id_main == 0: continue
+                    durability = -1
+                    if id_main >= G.ITEM_ID_MIN and (id_main, id_sub) not in G.ITEMS_DIR:
+                        #The subid must be durability
+                        durability = id_sub * G.ITEMS_DIR[(id_main, 0)].max_durability / 255
+                        id_sub = 0
+                    inventory[i] = ItemStack(type=BlockID(id_main, id_sub), amount=amount, durability=durability)
+            self.controller.item_list.update_items()
+            self.controller.inventory_list.update_items()
         elif packetid == 255:  # Spawn Position
             self.controller.player.position = packet
             #Now that we know where the player should be, we can enable .update again
@@ -127,6 +147,15 @@ class PacketReceiver(Thread):
         self.sock.sendall("\5"+struct.pack("i", len(msg))+msg)
     def request_spawnpos(self):
         self.sock.sendall(struct.pack("B", 255)+struct.pack("i",len(G.USERNAME)) + G.USERNAME)
+    def send_player_inventory(self):
+        packet = ""
+        for item in (self.controller.player.quick_slots.slots + self.controller.player.inventory.slots + self.controller.player.armor.slots):
+            if item:
+                packet += struct.pack("HBB", item.type.main, item.type.sub if item.max_durability == -1 else item.durability * 255 / item.max_durability, item.amount)
+            else:
+                packet += "\0\0\0\0"
+        self.sock.sendall("\6"+packet)
+
 
     def stop(self):
         self._stop.set()

@@ -27,7 +27,7 @@ class Player(Entity):
         super(Player, self).__init__(position, rotation, health=7,
                                      max_health=10, attack_power=2.0 / 3,
                                      attack_range=4)
-        self.inventory = Inventory()
+        self.inventory = Inventory(27)
         self.quick_slots = Inventory(9)
         self.armor = Inventory(4)
         self.flying = flying

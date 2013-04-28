@@ -26,6 +26,9 @@ class WorldServer(dict):
         super(WorldServer, self).__init__()
         import savingsystem #This module doesn't like being imported at modulescope
         self.savingsystem = savingsystem
+        if not os.path.lexists(os.path.join(G.game_dir, "world", "players")):
+            os.makedirs(os.path.join(G.game_dir, "world", "players"))
+
         self.sectors = defaultdict(list)
         self.exposed_cache = dict()
 

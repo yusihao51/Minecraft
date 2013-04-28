@@ -77,7 +77,6 @@ TOGGLE_HUD_KEY = 'F3'
 SCREENCAP_KEY = 'F2'
 
 # Various
-SAVE_KEY = 'V'
 ESCAPE_KEY = 'ESCAPE'
 
 KEY_BINDINGS = dict(
@@ -91,7 +90,7 @@ KEY_BINDINGS = dict(
 
 DISABLE_SAVE = True
 SAVE_FILENAME = None
-USERNAME = getpass.getuser()  # Default to system username, TODO: Load from config
+USERNAME = getpass.getuser()  # Default to system username
 
 #
 # Game engine

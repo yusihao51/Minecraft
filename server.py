@@ -3,8 +3,6 @@ from _socket import SHUT_RDWR
 import socket
 import struct
 import time
-from commands import CommandParser, COMMAND_HANDLED, CommandException, COMMAND_ERROR_COLOR
-from utils import sectorize
 
 try:  # Python 3
     import socketserver
@@ -15,12 +13,15 @@ import threading
 
 # Modules from this project
 import globals as G
-from savingsystem import save_sector_to_string, save_blocks
+from savingsystem import save_sector_to_string, save_blocks, save_world, load_player, save_player
 from world_server import WorldServer
 import blocks
+from commands import CommandParser, COMMAND_HANDLED, CommandException, COMMAND_ERROR_COLOR
+from utils import sectorize
 
 #This class is effectively a serverside "Player" object
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
+    inventory = "\0"*(4*40)  # Currently, is serialized to be 4 bytes * (27 inv + 9 quickbar + 4 armor) = 160 bytes
     def sendpacket(self, size, packet):
         self.request.sendall(struct.pack("i", 5+size)+packet)
     def sendchat(self, txt, color=(255,255,255,255)):
@@ -95,9 +96,14 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                         print txt  # May as well let console see it too
                 except CommandException, e:
                     self.sendchat(str(e), COMMAND_ERROR_COLOR)
+            elif packettype == 6:  # Player Inventory Update
+                self.inventory = self.request.recv(4*40)
+                #TODO: All player's inventories should be autosaved at a regular interval.
             elif packettype == 255:  # Initial Login
                 txtlen = struct.unpack("i", self.request.recv(4))[0]
                 self.username = self.request.recv(txtlen)
+                load_player(self, "world")
+
                 for player in self.server.players.itervalues():
                     player.sendchat("%s has connected." % self.username)
                 print "%s's username is %s" % (self.client_address, self.username)
@@ -114,6 +120,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
                 #Send them their spawn position
                 self.sendpacket(12, struct.pack("B",255) + struct.pack("iii", *position))
+                self.sendpacket(4*40, "\6" + self.inventory)
             else:
                 print "Received unknown packettype", packettype
     def finish(self):
@@ -122,6 +129,9 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         except KeyError: pass
         for player in self.server.players.itervalues():
             player.sendchat("%s has disconnected." % self.username)
+
+        save_player(self, "world")
+
 
 class Server(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
@@ -170,7 +180,7 @@ if __name__ == '__main__':
     ip, port = server.server_address
     print "Listening on",ip,port
 
-    helptext = "Available commands: " + ", ".join(["say", "stop"])
+    helptext = "Available commands: " + ", ".join(["say", "stop", "save"])
     while 1:
         args = raw_input().replace(chr(13), "").split(" ")  # On some systems CR is appended, gotta remove that
         cmd = args.pop(0)
@@ -181,6 +191,10 @@ if __name__ == '__main__':
                 player.sendchat(msg, color=(180,180,180,255))
         elif cmd == "help":
             print helptext
+        elif cmd == "save":
+            print "Saving..."
+            save_world(server, "world")
+            print "Done saving"
         elif cmd == "stop":
             server._stop.set()
             print "Disconnecting clients..."
@@ -190,7 +204,7 @@ if __name__ == '__main__':
             print "Shutting down socket..."
             server.shutdown()
             print "Saving..."
-            save_blocks(server.world, "world")
+            save_world(server, "world")
             print "Goodbye"
             break
         else:

@@ -510,6 +510,8 @@ class InventorySelector(AbstractInventory):
             elif self.crafting_outcome:
                 self.remove_crafting_outcome()
 
+        self.world.packetreceiver.send_player_inventory()  # Tell the server.
+
     def get_current_block_item_and_amount(self):
         item = self.player.inventory.at(self.current_index)
         if item:
@@ -750,7 +752,7 @@ class InventorySelector(AbstractInventory):
                 if item.amount > 1:
                     split_amount = int(ceil(item.amount / 2))
                     item.change_amount(split_amount * -1)
-                    new_item = ItemStack(item.type, split_amount, item.durability, item.data)
+                    new_item = ItemStack(item.type, split_amount, item.durability)
                     self.set_selected_item(new_item)
                     new_stack = True
 
