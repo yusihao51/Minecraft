@@ -595,9 +595,9 @@ class ColumnQuartzBlock(HardBlock):
     digging_tool = G.PICKAXE
 
 class QuartzBrickBlock(HardBlock):
-    top_texture = 13, 0
-    bottom_texture = 13, 0
-    side_texture = 13, 0
+    top_texture = 9, 7
+    bottom_texture = 9, 7
+    side_texture = 9, 7
     id = 155,3
     hardness = 2
     name = "Quartz Brick"

@@ -147,7 +147,7 @@ G.recipes.add_recipe(["##", "##"], {'#': stone_block},
 G.recipes.add_recipe(["###", "# #", "###"], {'#': cobble_block},
                    ItemStack(furnace_block.id, amount=1))
 G.recipes.add_recipe(["##", "##"], {'#': quartz_block},
-                   ItemStack(quartzbrick_block.id, amount=2))
+                   ItemStack(quartzbrick_block.id, amount=4))
 G.recipes.add_recipe(["#", "#"], {'#': quartz_block},
                    ItemStack(quartzcolumn_block.id, amount=2))
 G.recipes.add_recipe(["#", "#", "#"], {'#': quartz_block},
