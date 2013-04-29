@@ -25,6 +25,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     def sendpacket(self, size, packet):
         self.request.sendall(struct.pack("i", 5+size)+packet)
     def sendchat(self, txt, color=(255,255,255,255)):
+        txt = txt.encode('utf-8')
         self.sendpacket(len(txt) + 4, "\5" + txt + struct.pack("BBBB", *color))
 
     def handle(self):
@@ -84,7 +85,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     players[address].sendpacket(12, "\4" + positionbytes)
             elif packettype == 5:  # Receive chat text
                 txtlen = struct.unpack("i", self.request.recv(4))[0]
-                txt = "%s: %s" % (self.username, self.request.recv(txtlen))
+                txt = "%s: %s" % (self.username, self.request.recv(txtlen).decode('utf-8'))
                 try:
                     #TODO: Enable the command parser again. This'll need some serverside controller object and player object
                     #ex = self.command_parser.execute(txt, controller=self, user=self.player, world=self.world)
@@ -101,7 +102,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 #TODO: All player's inventories should be autosaved at a regular interval.
             elif packettype == 255:  # Initial Login
                 txtlen = struct.unpack("i", self.request.recv(4))[0]
-                self.username = self.request.recv(txtlen)
+                self.username = self.request.recv(txtlen).decode('utf-8')
                 load_player(self, "world")
 
                 for player in self.server.players.itervalues():

@@ -71,7 +71,7 @@ class PacketReceiver(Thread):
                         main_thread((packetid, struct.unpack("iii", packet)))
                 elif packetid == 5:  # Print Chat
                     with self.lock:
-                        main_thread((packetid, (packet[:-4], struct.unpack("BBBB", packet[-4:]))))
+                        main_thread((packetid, (packet[:-4].decode('utf-8'), struct.unpack("BBBB", packet[-4:]))))
                 elif packetid == 6:  # Inventory
                     with self.lock:
                         main_thread((packetid, packet))
@@ -148,9 +148,11 @@ class PacketReceiver(Thread):
     def remove_block(self, position):
         self.sock.sendall("\4"+struct.pack("iii", *position))
     def send_chat(self, msg):
+        msg = msg.encode('utf-8')
         self.sock.sendall("\5"+struct.pack("i", len(msg))+msg)
     def request_spawnpos(self):
-        self.sock.sendall(struct.pack("B", 255)+struct.pack("i",len(G.USERNAME)) + G.USERNAME)
+        name = G.USERNAME.encode('utf-8')
+        self.sock.sendall(struct.pack("B", 255)+struct.pack("i",len(name)) + name)
     def send_player_inventory(self):
         packet = ""
         for item in (self.controller.player.quick_slots.slots + self.controller.player.inventory.slots + self.controller.player.armor.slots):
