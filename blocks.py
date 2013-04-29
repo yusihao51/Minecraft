@@ -1502,14 +1502,15 @@ class DesertGrassBlock(TallGrassBlock):
     density = 0.3
     id = 31,1
     name = "Desert Grass"
-    texture_name = 'deadbush'
+    texture_name = 'wg_red_bush'
+
 
 class DeadBushBlock(TallGrassBlock):
     side_texture = 10, 7
     density = 0.3
     id = 31,0
     name = "Dead bush"
-    texture_name = 'wg_red_desert'
+    texture_name = 'deadbush'
 
 
 class DiamondBlock(HardBlock):
