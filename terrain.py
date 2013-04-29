@@ -532,7 +532,6 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
             # We pass these as local variables for performance and readability.
             # Functions:
             init_block = world.init_block
-            generate_vegetation = world.generate_vegetation
             get_height = self.get_height
             choose = self.rand.choice
             rand_random = self.rand.random
@@ -604,7 +603,7 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
                             elif veget_choice < GRASS_CHANCE:
                                 veget_blocks = world_type_grass
                             if veget_blocks is not None:
-                                generate_vegetation((x, y + 1, z),
+                                world.generate_vegetation((x, y + 1, z),
                                                     choose(veget_blocks))
 
                             if main_block == sand_block:

@@ -22,6 +22,8 @@ cdef class World(dict):
         set before_set
         spreading_mutable_blocks
         double spreading_time
+        object packetreceiver
+        object sector_packets
 
     cpdef object add_block(self, tuple position, object block,
                            bint sync=?, bint force=?)
@@ -42,9 +44,6 @@ cdef class World(dict):
     @cython.locals(other_position=tuple)
     cpdef bint has_neighbors(self, tuple position,
                              set is_in=?,bint diagonals=?, tuple faces=?)
-
-    @cython.locals(x=float, y=float, z=float, above_position=tuple)
-    cpdef object check_spreading_mutable(self, tuple position, object block)
 
     @cython.locals(other_position=tuple)
     cpdef bint is_exposed(self, tuple position)
@@ -67,12 +66,8 @@ cdef class World(dict):
                    count=int, batch=object)
     cpdef object _show_block(self, tuple position, object block)
 
-    cpdef object show_sector(self, tuple sector, bint immediate=?)
-
     @cython.locals(position=tuple)
     cpdef object _show_sector(self, tuple sector)
-
-    cpdef object hide_sector(self, tuple sector, bint immediate=?)
 
     @cython.locals(position=tuple)
     cpdef object _hide_sector(self, tuple sector)
@@ -95,10 +90,3 @@ cdef class World(dict):
     cpdef object process_queue(self, double dt)
 
     cpdef object process_entire_queue(self)
-
-    @cython.locals(position=tuple)
-    cpdef object content_update(self, double dt)
-
-    @cython.locals(x=int, y=int, z=int)
-    cpdef object generate_vegetation(self, tuple position,
-                                     type vegetation_class)
