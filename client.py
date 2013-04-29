@@ -117,9 +117,10 @@ class PacketReceiver(Thread):
             self.world._remove_block(packet)
         elif packetid == 5:  # Chat Print
             self.controller.write_line(packet[0], color=packet[1])
-            self.controller.chat_box.visible = True
-            self.controller.chat_box.disable_timer = True
-            pyglet.clock.schedule_once(self.controller.hide_chat_box, G.CHAT_FADE_TIME)
+            if not self.controller.text_input.visible:
+                self.controller.chat_box.visible = True
+                pyglet.clock.unschedule(self.controller.hide_chat_box)
+                pyglet.clock.schedule_once(self.controller.hide_chat_box, G.CHAT_FADE_TIME)
         elif packetid == 6:  # Inventory
             player = self.controller.player
             caret = 0
