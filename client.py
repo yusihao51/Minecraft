@@ -75,6 +75,9 @@ class PacketReceiver(Thread):
                 elif packetid == 6:  # Inventory
                     with self.lock:
                         main_thread((packetid, packet))
+                elif packetid == 7:  # User list
+                    with self.lock:
+                        main_thread((packetid, [username.decode('utf-8') for username in packet.split('\7')[:-1]]))
                 elif packetid == 255:  # Spawn Position
                     with self.lock:
                         main_thread((packetid, struct.unpack("iii", packet)))
@@ -137,6 +140,8 @@ class PacketReceiver(Thread):
                     inventory[i] = ItemStack(type=BlockID(id_main, id_sub), amount=amount, durability=durability)
             self.controller.item_list.update_items()
             self.controller.inventory_list.update_items()
+        elif packetid == 7:
+            print(packet)
         elif packetid == 255:  # Spawn Position
             self.controller.player.position = packet
             #Now that we know where the player should be, we can enable .update again

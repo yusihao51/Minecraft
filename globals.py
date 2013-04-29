@@ -306,7 +306,7 @@ def get_or_update_config(section, option, default_value, conv=str, choices=()):
     return user_value
 
 def save_config():
-    config.set("General","username", USERNAME)
+    config.set("General","username", USERNAME.encode('utf-8'))
     config.set("General","ip_address", IP_ADDRESS)
     with open(config_file, 'wb') as handle:
         config.write(handle)
@@ -323,6 +323,7 @@ def initialize_config():
         general, 'debug', DEBUG, conv=bool)
     USERNAME = get_or_update_config(
         general, 'username', USERNAME, conv=str)
+    USERNAME = USERNAME.decode('utf-8')
     IP_ADDRESS = get_or_update_config(
         general, 'ip_address', IP_ADDRESS, conv=str)
 

@@ -111,6 +111,13 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
                 position = (0,self.server.world.terraingen.get_height(0,0)+2,0)
 
+                # Send user list
+                userlist = '\7'
+                for player in self.server.players.itervalues():
+                    userlist += player.username.encode('utf-8') + '\7'
+                for player in self.server.players.itervalues():
+                    player.sendpacket(len(userlist) - 1, userlist)
+
                 #Send them the sector under their feet first so they don't fall
                 sector = sectorize(position)
                 if sector not in world.sectors:
@@ -130,7 +137,12 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         except KeyError: pass
         for player in self.server.players.itervalues():
             player.sendchat("%s has disconnected." % self.username)
-
+        # Send user list
+        userlist = '\7'
+        for player in self.server.players.itervalues():
+            userlist += player.username.encode('utf-8') + '\7'
+        for player in self.server.players.itervalues():
+            player.sendpacket(len(userlist) - 1, userlist)
         save_player(self, "world")
 
 
