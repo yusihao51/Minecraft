@@ -36,6 +36,7 @@ class Player(Entity):
         self.dy = 0
         self.current_density = 1 # Current density of the block we're colliding with
         self.last_sector = None
+        self.last_damage_block = 0, 100, 0 # dummy temp value
 
         initial_items = [torch_block, stick_item]
 
@@ -195,6 +196,19 @@ class Player(Entity):
                         #new_pos = (x, y + current_height, z)
                         #self.position = new_pos
                         continue
+
+                    if parent.world[op].player_damage > 0:
+                        if self.last_damage_block != np:
+                            # this keeps a player from taking the same damage over and over...
+                            self.change_health( - parent.world[op].player_damage)
+                            parent.item_list.update_health()
+                            self.last_damage_block = np
+                            continue
+                        else:
+                            #do nothing
+                            continue
+
+
                     p[i] -= (d - pad) * face[i]
                     if face == (0, -1, 0) or face == (0, 1, 0):
                         # jump damage

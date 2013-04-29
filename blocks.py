@@ -141,6 +141,7 @@ class Block(object):
                # when creating a new "official" block.
 
     _drop_id = None
+    player_damage = 0
 
     @property
     def drop_id(self):
@@ -707,6 +708,7 @@ class CactusBlock(Block):
     transparent = True
     texture_name = "cactus_top","cactus_bottom","cactus_side"
     hardness = 2
+    player_damage = 1
     id = 81,0
     name = "Cactus"
 
@@ -719,6 +721,7 @@ class TallCactusBlock(Block):
     texture_name = "cactus_top","cactus_bottom","cactus_side"
     transparent = True
     hardness = 1
+    player_damage = 1
     id = 81,1  # not a real MC block, so the last possible # i think.
     name = "Thin Cactus"
 
