@@ -71,7 +71,7 @@ class PacketReceiver(Thread):
                         main_thread((packetid, struct.unpack("iii", packet)))
                 elif packetid == 5:  # Print Chat
                     with self.lock:
-                        main_thread((packetid, (packet[:-4], struct.unpack("BBBB", packet[-4:]))))
+                        main_thread((packetid, (packet[:-4].decode('utf-8'), struct.unpack("BBBB", packet[-4:]))))
                 elif packetid == 6:  # Inventory
                     with self.lock:
                         main_thread((packetid, packet))
@@ -117,9 +117,10 @@ class PacketReceiver(Thread):
             self.world._remove_block(packet)
         elif packetid == 5:  # Chat Print
             self.controller.write_line(packet[0], color=packet[1])
-            self.controller.chat_box.visible = True
-            self.controller.chat_box.disable_timer = True
-            pyglet.clock.schedule_once(self.controller.hide_chat_box, G.CHAT_FADE_TIME)
+            if not self.controller.text_input.visible:
+                self.controller.chat_box.visible = True
+                pyglet.clock.unschedule(self.controller.hide_chat_box)
+                pyglet.clock.schedule_once(self.controller.hide_chat_box, G.CHAT_FADE_TIME)
         elif packetid == 6:  # Inventory
             player = self.controller.player
             caret = 0
@@ -148,9 +149,11 @@ class PacketReceiver(Thread):
     def remove_block(self, position):
         self.sock.sendall("\4"+struct.pack("iii", *position))
     def send_chat(self, msg):
+        msg = msg.encode('utf-8')
         self.sock.sendall("\5"+struct.pack("i", len(msg))+msg)
     def request_spawnpos(self):
-        self.sock.sendall(struct.pack("B", 255)+struct.pack("i",len(G.USERNAME)) + G.USERNAME)
+        name = G.USERNAME.encode('utf-8')
+        self.sock.sendall(struct.pack("B", 255)+struct.pack("i",len(name)) + name)
     def send_player_inventory(self):
         packet = ""
         for item in (self.controller.player.quick_slots.slots + self.controller.player.inventory.slots + self.controller.player.armor.slots):
