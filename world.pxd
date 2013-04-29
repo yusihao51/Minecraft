@@ -28,9 +28,13 @@ cdef class World(dict):
     cpdef object add_block(self, tuple position, object block,
                            bint sync=?, bint force=?)
 
-    @cython.locals(sector_position=tuple)
+    cpdef object _add_block(self, tuple position, object block)
+
     cpdef object remove_block(self, object player, tuple position,
                               bint sync=?, bint sound=?)
+
+    @cython.locals(sector_position=tuple)
+    cpdef object _remove_block(self, tuple position, bint sync=?)
 
     # Generators are not handled by Cython for the moment.
     # @cython.locals(x=float, y=float, z=float,
@@ -38,14 +42,14 @@ cdef class World(dict):
     # cpdef object neighbors_iterator(self, tuple position,
     #                                 tuple relative_neighbors_positions=?)
 
-    @cython.locals(other_position=tuple)
+    @cython.locals(other_position=tuple, faces=tuple)
     cpdef object check_neighbors(self, tuple position)
 
     @cython.locals(other_position=tuple)
     cpdef bint has_neighbors(self, tuple position,
                              set is_in=?,bint diagonals=?, tuple faces=?)
 
-    @cython.locals(other_position=tuple)
+    @cython.locals(other_position=tuple, x=double, y=double, z=double, fx=int, fy=int, fz=int)
     cpdef bint is_exposed(self, tuple position)
 
     @cython.locals(m=int, _=int,
@@ -90,3 +94,6 @@ cdef class World(dict):
     cpdef object process_queue(self, double dt)
 
     cpdef object process_entire_queue(self)
+
+    @cython.locals(deload=int, plysector=tuple, px=double, py=double, pz=double, x=int, y=int, z=int)
+    cpdef object hide_sectors(self, double dt, object player)
