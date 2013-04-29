@@ -65,7 +65,7 @@ class PacketReceiver(Thread):
                     with self.lock:
                         main_thread((packetid,
                                      (struct.unpack("iii", packet[:12]),
-                                     BLOCKS_DIR[BlockID(struct.unpack("BB", packet[12:]))])))
+                                     BLOCKS_DIR[struct.unpack("BB", packet[12:])])))
                 elif packetid == 4:  # Remove Block
                     with self.lock:
                         main_thread((packetid, struct.unpack("iii", packet)))

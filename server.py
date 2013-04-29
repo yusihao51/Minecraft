@@ -66,7 +66,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 blockbytes = self.request.recv(2)
 
                 position = struct.unpack("iii", positionbytes)
-                blockid = G.BLOCKS_DIR[blocks.BlockID(struct.unpack("BB", blockbytes))]
+                blockid = G.BLOCKS_DIR[struct.unpack("BB", blockbytes)]
                 with world.server_lock:
                     world.add_block(position, blockid, sync=False)
 

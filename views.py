@@ -132,7 +132,10 @@ class MainMenuView(MenuView):
         self.on_resize(width, height)
 
     def launch_server(self):
-        subprocess.Popen([sys.executable, "server.py"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        if os.name == 'nt':
+            subprocess.Popen([sys.executable, "server.py"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        else:
+            subprocess.Popen([sys.executable, "server.py"])
         localip = [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][0]
         self.text_input.text = localip
         G.IP_ADDRESS = localip
