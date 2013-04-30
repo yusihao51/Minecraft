@@ -15,10 +15,14 @@ __all__ = (
 )
 
 
-def get_texture_coordinates(x, y, height, width):
+def get_texture_coordinates(x, y, height, width, texture_height, texture_width):
     if x == -1 and y == -1:
         return ()
-    return x, y, x + width, y, x + width, y + height, x, y + width
+    x = x / float(texture_width)
+    y = y / float(texture_height)
+    height = height / float(texture_height)
+    width = width / float(texture_width)
+    return x, y, x + width, y, x + width, y + height, x, y + height
 
 # not good at calculating coordinate things...there may be something wrong...
 class BoxModel(object):
@@ -27,20 +31,32 @@ class BoxModel(object):
     texture_data = None
     display = None
 
-    def __init__(self, position1, position2, filename):
+    def __init__(self, position, length, width, height, filename, pixel_length, pixel_width, pixel_height, texture_height, texture_width):
         self.image = pyglet.image.load(filename)
 
-        self.xpos1, self.ypos1, self.zpos1 = position1
-        self.xpos2, self.ypos2, self.zpos2 = position2
+        self.xpos1, self.ypos1, self.zpos1 = position
+        self.xpos2 = self.xpos1 + length
+        self.ypos2 = self.ypos1 + height
+        self.zpos2 = self.zpos1 + width 
+        self.height, self.width, self.height = height, width, height
+        self.pixel_height, self.pixel_width, self.pixel_height = pixel_height, pixel_width, pixel_height
+        self.texture_height = texture_height
+        self.texture_width = texture_width
 
-        self.texture_data = []
-        self.texture_data += get_texture_coordinates(self.textures[0][0], self.textures[0][-1], self.xpos2 - self.xpos1, self.zpos2 - self.zpos1)
-        self.texture_data += get_texture_coordinates(self.textures[1][0], self.textures[1][-1], self.xpos2 - self.xpos1, self.zpos2 - self.zpos1)
-        self.texture_data += get_texture_coordinates(self.textures[2][0], self.textures[2][-1], self.ypos2 - self.ypos1, self.zpos2 - self.zpos1)
-        self.texture_data += get_texture_coordinates(self.textures[3][0], self.textures[3][-1], self.ypos2 - self.ypos1, self.zpos2 - self.zpos1)
-        self.texture_data += get_texture_coordinates(self.textures[4][0], self.textures[4][-1], self.ypos2 - self.ypos1, self.xpos2 - self.xpos1)
-        self.texture_data += get_texture_coordinates(self.textures[-1][0], self.textures[-1][-1], self.ypos2 - self.ypos1, self.xpos2 - self.xpos1)
-        
+    def get_texture_data(self):
+        texture_data = []
+        texture_data += get_texture_coordinates(self.textures[0][0], self.textures[0][-1], self.pixel_height, self.pixel_width, self.texture_height, self.texture_width)
+        texture_data += get_texture_coordinates(self.textures[1][0], self.textures[1][-1], self.pixel_height, self.pixel_width, self.texture_height, self.texture_width)
+        texture_data += get_texture_coordinates(self.textures[2][0], self.textures[2][-1], self.pixel_width, self.pixel_height, self.texture_height, self.texture_width)
+        texture_data += get_texture_coordinates(self.textures[3][0], self.textures[3][-1], self.pixel_width, self.pixel_height, self.texture_height, self.texture_width)
+        texture_data += get_texture_coordinates(self.textures[4][0], self.textures[4][-1], self.pixel_height, self.pixel_width, self.texture_height, self.texture_width)
+        texture_data += get_texture_coordinates(self.textures[-1][0], self.textures[-1][-1], self.pixel_height, self.pixel_width, self.texture_height, self.texture_width)
+        return texture_data
+
+    def update_texture_data(self, textures):
+        self.textures = textures
+        self.texture_data = self.get_texture_data()
+
     def get_vertices(self):
         xm = self.xpos1
         xp = self.xpos2
@@ -59,16 +75,29 @@ class BoxModel(object):
         )
         return vertices
 
+    def update_position(self, position):
+        self.xpos1, self.ypos1, self.zpos1 = position
+        self.xpos2 = self.xpos1 + self.length
+        self.ypos2 = self.ypos1 + self.height
+        self.zpos2 = self.zpos1 + self.width 
+
     def draw(self):
         glPushMatrix()
         glBindTexture(self.image.texture.target, self.image.texture.id)
         glEnable(self.image.texture.target)
-        self.display = pyglet.graphics.vertex_list(count,
+        self.display = pyglet.graphics.vertex_list(24,
             ('v3f/static', self.get_vertices()),
             ('t2f/static', self.texture_data),
         )
-        self.display.draw(GL_QUAD)
+        self.display.draw(GL_QUADS)
         glPopMatrix()
 
-# with BoxModel, it will be easier to create player model.
-# because player model is made of many boxes.
+class PlayerModel(object):
+    def __init__(self, position):
+        # head
+        self.position = position
+        self.head = BoxModel(position, 1, 1, 1, 'resources/textures/char.png', 32, 32, 32, 128, 256)
+        self.head.update_texture_data([(32, 96), (64, 96), (0, 64), (64, 64), (32, 64), (96, 64)])
+
+    def draw(self):
+        self.head.draw()
