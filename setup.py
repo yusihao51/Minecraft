@@ -1,8 +1,10 @@
 # Imports, sorted alphabetically.
 
 # Python packages
+from distribute_setup import use_setuptools
+use_setuptools()
 from Cython.Distutils import build_ext
-from distutils.core import setup
+from setuptools import setup, find_packages
 from distutils.extension import Extension
 import os
 
@@ -38,8 +40,8 @@ def get_modules(path=None):
             f_or_d = os.path.join(path, f_or_d)
         if os.path.isdir(f_or_d):
             d = f_or_d
-            for name, f in get_modules(d):
-                yield name, f
+          #  for name, f in get_modules(d):
+           #     yield name, f
         else:
             f = f_or_d
             if f.endswith(('.py', 'pyx')):
@@ -53,5 +55,6 @@ ext_modules = [Extension(name, [f]) for name, f in get_modules()]
 setup(
     name=G.APP_NAME,
     cmdclass={'build_ext': build_ext},
-    ext_modules=ext_modules, requires=['pyglet', 'Cython']
+    ext_modules=ext_modules, install_requires=['pyglet', 'Cython'], setup_requires=['pyglet', 'Cython'],
+    packages = find_packages(), include_package_data=True
 )
