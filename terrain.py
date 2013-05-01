@@ -624,10 +624,13 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
                         # ores and filler...
                         if yy >= 32:
                             blockset = highlevel_ores
-                        elif yy > 8:
+                        elif yy > 9:
                             blockset = midlevel_ores
-                        else:
+                        elif yy > 2:
                             blockset = lowlevel_ores
+                        elif yy <= 1:
+                            blockset = (bed_block, bed_block)
+
                         init_block((x, yy, z), choose(blockset))
-                    if by == 0:
-                        init_block((x, 0, z), bed_block)
+                        #if yy == 0:
+                         #   init_block((x, 0, z), bed_block)
