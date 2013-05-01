@@ -12,3 +12,5 @@
 screencaptures*
 texturepacks*
 .idea*
+build*
+dist*
