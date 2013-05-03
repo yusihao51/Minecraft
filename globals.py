@@ -148,9 +148,13 @@ TERRAIN_CHOICES = {  # hill_height & max_trees mandatory for the moment.
     'snow': {
         'hill_height': 4,
         'max_trees': 1500,
+    },
+    'nether': {
+        'hill_height': 1,
+        'max_trees': 0,
     }
 }
-DEFAULT_TERRAIN_CHOICE = 'island'  # was 'plains', makes more sense for islands, player stranded on an island
+DEFAULT_TERRAIN_CHOICE = 'island'  # island  # was 'plains', makes more sense for islands, player stranded on an island
 TERRAIN_CHOICE = DEFAULT_TERRAIN_CHOICE
 TERRAIN = TERRAIN_CHOICES[DEFAULT_TERRAIN_CHOICE]
 

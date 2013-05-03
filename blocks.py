@@ -1595,6 +1595,45 @@ class MossyCobbleBlock(HardBlock):
     digging_tool = G.PICKAXE
     max_stack_size = 64
 
+
+#  nether items
+
+class NetherrackBlock(Block):
+    top_texture = 3, 7
+    bottom_texture = 3, 7
+    side_texture = 3, 7
+    texture_name = "dirt",
+    hardness = 0.5
+    id = 87
+    name = "Netherrack"
+    digging_tool = G.SHOVEL
+    break_sound = sounds.dirt_break
+    max_stack_size = 64
+
+class NetherOreBlock(Block):
+    top_texture = 4, 7
+    bottom_texture = 4, 7
+    side_texture = 4, 7
+    texture_name = "dirt",
+    hardness = 0.5
+    id = 153
+    name = "Nether Quartz Ore"
+    digging_tool = G.SHOVEL
+    break_sound = sounds.dirt_break
+    max_stack_size = 64
+
+class SoulsandBlock(Block):
+    top_texture = 2, 7
+    bottom_texture = 2, 7
+    side_texture = 2, 7
+    texture_name = "dirt",
+    hardness = 0.5
+    id = 88
+    name = "Soul Sand"
+    digging_tool = G.SHOVEL
+    break_sound = sounds.dirt_break
+    max_stack_size = 64
+
 CRACK_LEVELS = 10
 
 
@@ -1608,6 +1647,12 @@ class CrackTextureBlock(object):
             self.texture_data.append(texture_coords * 6)
 
 crack_textures = CrackTextureBlock()
+
+# nether
+nether_block = NetherrackBlock()
+netherore_block = NetherOreBlock()
+soulsand_block = SoulsandBlock()
+# overworld blocks
 
 air_block = AirBlock()
 grass_block = GrassBlock()
@@ -1722,3 +1767,4 @@ wildgrass6_block = Grass6Block()
 wildgrass7_block = Grass7Block()
 desertgrass_block = DesertGrassBlock()
 deadbush_block = DeadBushBlock()
+
