@@ -471,13 +471,15 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
         return int(self.height_base + self._clamp((y+1.0)/2.0)*self.height_range)
 
     def generate_sector(self, sector):
-        main_block = grass_block
-        if G.BIOME_BLOCK_COUNT >= G.BIOME_BLOCK_TRIGGER or G.BIOME_BLOCK_COUNT <= G.BIOME_NEGATIVE_BLOCK_TRIGGER: #  or self.negative_biome_trigger:  # 215 or -215
-            G.BIOME_BLOCK_COUNT = 0
-            new_biomes = ('plains', 'desert', 'mountains', 'snow')
-            print ('old biome was ' + G.TERRAIN_CHOICE)
-            G.TERRAIN_CHOICE = self.rand.choice(new_biomes)
-            print ('new biome is ' + G.TERRAIN_CHOICE)
+        #main_block = grass_block
+        # if not nether, generate new biome info when the trigger hits...
+        if G.TERRAIN_CHOICE != 'nether':
+            if G.BIOME_BLOCK_COUNT >= G.BIOME_BLOCK_TRIGGER or G.BIOME_BLOCK_COUNT <= G.BIOME_NEGATIVE_BLOCK_TRIGGER: #  or self.negative_biome_trigger:  # 215 or -215
+                G.BIOME_BLOCK_COUNT = 0
+                new_biomes = ('plains', 'desert', 'mountains', 'snow')
+                print ('old biome was ' + G.TERRAIN_CHOICE)
+                G.TERRAIN_CHOICE = self.rand.choice(new_biomes)
+                print ('new biome is ' + G.TERRAIN_CHOICE)
 
         if G.TERRAIN_CHOICE == "plains":
             main_block = grass_block
