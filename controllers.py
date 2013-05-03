@@ -23,6 +23,7 @@ import globals as G
 from gui import ItemSelector, InventorySelector, TextWidget
 from items import Tool
 from player import Player
+from model import PlayerModel
 from skydome import Skydome
 import utils
 from utils import vec, sectorize, normalize
@@ -218,6 +219,7 @@ class GameController(Controller):
             sky_rotation,
         )
 
+        self.pm = PlayerModel((0, 64, 0))
         lux = 600.0
 
         self.focus_block = Block(width=1.05, height=1.05)
@@ -477,6 +479,7 @@ class GameController(Controller):
         self.world.transparency_batch.draw()
         self.crack_batch.draw()
         self.draw_focused_block()
+        self.pm.draw()
         self.set_2d()
         if G.HUD_ENABLED:
             self.draw_label()
