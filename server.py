@@ -33,6 +33,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         self.username = str(self.client_address)
         print "Client connecting...", self.client_address
         self.server.players[self.client_address] = self
+        self.server.player_ids.append(self)
+        self.id = len(self.server.player_ids) - 1
         try:
             self.loop()
         except socket.error as e:
@@ -101,6 +103,19 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             elif packettype == 6:  # Player Inventory Update
                 self.inventory = self.request.recv(4*40)
                 #TODO: All player's inventories should be autosaved at a regular interval.
+            elif packettype == 8:  # Player Movement
+                mom_bytes, pos_bytes = self.request.recv(4*3), self.request.recv(8*3)
+                self.momentum = struct.unpack("fff", mom_bytes)
+                self.position = struct.unpack("ddd", pos_bytes)
+                for address in players:
+                    if address is self.client_address: continue  # He told us, we don't need to tell him
+                    #TODO: Only send to nearby players
+                    players[address].sendpacket(38, "\x08" + struct.pack("H", self.id) + mom_bytes + pos_bytes)
+            elif packettype == 9:  # Player Jump
+                for address in players:
+                    if address is self.client_address: continue  # He told us, we don't need to tell him
+                    #TODO: Only send to nearby players
+                    players[address].sendpacket(2, "\x09" + struct.pack("H", self.id))
             elif packettype == 255:  # Initial Login
                 txtlen = struct.unpack("i", self.request.recv(4))[0]
                 self.username = self.request.recv(txtlen).decode('utf-8')
@@ -112,12 +127,14 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
                 position = (0,self.server.world.terraingen.get_height(0,0)+2,0)
 
-                # Send user list
-                userlist = '\7'
+                # Send list of current players to the newcomer
                 for player in self.server.players.itervalues():
-                    userlist += player.username.encode('utf-8') + '\7'
+                    name = player.username.encode('utf-8')
+                    self.sendpacket(2 + len(name), '\7' + struct.pack("H", player.id) + name)
+                # Send the newcomer's name to all current players
+                name = self.username.encode('utf-8')
                 for player in self.server.players.itervalues():
-                    player.sendpacket(len(userlist) - 1, userlist)
+                    player.sendpacket(2 + len(name), '\7' + struct.pack("H", self.id) + name)
 
                 #Send them the sector under their feet first so they don't fall
                 sector = sectorize(position)
@@ -155,7 +172,8 @@ class Server(socketserver.ThreadingTCPServer):
         self._stop = threading.Event()
 
         self.world = WorldServer(self)
-        self.players = {}  # List of all players connected. {ipaddress: requesthandler,}
+        self.players = {}  # Dict of all players connected. {ipaddress: requesthandler,}
+        self.player_ids = []  # List of all players this session, indexes are their ID's [0: first requesthandler,]
 
         self.command_parser = CommandParser()
 

@@ -13,6 +13,7 @@ from entity import Entity
 import globals as G
 from inventory import Inventory
 from items import stick_item
+from model import PlayerModel
 from utils import normalize, FACES
 
 
@@ -22,8 +23,10 @@ __all__ = (
 
 
 class Player(Entity):
-    def __init__(self, position, rotation, flying=False,
-                 game_mode=G.GAME_MODE):
+    local_player = True
+
+    def __init__(self, position=(0,0,0), rotation=(-20, 0), flying=False,
+                 game_mode=G.GAME_MODE, username="", local_player=True):
         super(Player, self).__init__(position, rotation, health=7,
                                      max_health=10, attack_power=2.0 / 3,
                                      attack_range=4)
@@ -35,17 +38,15 @@ class Player(Entity):
         self.strafe = [0, 0]
         self.dy = 0
         self.current_density = 1 # Current density of the block we're colliding with
+        self._position = position
         self.last_sector = None
         self.last_damage_block = 0, 100, 0 # dummy temp value
+        self.username = username
+        self.local_player = local_player
 
-        initial_items = [torch_block, stick_item]
-
-        for item in initial_items:
-            quantity = random.randint(2, 10)
-            if random.choice((True, False)):
-                self.inventory.add_item(item.id, quantity)
-            #else:
-            #    self.quick_slots.add_item(item.id, quantity)
+        if not local_player:
+            self.model = PlayerModel(position)
+            self.momentum = (0,0,0)
 
     def add_item(self, item_id):
         if self.quick_slots.add_item(item_id):
@@ -58,6 +59,14 @@ class Player(Entity):
         self.health += change
         if self.health > self.max_health:
             self.health = self.max_health
+    @property
+    def position(self):
+        return self._position
+
+    @position.setter
+    def position(self, value):
+        self._position = value
+        if not self.local_player: self.model.update_position(value)
 
     def on_deactivate(self):
         self.strafe = [0, 0]
@@ -98,6 +107,7 @@ class Player(Entity):
                 self.dy = 0.045  # jump speed
             elif self.dy == 0:
                 self.dy = 0.016  # jump speed
+                G.CLIENT.send_jump()
         elif symbol == G.CROUCH_KEY:
             if self.flying:
                 self.dy = -0.045  # inversed jump speed
@@ -146,8 +156,12 @@ class Player(Entity):
 
     def update(self, dt, parent):
         # walking
-        speed = 15 if self.flying else 5*self.current_density
-        dx, dy, dz = self.get_motion_vector(dt * speed)
+        if self.local_player:
+            speed = 15 if self.flying else 5*self.current_density
+            dx, dy, dz = self.get_motion_vector(multiplier=(dt * speed))
+        else:
+            dx, dy, dz = self.momentum
+            dx, dy, dz = dx*dt, dy*dt, dz*dt
 
         # gravity
         if not self.flying:

@@ -12,6 +12,7 @@ from blocks import BlockID
 import globals as G
 from globals import BLOCKS_DIR, SECTOR_SIZE
 from items import ItemStack
+from player import Player
 from savingsystem import null2, structuchar2, sector_to_blockpos
 
 class PacketReceiver(Thread):
@@ -55,6 +56,8 @@ class PacketReceiver(Thread):
                 packet = packetcache[5:packetsize]
 
                 #Preprocess the packet as much as possible in this thread
+                #There isn't a lot of cases where we can do much processing outside of the main thread...
+                #We could consider removing this section and just let the main thread do the unpacking too
                 if packetid == 1:    # Receiving sector
                     with self.lock:
                         main_thread((packetid, packet))
@@ -75,14 +78,20 @@ class PacketReceiver(Thread):
                 elif packetid == 6:  # Inventory
                     with self.lock:
                         main_thread((packetid, packet))
-                elif packetid == 7:  # User list
+                elif packetid == 7:  # New player connected
                     with self.lock:
-                        main_thread((packetid, [username.decode('utf-8') for username in packet.split('\7')[:-1]]))
+                        main_thread((packetid, (struct.unpack("H", packet[:2])[0], packet[2:].decode('utf-8'))))
+                elif packetid == 8:  # Player Movement
+                    with self.lock:
+                        main_thread((packetid, (struct.unpack("H", packet[:2])[0], struct.unpack("fff", packet[2:14]), struct.unpack("ddd", packet[14:]))))
+                elif packetid == 9:  # Player Jump
+                    with self.lock:
+                        main_thread((packetid, struct.unpack("H", packet)[0]))
                 elif packetid == 255:  # Spawn Position
                     with self.lock:
                         main_thread((packetid, struct.unpack("iii", packet)))
                 else:
-                    warn("Received unknown packetid %s" % packetid)
+                    warn("Received unknown packetid %s, there's probably a version mismatch between client and server!" % packetid)
                 packetcache = packetcache[packetsize:]
                 packetsize = struct.unpack("i", packetcache[:4])[0] if packetcache else 0
 
@@ -140,8 +149,14 @@ class PacketReceiver(Thread):
                     inventory[i] = ItemStack(type=BlockID(id_main, id_sub), amount=amount, durability=durability)
             self.controller.item_list.update_items()
             self.controller.inventory_list.update_items()
-        elif packetid == 7:
-            print(packet)
+        elif packetid == 7:  # New player connected
+            self.controller.player_ids[packet[0]] = Player(username=packet[1], local_player=False)
+        elif packetid == 8:  # Player Movement
+            ply = self.controller.player_ids[packet[0]]
+            ply.momentum = packet[1]
+            ply.position = packet[2]
+        elif packetid == 9:  # Player Jump
+            self.controller.player_ids[packet].dy = 0.016
         elif packetid == 255:  # Spawn Position
             self.controller.player.position = packet
             #Now that we know where the player should be, we can enable .update again
@@ -167,7 +182,10 @@ class PacketReceiver(Thread):
             else:
                 packet += "\0\0\0\0"
         self.sock.sendall("\6"+packet)
-
+    def send_movement(self, momentum, position):
+        self.sock.sendall("\x08"+struct.pack("fff", *momentum) + struct.pack("ddd", *position))
+    def send_jump(self):
+        self.sock.sendall("\x09")
 
     def stop(self):
         self._stop.set()

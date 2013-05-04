@@ -23,6 +23,7 @@ class Entity(object):
     def __init__(self, position, rotation, velocity=0, health=0, max_health=0,
                  attack_power=0, sight_range=0, attack_range=0):
         self.position = position
+        self.momentum_previous = ()
         self.rotation = rotation
         self.velocity = velocity
         self.health = health

@@ -139,6 +139,14 @@ class GameController(Controller):
         df = min(dt, 0.2)
         for _ in xrange(m):
             self.player.update(df / m, self)
+        for ply in self.player_ids.itervalues():
+            for _ in xrange(m):
+                ply.update(df / m, self)
+        momentum = self.player.get_motion_vector(15 if self.player.flying else 5*self.player.current_density)
+        if momentum != self.player.momentum_previous:
+            self.player.momentum_previous = momentum
+            self.packetreceiver.send_movement(momentum, self.player.position)
+
 
     def update_mouse(self, dt):
         if self.mouse_pressed:
@@ -219,7 +227,7 @@ class GameController(Controller):
             sky_rotation,
         )
 
-        self.pm = PlayerModel((0, 64, 0))
+        self.player_ids = {}  # Dict of all players this session, indexes are their ID's [0: first Player on server,]
 
         self.focus_block = Block(width=1.05, height=1.05)
         self.earth = vec(0.8, 0.8, 0.8, 1.0)
@@ -244,8 +252,7 @@ class GameController(Controller):
         self.update = lambda dt: None
         #We'll re-enable it when the server tells us where we should be
 
-        self.player = Player((0,0,0), (-20, 0),
-                                game_mode=G.GAME_MODE)
+        self.player = Player(game_mode=G.GAME_MODE)
         print('Game mode: ' + self.player.game_mode)
         self.item_list = ItemSelector(self, self.player, self.world)
         self.inventory_list = InventorySelector(self, self.player, self.world)
@@ -479,7 +486,8 @@ class GameController(Controller):
         self.world.transparency_batch.draw()
         self.crack_batch.draw()
         self.draw_focused_block()
-        self.pm.draw()
+        for ply in self.player_ids.itervalues():
+            ply.model.draw()
         self.set_2d()
         if G.HUD_ENABLED:
             self.draw_label()
