@@ -220,7 +220,6 @@ class GameController(Controller):
         )
 
         self.pm = PlayerModel((0, 64, 0))
-        lux = 600.0
 
         self.focus_block = Block(width=1.05, height=1.05)
         self.earth = vec(0.8, 0.8, 0.8, 1.0)
@@ -235,6 +234,7 @@ class GameController(Controller):
         self.world = World()
         self.packetreceiver = PacketReceiver(self.world, self, sock)
         self.world.packetreceiver = self.packetreceiver
+        G.CLIENT = self.packetreceiver
         self.packetreceiver.start()
 
         #Get our position from the server
@@ -271,7 +271,7 @@ class GameController(Controller):
                 anchor_x='left', anchor_y='top', color=(255, 255, 255, 255))
         pyglet.clock.schedule_interval_soft(self.world.process_queue,
                                             1.0 / G.MAX_FPS)
-        pyglet.clock.schedule_interval_soft(self.world.hide_sectors, 1.0, self.player)
+        pyglet.clock.schedule_interval_soft(self.world.hide_sectors, 10.0, self.player)
         return True
 
     def update_time(self):

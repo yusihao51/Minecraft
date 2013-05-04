@@ -30,6 +30,9 @@ DEBUG = False
 IP_ADDRESS = "neb.nebtown.info"  # The IP Address to connect to
 USERNAME = getpass.getuser()  # Default to system username
 
+CLIENT = None  # Becomes the instance of PacketReceiver if running the client
+SERVER = None  # Becomes the instance of Server if running the server
+
 #
 # Game modes
 #

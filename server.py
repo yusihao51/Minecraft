@@ -174,6 +174,7 @@ class Server(socketserver.ThreadingTCPServer):
 def start_server():
     localip = [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][0]
     server = Server((localip, 1486), ThreadedTCPRequestHandler)
+    G.SERVER = server
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.start()
 
@@ -216,8 +217,11 @@ if __name__ == '__main__':
             server._stop.set()
             print "Disconnecting clients..."
             for address in server.players:
-                server.players[address].request.shutdown(SHUT_RDWR)
-                server.players[address].request.close()
+                try:
+                    server.players[address].request.shutdown(SHUT_RDWR)
+                    server.players[address].request.close()
+                except socket.error:
+                    pass
             print "Shutting down socket..."
             server.shutdown()
             print "Saving..."
