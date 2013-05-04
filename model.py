@@ -18,10 +18,10 @@ __all__ = (
 def get_texture_coordinates(x, y, height, width, texture_height, texture_width):
     if x == -1 and y == -1:
         return ()
-    x = x / float(texture_width)
-    y = y / float(texture_height)
-    height = height / float(texture_height)
-    width = width / float(texture_width)
+    x /= float(texture_width)
+    y /= float(texture_height)
+    height /= float(texture_height)
+    width /= float(texture_width)
     return x, y, x + width, y, x + width, y + height, x, y + height
 
 # not good at calculating coordinate things...there may be something wrong...
@@ -37,8 +37,8 @@ class BoxModel(object):
         self.xpos1, self.ypos1, self.zpos1 = position
         self.xpos2 = self.xpos1 + length
         self.ypos2 = self.ypos1 + height
-        self.zpos2 = self.zpos1 + width 
-        self.height, self.width, self.height = height, width, height
+        self.zpos2 = self.zpos1 + width
+        self.length, self.width, self.height = length, width, height
         self.pixel_length, self.pixel_width, self.pixel_height = pixel_length, pixel_width, pixel_height
         self.texture_height = texture_height
         self.texture_width = texture_width
@@ -64,7 +64,7 @@ class BoxModel(object):
         yp = self.ypos2
         zm = self.zpos1
         zp = self.zpos2
-        
+
         vertices = (
             xm, yp, zm,   xm, yp, zp,   xp, yp, zp,   xp, yp, zm,  # top
             xm, ym, zm,   xp, ym, zm,   xp, ym, zp,   xm, ym, zp,  # bottom
@@ -79,7 +79,7 @@ class BoxModel(object):
         self.xpos1, self.ypos1, self.zpos1 = position
         self.xpos2 = self.xpos1 + self.length
         self.ypos2 = self.ypos1 + self.height
-        self.zpos2 = self.zpos1 + self.width 
+        self.zpos2 = self.zpos1 + self.width
 
     def draw(self):
         glPushMatrix()
@@ -147,8 +147,8 @@ class PlayerModel(object):
             self.body.update_position(self.body_pos)
             self.left_arm.update_position(self.left_arm_pos)
             self.right_arm.update_position(self.right_arm_pos)
-            self.left_leg.update_position(self.left_arm_pos)
-            self.right_leg.update_position(self.right_arm_pos)
+            self.left_leg.update_position(self.left_leg_pos)
+            self.right_leg.update_position(self.right_leg_pos)
 
     def draw(self):
         self.head.draw()
