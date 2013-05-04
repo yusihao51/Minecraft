@@ -105,7 +105,7 @@ class Player(Entity):
             self.dy = 0
             self.flying = not self.flying
 
-    def get_motion_vector(self):
+    def get_motion_vector(self, multiplier=1):
         if any(self.strafe):
             x, y = self.rotation
             y_r = radians(y)
@@ -131,7 +131,7 @@ class Player(Entity):
             dy = 0.0
             dx = 0.0
             dz = 0.0
-        return dx, dy, dz
+        return dx*multiplier, dy*multiplier, dz*multiplier
 
     def get_sight_vector(self):
         x, y = self.rotation
@@ -147,21 +147,17 @@ class Player(Entity):
     def update(self, dt, parent):
         # walking
         speed = 15 if self.flying else 5*self.current_density
-        d = dt * speed
-        dx, dy, dz = self.get_motion_vector()
-        dx, dy, dz = dx * d, dy * d, dz * d
+        dx, dy, dz = self.get_motion_vector(dt * speed)
+
         # gravity
         if not self.flying:
             self.dy -= dt * 0.022  # g force, should be = jump_speed * 0.5 / max_jump_height
-            self.dy = max(self.dy, -0.5)  # terminal velocity
-            dy += self.dy
-        else:
-            self.dy = max(self.dy, -0.5)  # terminal velocity
-            dy += self.dy
-            # collisions
+        self.dy = max(self.dy, -0.5)  # terminal velocity
+        dy += self.dy
+
+        # collisions
         x, y, z = self.position
-        x, y, z = self.collide(parent, (x + dx, y + dy, z + dz), 2)
-        self.position = (x, y, z)
+        self.position = self.collide(parent, (x + dx, y + dy, z + dz), 2)
 
     def collide(self, parent, position, height):
         pad = 0.25
