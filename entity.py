@@ -96,13 +96,14 @@ class WheatCropEntity(TileEntity):
         if self.world is None:
             return
         if self.position in self.world:
-            self.world.hide_block(self.position)
+            self.world.server.hide_block(self.position)
 
     def grow_callback(self):
         if self.position in self.world:
             self.world[self.position].growth_stage = self.world[self.position].growth_stage + 1
-            self.world.hide_block(self.position)
-            self.world.show_block(self.position)
+            wheat_block = self.world[self.position]
+            self.world.server.hide_block(self.position)
+            self.world.server.show_block(self.position, wheat_block)
         else:
             # the block ceased to exist
             return

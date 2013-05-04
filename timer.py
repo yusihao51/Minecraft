@@ -9,6 +9,7 @@
 # Modules from this project
 # Nothing for now...
 
+import threading
 
 __all__ = (
     'TimerTask', 'Timer',
@@ -27,8 +28,9 @@ class TimerTask(object):
 
 # Timer used in furnace and redstone circuits
 class Timer(object):
-    def __init__(self):
+    def __init__(self, interval):
         self.queue = [None]
+        self.interval = interval
 
     def add_task(self, ticks, callback, speed=1):
         if ticks == 0 and callback is not None:
@@ -50,14 +52,20 @@ class Timer(object):
         self.queue[index] = None
         return True
 
-    def schedule(self, interval):
+    def start(self):
+        self.schedule()
+
+    def schedule(self):
         for index, _task in enumerate(self.queue):
             if _task is None:
                 continue
-            self.queue[index].ticks -= interval * self.queue[index].speed
+            self.queue[index].ticks -= self.interval * self.queue[index].speed
             if self.queue[index].ticks <= 0:
                 self.queue[index].callback()
                 self.queue[index] = None
+
+        t = threading.Timer(self.interval, self.schedule)
+        t.start()
 
     def progress(self, index):
         if index >= len(self.queue):

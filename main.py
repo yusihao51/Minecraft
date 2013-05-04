@@ -105,9 +105,6 @@ def main(options):
         # window = Window(resizable=True, config=window_config)
     # except pyglet.window.NoSuchConfigException:
     window = Window(resizable=True, vsync=False)
-
-    G.main_timer = Timer()
-    pyglet.clock.schedule_interval(G.main_timer.schedule, G.TIMER_INTERVAL)
     pyglet.app.run()
 
 

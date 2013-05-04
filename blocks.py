@@ -1130,7 +1130,7 @@ class WhiteWoolBlock(Block):
     hardness = 1
     id = 35,0
     name = "White Wool"
-amount_label_color = 0, 0, 0, 255
+    amount_label_color = 0, 0, 0, 255
 
 # Carpet blocks
 
@@ -1362,7 +1362,7 @@ class WheatCropBlock(Block):
     vertex_mode = G.VERTEX_GRID
     hardness = 0.0
     transparent = True
-    id = 59
+    id = 59, 0
     name = "Wheat Crop"
     break_sound = sounds.leaves_break
     max_stack_size = 16
@@ -1377,11 +1377,13 @@ class WheatCropBlock(Block):
     # FIXME: This constructor contains many heresies.  The parent class
     # constructor is not called and it contains hard-coded values.
     def __init__(self):
+        self.id = BlockID(self.id or 0)
         self.top_texture = get_texture_coordinates(-1, -1)
         self.bottom_texture = get_texture_coordinates(-1, -1)
         for i in range(0, 8):
             self.side_texture = get_texture_coordinates(14, i)
             self.texture_list.append(self.get_texture_data())
+        G.BLOCKS_DIR[self.id] = self
 
     def __del__(self):
         if self.entity is not None:

@@ -3,6 +3,7 @@ from _socket import SHUT_RDWR
 import socket
 import struct
 import time
+import timer
 
 try:  # Python 3
     import socketserver
@@ -192,6 +193,9 @@ if __name__ == '__main__':
 
     ip, port = server.server_address
     print "Listening on",ip,port
+
+    G.main_timer = timer.Timer(G.TIMER_INTERVAL)
+    G.main_timer.start()
 
     helptext = "Available commands: " + ", ".join(["say", "stop", "save"])
     while 1:
