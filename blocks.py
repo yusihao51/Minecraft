@@ -168,6 +168,7 @@ class Block(object):
     top_texture = ()
     bottom_texture = ()
     side_texture = ()
+    front_texture = None
     vertex_mode = G.VERTEX_CUBE
     group = None  # The texture (group) the block renders from
     texture_name = None  # A list of block faces, named what Mojang names their blocks/"file".png
@@ -207,9 +208,11 @@ class Block(object):
             if self.group:
                 self.texture_data = self.group.texture_data
         
+        if self.front_texture is None:
+            self.front_texture = self.side_texture
         if not self.texture_data:
             # Applies get_texture_coordinates to each of the faces to be textured.
-            for k in ('top_texture', 'bottom_texture', 'side_texture'):
+            for k in ('top_texture', 'bottom_texture', 'side_texture', 'front_texture'):
                 v = getattr(self, k)
                 if v:
                     setattr(self, k, get_texture_coordinates(*v))
@@ -222,9 +225,9 @@ class Block(object):
 
     def get_texture_data(self):
         textures = self.top_texture + self.bottom_texture \
-                   + self.side_texture * 2
+                   + self.front_texture + self.side_texture
         if self.vertex_mode != G.VERTEX_CROSS:
-            textures += (self.side_texture * 2)
+            textures += self.side_texture * 2
         return list(textures)
 
     def get_vertices(self, x, y, z):
@@ -500,7 +503,8 @@ class WaterBlock(Block):
 class CraftTableBlock(WoodBlock):
     top_texture = 8, 1
     bottom_texture = 1, 1
-    side_texture = 8, 0
+    side_texture = 5, 7
+    front_texture = 8, 0
     texture_name = "workbench_top","wood","workbench_front","workbench_side",
     hardness = 2.5
     id = 58
@@ -882,6 +886,7 @@ class FurnaceBlock(HardBlock):
     top_texture = 7, 7
     bottom_texture = 6, 3
     side_texture = 7, 6
+    front_texture = 6, 7
     texture_name = "furnace_top","stonebrick","furnace_front","furnace_side"
     hardness = 3.5
     id = 61
@@ -1293,7 +1298,7 @@ class WhiteCarpetBlock(Block):
     hardness = 1
     id = 171,0
     name = "White Carpet"
-amount_label_color = 0, 0, 0, 255
+    amount_label_color = 0, 0, 0, 255
 
 # moreplants
 class RoseBlock(Block):
@@ -1382,6 +1387,7 @@ class WheatCropBlock(Block):
         self.bottom_texture = get_texture_coordinates(-1, -1)
         for i in range(0, 8):
             self.side_texture = get_texture_coordinates(14, i)
+            self.front_texture = self.side_texture
             self.texture_list.append(self.get_texture_data())
         G.BLOCKS_DIR[self.id] = self
 
@@ -1636,6 +1642,17 @@ class SoulsandBlock(Block):
     break_sound = sounds.dirt_break
     max_stack_size = 64
 
+class CakeBlock(Block):
+    top_texture = 12, 3
+    bottom_texture = 12, 4
+    side_texture = 12, 5
+    height = 0.5
+    texture_name = "cake_top", "cake_bottom", "cake_side"
+    hardness = 0.5
+    id = 92
+    name = "Cake"
+    max_stack_size = 64
+
 CRACK_LEVELS = 10
 
 
@@ -1703,6 +1720,7 @@ cobblefence_block = CobbleFenceBlock()
 snow_block = SnowBlock()
 meta_block = MetaBlock()
 chest_block = ChestBlock()
+cake_block = CakeBlock()
 # wool
 blackwool_block = BlackWoolBlock()
 redwool_block = RedWoolBlock()
@@ -1769,4 +1787,3 @@ wildgrass6_block = Grass6Block()
 wildgrass7_block = Grass7Block()
 desertgrass_block = DesertGrassBlock()
 deadbush_block = DeadBushBlock()
-
