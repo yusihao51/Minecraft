@@ -153,7 +153,10 @@ class PacketReceiver(Thread):
             self.controller.item_list.update_items()
             self.controller.inventory_list.update_items()
         elif packetid == 7:  # New player connected
-            self.controller.player_ids[packet[0]] = Player(username=packet[1], local_player=False)
+            if packet[0] not in self.controller.player_ids:
+                self.controller.player_ids[packet[0]] = Player(username=packet[1], local_player=False)
+            elif packet[1] == '\0':
+                del self.controller.player_ids[packet[0]]
         elif packetid == 8:  # Player Movement
             ply = self.controller.player_ids[packet[0]]
             ply.momentum = packet[1]

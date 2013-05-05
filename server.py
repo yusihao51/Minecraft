@@ -129,11 +129,13 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
                 # Send list of current players to the newcomer
                 for player in self.server.players.itervalues():
+                    if player is self: continue
                     name = player.username.encode('utf-8')
                     self.sendpacket(2 + len(name), '\7' + struct.pack("H", player.id) + name)
                 # Send the newcomer's name to all current players
                 name = self.username.encode('utf-8')
                 for player in self.server.players.itervalues():
+                    if player is self: continue
                     player.sendpacket(2 + len(name), '\7' + struct.pack("H", self.id) + name)
 
                 #Send them the sector under their feet first so they don't fall
@@ -156,11 +158,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         for player in self.server.players.itervalues():
             player.sendchat("%s has disconnected." % self.username)
         # Send user list
-        userlist = '\7'
         for player in self.server.players.itervalues():
-            userlist += player.username.encode('utf-8') + '\7'
-        for player in self.server.players.itervalues():
-            player.sendpacket(len(userlist) - 1, userlist)
+            player.sendpacket(2 + 1, '\7' + struct.pack("H", self.id) + '\0')
         save_player(self, "world")
 
 
