@@ -15,6 +15,7 @@ from blocks import *
 from utils import FACES, FACES_WITH_DIAGONALS, normalize_float, normalize, sectorize, TextureGroup
 import globals as G
 from client import PacketReceiver
+from entity import TileEntity
 
 
 __all__ = (
@@ -54,11 +55,15 @@ class World(dict):
     def _add_block(self, position, block):
         if position in self:
             self._remove_block(position, sync=True)
-        #if hasattr(block, 'entity_type'):
-        #    self[position] = type(block)()
-        #    self[position].entity = self[position].entity_type(self, position)
-        #else:
-        self[position] = block
+        if hasattr(block, 'entity_type'):
+            # in world_server we have to create its entity to handle some tasks(growing, etc.)
+            # but in client's world, we only create a TileEntity that contains the position
+            # and the world to allow the block update itself and server will handle the task
+            # and tell us
+            self[position] = type(block)()
+            self[position].entity = TileEntity(self, position)
+        else:
+            self[position] = block
         self.sectors[sectorize(position)].append(position)
         if self.is_exposed(position):
             self.show_block(position)

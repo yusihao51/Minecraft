@@ -188,6 +188,10 @@ class Server(socketserver.ThreadingTCPServer):
             #TODO: Only if they're in range
             player.sendpacket(12, "\4" + struct.pack("iii", *position))
 
+    def update_tile_entity(self, position, value, value_size):
+        for player in server.players.itervalues():
+            player.sendpacket(12 + value_size, "\x0A" + struct.pack("iii", *position) + value)
+
 
 def start_server():
     localip = [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][0]

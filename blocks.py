@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 # Python packages
 # Nothing for now...
+import struct   # for update_tile_entity
 
 # Third-party packages
 import pyglet
@@ -281,6 +282,9 @@ class Block(object):
     def play_break_sound(self, player=None, position=None):
         if self.break_sound is not None:
             sounds.play_sound(self.break_sound, player=player, position=position)
+
+    def update_tile_entity(self, value):
+        pass
 
 
 class AirBlock(Block):
@@ -1414,6 +1418,12 @@ class WheatCropBlock(Block):
     @drop_id.setter
     def drop_id(self, value):
         self._drop_id = value
+
+    def update_tile_entity(self, value):
+        self.growth_stage = struct.unpack("i", value)[0]
+        # update the texture
+        self.entity.world.hide_block(self.entity.position)
+        self.entity.world.show_block(self.entity.position)
 
 class TallGrassBlock(Block):
     width = 0.9

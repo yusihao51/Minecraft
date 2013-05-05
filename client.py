@@ -87,6 +87,9 @@ class PacketReceiver(Thread):
                 elif packetid == 9:  # Player Jump
                     with self.lock:
                         main_thread((packetid, struct.unpack("H", packet)[0]))
+                elif packetid == 10:  # Update Tile Entity
+                    with self.lock:
+                        main_thread((packetid, packet))
                 elif packetid == 255:  # Spawn Position
                     with self.lock:
                         main_thread((packetid, struct.unpack("iii", packet)))
@@ -157,6 +160,8 @@ class PacketReceiver(Thread):
             ply.position = packet[2]
         elif packetid == 9:  # Player Jump
             self.controller.player_ids[packet].dy = 0.016
+        elif packetid == 10: # Update Tile Entity
+            self.world[struct.unpack("iii", packet[:12])].update_tile_entity(packet[12:])
         elif packetid == 255:  # Spawn Position
             self.controller.player.position = packet
             #Now that we know where the player should be, we can enable .update again

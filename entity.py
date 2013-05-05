@@ -2,6 +2,7 @@
 
 # Python packages
 # Nothing for now...
+import struct
 
 # Third-party packages
 # Nothing for now...
@@ -82,6 +83,7 @@ class TileEntity(Entity):
         super(TileEntity, self).__init__(position, rotation=(0,0))
         self.world = world
 
+# server-side only
 class WheatCropEntity(TileEntity):
     # seconds per stage
     grow_time = 10
@@ -97,14 +99,12 @@ class WheatCropEntity(TileEntity):
         if self.world is None:
             return
         if self.position in self.world:
-            self.world.server.hide_block(self.position)
+            G.SERVER.hide_block(self.position)
 
     def grow_callback(self):
         if self.position in self.world:
             self.world[self.position].growth_stage = self.world[self.position].growth_stage + 1
-            wheat_block = self.world[self.position]
-            self.world.server.hide_block(self.position)
-            self.world.server.show_block(self.position, wheat_block)
+            G.SERVER.update_tile_entity(self.position, struct.pack("i", self.world[self.position].growth_stage), 4)
         else:
             # the block ceased to exist
             return
