@@ -256,7 +256,7 @@ TREES = set((
 VEGETATION = PLANTS | TREES
 
 TREE_BLOCKS = set(tree.trunk_block for tree in TREES)
-
+LEAF_BLOCKS = set(tree.leaf_block for tree in TREES)
 PLANT_BLOCKS = set(plant.block for plant in PLANTS)
 
-VEGETATION_BLOCKS = PLANT_BLOCKS | TREE_BLOCKS
+VEGETATION_BLOCKS = PLANT_BLOCKS | TREE_BLOCKS | LEAF_BLOCKS
