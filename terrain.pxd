@@ -1,11 +1,35 @@
 import cython
 cimport world
-
+cimport perlin
 
 #cython: boundscheck=False
 #cython: wraparound=False
 #cython: cdivision=True
 
+cdef class SimplexNoiseGen(object):
+    cdef public:
+        list perm
+        object noise
+        double PERSISTENCE, H
+        int OCTAVES
+        list weights
+        double zoom_level
+
+    @cython.locals(y=double, weight=double)
+    cpdef double fBm(self, double x, double z)
+
+cdef class BiomeGenerator(object):
+    cdef public:
+        SimplexNoiseGen temperature_gen, humidity_gen
+
+    cpdef double _clamp(self, double a)
+
+    cpdef double get_humidity(self, double x, double z)
+
+    cpdef double get_temperature(self, double x, double z)
+
+    @cython.locals(temp=double, humidity=double)
+    cpdef int get_biome_type(self, double x, double z)
 
 cdef class PerlinNoise(object):
     cdef public:
@@ -28,12 +52,33 @@ cdef class PerlinNoise(object):
     @cython.locals(total=double, n=int)
     cpdef double fBm(self, double x, double y, double z)
 
+cdef int CHUNK_X_SIZE, CHUNK_Y_SIZE, CHUNK_Z_SIZE  
+
+@cython.locals(xblks=dict, yblks=dict, zblks=dict, x=int, y=int, z=int)
+cpdef dict init_3d_list(int x_size, int y_size, int z_size)
+
+cdef class Chunk(object):
+    cdef public:
+        int x_pos, y_pos, z_pos
+        int x_size, y_size, z_size
+        dict blocks
+
+    cdef get_block(self,int x, int y, int z)
+
+    cdef set_block(self,int x, int y, int z, object block)
+
+    cdef int world_block_xpos(self, int x)
+
+    cdef int world_block_ypos(self, int y)
+
+    cdef int world_block_zpos(self, int z)
+
+cdef int SAMPLE_RATE_HOR, SAMPLE_RATE_VER
 
 cdef class TerrainGeneratorBase(object):
     cdef public object seed
 
     cpdef object generate_sector(self, sector)
-
 
 cdef class TerrainGenerator(TerrainGeneratorBase):
     cdef public:
@@ -43,45 +88,48 @@ cdef class TerrainGenerator(TerrainGeneratorBase):
         PerlinNoise mount_gen
         PerlinNoise hill_gen
         PerlinNoise cave_gen
-        object biome_gen
+        BiomeGenerator biome_gen
 
     cpdef object set_seed(self, object seed)
 
+    @cython.locals(c=Chunk, d_map=dict, x=int, y=int, z=int, biome_type=int, first_block=int, den=double)
     cpdef object generate_chunk(self, object chunk_x, object chunk_y,
                                 object chunk_z)
 
-    cpdef object gen_inner_layer(self, object x, object y, object z, object c)
+    cpdef Chunk gen_inner_layer(self, int x, int y, int z, Chunk c)
 
-    cpdef object gen_outer_layer(self, object x, object y, object z,
-                                 object first_block, object c,
+    @cython.locals(depth=int, biome_type=int)
+    cpdef Chunk gen_outer_layer(self, int x, int y, int z,
+                                 object first_block, Chunk c,
                                  object biome_type)
 
-    cpdef object lerp(self, object x, object x1, object x2, object v00,
-                      object v01)
+    cpdef double lerp(self, float x, float x1, float x2, float v00,
+                      float v01)
 
-    cpdef object tri_lerp(self, object x, object y, object z, object v000,
-                          object v001, object v010, object v011, object v100,
-                          object v101, object v110, object v111, object x1,
-                          object x2, object  y1, y2, object z1, object z2)
+    @cython.locals(u=double, v=double)
+    cpdef double tri_lerp(self, float x, float y, float z, float v000,
+                          float v001, float v010, float v011, float v100,
+                          float v101, float v110, float v111, float x1,
+                          float x2, float  y1, y2, float z1, float z2)
 
-    @cython.locals(x=int, y=int, z=int)
-    cpdef object tri_lerp_d_map(self, object d_map)
+    @cython.locals(x=int, y=int, z=int, offsetX=int, offsetY=int, offsetZ=int)
+    cpdef dict tri_lerp_d_map(self, dict d_map)
 
     cpdef double _clamp(self, double a)
 
-    cpdef object density(self, object x, object y, object z)
+    cpdef double density(self, int x, int y, int z)
 
-    cpdef object base_terrain(self, object x, object y)
+    cpdef double base_terrain(self, int x, int y)
 
-    cpdef object ocean_terrain(self, object x, object y)
+    cpdef double ocean_terrain(self, int x, int y)
 
-    cpdef object rive_terrain(self, object x, object y)
+    cpdef double rive_terrain(self, int x, int y)
 
-    cpdef object mount_density(self, object x, object y, object z)
+    cpdef double mount_density(self, int x, int y, int z)
 
-    cpdef object hill_density(self, object x, object y, object z)
+    cpdef double hill_density(self, int x, int y, int z)
 
-    cpdef object cave_density(self, object x, object y, object z)
+    cpdef double cave_density(self, int x, int y, int z)
 
 
 cdef class TerrainGeneratorSimple(TerrainGeneratorBase):
@@ -110,6 +158,8 @@ cdef class TerrainGeneratorSimple(TerrainGeneratorBase):
         tuple leaf_blocks
         set autogenerated_blocks
         int negative_biome_trigger
+        BiomeGenerator biome_generator
+        tuple nether
 
     cpdef double _clamp(self, double a)
 
