@@ -217,7 +217,7 @@ if __name__ == '__main__':
     ip, port = server.server_address
     print "Listening on",ip,port
 
-    G.main_timer = timer.Timer(G.TIMER_INTERVAL)
+    G.main_timer = timer.Timer(G.TIMER_INTERVAL, name="G.main_timer")
     G.main_timer.start()
 
     helptext = "Available commands: " + ", ".join(["say", "stop", "save"])
@@ -237,6 +237,7 @@ if __name__ == '__main__':
             print "Done saving"
         elif cmd == "stop":
             server._stop.set()
+            G.main_timer.stop()
             print "Disconnecting clients..."
             for address in server.players:
                 try:

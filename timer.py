@@ -10,6 +10,7 @@
 # Nothing for now...
 
 import threading
+import time
 
 __all__ = (
     'TimerTask', 'Timer',
@@ -27,10 +28,12 @@ class TimerTask(object):
 
 
 # Timer used in furnace and redstone circuits
-class Timer(object):
-    def __init__(self, interval):
+class Timer(threading.Thread):
+    def __init__(self, interval, name=None):
+        super(Timer, self).__init__(name=name)
         self.queue = [None]
         self.interval = interval
+        self._stop = threading.Event()
 
     def add_task(self, ticks, callback, speed=1):
         if ticks == 0 and callback is not None:
@@ -52,20 +55,18 @@ class Timer(object):
         self.queue[index] = None
         return True
 
-    def start(self):
-        self.schedule()
+    def run(self):
+        while True:
+            time.sleep(self.interval)
+            if self._stop.is_set(): return
 
-    def schedule(self):
-        for index, _task in enumerate(self.queue):
-            if _task is None:
-                continue
-            self.queue[index].ticks -= self.interval * self.queue[index].speed
-            if self.queue[index].ticks <= 0:
-                self.queue[index].callback()
-                self.queue[index] = None
-
-        t = threading.Timer(self.interval, self.schedule)
-        t.start()
+            for index, _task in enumerate(self.queue):
+                if _task is None:
+                    continue
+                self.queue[index].ticks -= self.interval * self.queue[index].speed
+                if self.queue[index].ticks <= 0:
+                    self.queue[index].callback()
+                    self.queue[index] = None
 
     def progress(self, index):
         if index >= len(self.queue):
@@ -75,3 +76,6 @@ class Timer(object):
             return self.queue[index].progress()
         else:
             return 0
+
+    def stop(self):
+        self._stop.set()
