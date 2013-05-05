@@ -176,56 +176,6 @@ class GetIDCommand(Command):
         else:
             self.send_info("ID: None")
 
-class SetSnowCommand(Command):
-    command = r"^setsnow$"
-    help_text = "setsnow: Sets next biome to Snow."
-
-
-    def execute(self, *args, **kwargs):
-        print ('Old biome was ' + G.TERRAIN_CHOICE)
-        G.TERRAIN_CHOICE = 'snow'
-        self.send_info("Biome set to " + G.TERRAIN_CHOICE + ".")
-
-class SetPlainsCommand(Command):
-    command = r"^setplains$"
-    help_text = "setplains: Sets next biome to Plains."
-
-
-    def execute(self, *args, **kwargs):
-        print ('Old biome was ' + G.TERRAIN_CHOICE)
-        G.TERRAIN_CHOICE = 'plains'
-        self.send_info("Biome set to " + G.TERRAIN_CHOICE + ".")
-
-class SetIslandCommand(Command):
-    command = r"^setisland$"
-    help_text = "setisland: Sets next biome to Island."
-
-
-    def execute(self, *args, **kwargs):
-        print ('Old biome was ' + G.TERRAIN_CHOICE)
-        G.TERRAIN_CHOICE = 'island'
-        self.send_info("Biome set to " + G.TERRAIN_CHOICE + ".")
-
-class SetDesertCommand(Command):
-    command = r"^setdesert$"
-    help_text = "setdesert: Sets next biome to Desert."
-
-
-    def execute(self, *args, **kwargs):
-        print ('Old biome was ' + G.TERRAIN_CHOICE)
-        G.TERRAIN_CHOICE = 'desert'
-        self.send_info("Biome set to " + G.TERRAIN_CHOICE + ".")
-
-class SetMountainsCommand(Command):
-    command = r"^setmountain$"
-    help_text = "setmountain: Sets next biome to Mountains."
-
-
-    def execute(self, *args, **kwargs):
-        print ('Old biome was ' + G.TERRAIN_CHOICE)
-        G.TERRAIN_CHOICE = 'mountains'
-        self.send_info("Biome set to " + G.TERRAIN_CHOICE + ".")
-
 class TakeScreencapCommand(Command):
     command = r"^screencap$"
     help_text = "screencap: saves current screen to a file. Press " + str(G.SCREENCAP_KEY) + " for instant screencap."

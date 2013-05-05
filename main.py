@@ -92,11 +92,6 @@ def main(options):
     for name, val in options._get_kwargs():
         setattr(G.LAUNCH_OPTIONS, name, val)
 
-    G.TERRAIN_CHOICE = options.terrain
-    G.TERRAIN = G.TERRAIN_CHOICES[options.terrain]
-
-    G.FLAT_MODE = options.flat
-
     if options.fast:
         G.TIME_RATE /= 20
 
@@ -112,8 +107,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Play a Python made Minecraft clone.')
 
     game_group = parser.add_argument_group('Game options')
-    game_group.add_argument("--terrain", choices=G.TERRAIN_CHOICES, default=G.DEFAULT_TERRAIN_CHOICE)
-    game_group.add_argument("--flat", action="store_true", default=False, help="Generate a flat world.")
     game_group.add_argument("--fast", action="store_true", default=False, help="Makes time progress faster then normal.")
     game_group.add_argument("--game-mode", choices=G.GAME_MODE_CHOICES, default=G.GAME_MODE)
 

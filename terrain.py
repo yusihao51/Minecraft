@@ -25,6 +25,32 @@ __all__ = (
 )
 
 
+# Factory class utilizing perlin.SimplexNoise
+class SimplexNoiseGen(object):
+    def __init__(self, seed, octaves=6, zoom_level=0.002):
+        perm = range(255)
+        random.Random(seed).shuffle(perm)
+        self.noise = SimplexNoise(permutation_table=perm).noise2
+
+        self.PERSISTENCE = 2.1379201 # AKA lacunarity
+        self.H = 0.836281
+        self.OCTAVES = octaves       # Higher linearly increases calc time; increases apparent 'randomness'
+        self.weights = [self.PERSISTENCE ** (-self.H * n) for n in xrange(self.OCTAVES)]
+
+        self.zoom_level = zoom_level # Smaller will create gentler, softer transitions. Larger is more mountainy
+
+    def fBm(self,x,z):
+        x *= self.zoom_level
+        z *= self.zoom_level
+        y = 0
+        for weight in self.weights:
+            y += self.noise(x, z) * weight
+
+            x *= self.PERSISTENCE
+            z *= self.PERSISTENCE
+        return y
+
+
 # Improved Perlin Noise based on Improved Noise reference implementation by Ken Perlin
 class PerlinNoise(object):
     def __init__(self, seed):
@@ -177,38 +203,37 @@ SAMPLE_RATE_VER = 4
 
 class BiomeGenerator(object):
     def __init__(self, seed):
-        self.temperature_gen = PerlinNoise(seed + 97)
-        self.humidity_gen = PerlinNoise(seed + 147)
+        self.temperature_gen = SimplexNoiseGen(seed + "97", zoom_level=0.01)
+        self.humidity_gen = SimplexNoiseGen(seed + "147", zoom_level=0.01)
 
     def _clamp(self, a):
         if a > 1:
-            return 1
+            return 1.0
         elif a < 0:
-            return 0
+            return 0.0
         else:
             return a
 
     def get_humidity(self, x, z):
-        return float(self._clamp((self.humidity_gen.fBm(x * 0.0005, 0, 0.0005 * z) + 1.0) / 2.0))
+        return self._clamp((self.humidity_gen.fBm(x, z) + 1.0) / 2.0)
 
     def get_temperature(self,x, z):
-        return float(self._clamp((self.temperature_gen.fBm(x * 0.0005, 0, 0.0005 * z) + 1.0) / 2.0))
+        return self._clamp((self.temperature_gen.fBm(x, z) + 1.0) / 2.0)
 
     def get_biome_type(self, x, z):
-        x = int(x)
-        z = int(z)
         temp = self.get_temperature(x, z)
         humidity = self.get_humidity(x, z) * temp
 
-        if temp >= 0.5 and humidity < 0.3:
-            return G.DESERT
-        elif 0.3 <= humidity <= 0.6 and temp >= 0.5:
-            return G.PLAINS
-        elif temp <= 0.3 and humidity > 0.5:
-            return G.SNOW
-        elif 0.2 <= humidity <= 0.6 and temp < 0.5:
-            return G.MOUNTAINS
-
+        if temp >= 0.5:
+            if humidity < 0.3:
+                return G.DESERT
+            elif humidity <= 0.6:
+                return G.PLAINS
+        else:
+            if temp <= 0.3 and humidity > 0.5:
+                return G.SNOW
+            elif 0.2 <= humidity <= 0.6:
+                return G.MOUNTAINS
         return G.FOREST
 
 class TerrainGeneratorBase(object):
@@ -401,6 +426,7 @@ class TerrainGenerator(TerrainGeneratorBase):
     def cave_density(self, x, y, z):
         return self.cave_gen.fBm(x * 0.02, y * 0.02, z * 0.02)
 
+
 class TerrainGeneratorSimple(TerrainGeneratorBase):
     """
     A simple and fast use of (Simplex) Perlin Noise to generate a heightmap
@@ -419,6 +445,8 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
         self.PERSISTENCE = 2.1379201 #AKA lacunarity
         self.H = 0.836281
 
+        self.biome_generator = BiomeGenerator(seed)
+
         #Fun things to adjust
         self.OCTAVES = 9        #Higher linearly increases calc time; increases apparent 'randomness'
         self.height_range = 32  #If you raise this, you should shrink zoom_level equally
@@ -426,9 +454,6 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
         self.island_shore = 38  #below this is sand, above is grass .. island only
         self.water_level = 36 # have water 2 block higher than base, allowing for some rivers...
         self.zoom_level = 0.002 #Smaller will create gentler, softer transitions. Larger is more mountainy
-        #self.negative_biome_trigger = G.BIOME_BLOCK_TRIGGER - G.BIOME_BLOCK_TRIGGER - G.BIOME_BLOCK_TRIGGER  #  negative version of the biome trigger
-        #print(self.negative_biome_trigger)
-        self.negative_biome_trigger = -215
 
 
         # ores avaliable on the lowest level, closet to bedrock
@@ -471,38 +496,53 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
         return int(self.height_base + self._clamp((y+1.0)/2.0)*self.height_range)
 
     def generate_sector(self, sector):
-        #main_block = grass_block
-        # if not nether, generate new biome info when the trigger hits...
-        if G.TERRAIN_CHOICE != 'nether':
-            if G.BIOME_BLOCK_COUNT >= G.BIOME_BLOCK_TRIGGER or G.BIOME_BLOCK_COUNT <= G.BIOME_NEGATIVE_BLOCK_TRIGGER: #  or self.negative_biome_trigger:  # 215 or -215
-                G.BIOME_BLOCK_COUNT = 0
-                new_biomes = ('plains', 'desert', 'mountains', 'snow')
-                print ('old biome was ' + G.TERRAIN_CHOICE)
-                G.TERRAIN_CHOICE = self.rand.choice(new_biomes)
-                print ('new biome is ' + G.TERRAIN_CHOICE)
+        world = self.world
+        if sector in world.sectors:
+            #This sector is already loaded? Does it just have leaf blocks or something?
+            for pos in world.sectors[sector]:
+                if world[pos] not in self.autogenerated_blocks:
+                    return
 
-        if G.TERRAIN_CHOICE == "plains":
+        #if G.TERRAIN_CHOICE != 'nether':
+        TERRAIN_CHOICE = self.biome_generator.get_biome_type(sector[0], sector[2])
+
+        TREE_CHANCE = G.TREE_CHANCE
+        WILDFOOD_CHANCE = G.WILDFOOD_CHANCE
+        GRASS_CHANCE = G.GRASS_CHANCE
+
+        #TODO: This is very untidy, should be converted to a dict or something clever
+        if TERRAIN_CHOICE == G.FOREST:
             main_block = grass_block
             self.height_range = 32
             self.height_base = 32
             self.island_shore = 0
             self.water_level = 0
             self.zoom_level = 0.002
-        elif G.TERRAIN_CHOICE == "snow":
+            TREE_CHANCE = 0.012
+        elif TERRAIN_CHOICE == G.PLAINS:
+            main_block = grass_block
+            self.height_range = 32
+            self.height_base = 32
+            self.island_shore = 0
+            self.water_level = 0
+            self.zoom_level = 0.002
+            TREE_CHANCE = 0.004
+        elif TERRAIN_CHOICE == G.SNOW:
             main_block = snowgrass_block
             self.height_range = 32
             self.height_base = 32
             self.island_shore = 34
             self.water_level = 33
             self.zoom_level = 0.002
-        elif G.TERRAIN_CHOICE == "desert":
+        elif TERRAIN_CHOICE == G.DESERT:
             main_block = sand_block
             self.height_range = 32
             self.height_base = 32
             self.island_shore = 32
             self.water_level = 0
             self.zoom_level = 0.002
-        elif G.TERRAIN_CHOICE == "island":
+            TREE_CHANCE = 0
+        elif TERRAIN_CHOICE == G.ISLAND:  #Does not naturally occur
             # Some grass that cant be on sand, for a clean beach
             self.world_type_grass = (YFlowers, Rose, TallGrass)
             main_block = grass_block
@@ -511,14 +551,14 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
             self.island_shore = 38
             self.water_level = 36
             self.zoom_level = 0.002
-        elif G.TERRAIN_CHOICE == "mountains":
+        elif TERRAIN_CHOICE == G.MOUNTAINS:
             main_block = stone_block
             self.height_range = 32
             self.height_base = 32
             self.island_shore = 18
             self.water_level = 20
             self.zoom_level = 0.001
-        elif G.TERRAIN_CHOICE == "nether":
+        elif TERRAIN_CHOICE == G.NETHER:  #Does not naturally occur
             main_block = nether_block
             self.height_range = 32
             self.height_base = 32
@@ -526,11 +566,6 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
             self.island_shore = -1
             self.water_level = -2
             self.zoom_level = 0.01
-        world = self.world
-        if sector in world.sectors:
-            for pos in world.sectors[sector]:
-                if world[pos] not in self.autogenerated_blocks:
-                    return
 
         world.sectors[sector] = []  # Precache it incase it ends up being solid air, so it doesn't get regenerated indefinitely
         bx, by, bz = world.savingsystem.sector_to_blockpos(sector)
@@ -547,10 +582,6 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
             choose = self.rand.choice
             rand_random = self.rand.random
             # Variables (that are static during what follows)
-            TERRAIN_CHOICE = G.TERRAIN_CHOICE
-            TREE_CHANCE = G.TREE_CHANCE
-            WILDFOOD_CHANCE = G.WILDFOOD_CHANCE
-            GRASS_CHANCE = G.GRASS_CHANCE
             height_base = self.height_base
             island_shore = self.island_shore
             water_level = self.water_level
@@ -558,11 +589,14 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
             world_type_trees = self.world_type_trees
             world_type_plants = self.world_type_plants
             world_type_grass = self.world_type_grass
-            highlevel_ores = self.highlevel_ores
-            midlevel_ores = self.midlevel_ores
-            lowlevel_ores = self.lowlevel_ores
-
-
+            if TERRAIN_CHOICE == G.NETHER:
+                highlevel_ores = ((nether_block,) * 60 + (soulsand_block,) * 35 + (netherore_block,) * 5 + (air_block,) * 10)
+                midlevel_ores = highlevel_ores
+                lowlevel_ores = highlevel_ores
+            else:
+                highlevel_ores = self.highlevel_ores
+                midlevel_ores = self.midlevel_ores
+                lowlevel_ores = self.lowlevel_ores
 
             for x in xrange(bx, bx + 8):
                 for z in xrange(bz, bz + 8):
@@ -575,7 +609,7 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
                         if y > bytop:
                             y = bytop
 
-                        if TERRAIN_CHOICE == "mountains":
+                        if TERRAIN_CHOICE == G.MOUNTAINS:
                             if 0 <= y <= 35:  # bottom level = grass
                                 main_block = grass_block
                             if 36 <= y <= 54:  # mid level = rock
@@ -584,15 +618,15 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
                                 main_block = snow_block
 
                         if y <= water_level:
-                            if TERRAIN_CHOICE != "desert":  # was y == self.height_base -- you can have water!
-                                if TERRAIN_CHOICE == "snow":  # top block is ice
+                            if TERRAIN_CHOICE != G.DESERT:  # was y == self.height_base -- you can have water!
+                                if TERRAIN_CHOICE == G.SNOW:  # top block is ice
                                     init_block((x, water_level, z), ice_block)
                                 else:
                                     init_block((x, water_level, z), water_block)
                                 # init_block((x, y -1, z), water_block)
                                 init_block((x, water_level - 2, z), choose(underwater_blocks))
                                 init_block((x, water_level - 3, z), dirt_block)
-                            if TERRAIN_CHOICE == "desert":  # no water for you!
+                            else:  # no water for you!
                                 init_block((x, y + 1, z), sand_block)
                                 init_block((x, y, z), sand_block)
                                 init_block((x, y - 1, z), sand_block)
@@ -600,7 +634,7 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
                                 init_block((x, y - 3, z), sandstone_block)
                             y -= 3
                         elif y < bytop:
-                            if TERRAIN_CHOICE == "island":  # always sand by the water, grass above
+                            if TERRAIN_CHOICE == G.ISLAND:  # always sand by the water, grass above
                                 if y > island_shore:
                                     main_block = grass_block
                                 else:
@@ -636,10 +670,6 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
                             y -= 3
 
                     for yy in xrange(by, y):
-                        if G.TERRAIN_CHOICE == "nether":
-                            highlevel_ores = ((nether_block,) * 60 + (soulsand_block,) * 35 + (netherore_block,) * 5 + (air_block,) * 10)
-                            midlevel_ores = highlevel_ores
-                            lowlevel_ores = highlevel_ores
                         # ores and filler...
                         if yy >= 32:
                             blockset = highlevel_ores
@@ -648,7 +678,7 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
                         elif yy > 2:
                             blockset = lowlevel_ores
                         elif yy <= 1:
-                            blockset = (bed_block, bed_block)
+                            blockset = (bed_block, )
 
                         init_block((x, yy, z), choose(blockset))
                         #if yy == 0:

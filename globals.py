@@ -42,8 +42,6 @@ CREATIVE_MODE = 'creative'
 GAME_MODE_CHOICES = (SURVIVAL_MODE, CREATIVE_MODE)
 GAME_MODE = CREATIVE_MODE
 
-FLAT_MODE = False
-
 
 #
 # User input
@@ -157,9 +155,6 @@ TERRAIN_CHOICES = {  # hill_height & max_trees mandatory for the moment.
         'max_trees': 0,
     }
 }
-DEFAULT_TERRAIN_CHOICE = 'island'  # island  # was 'plains', makes more sense for islands, player stranded on an island
-TERRAIN_CHOICE = DEFAULT_TERRAIN_CHOICE
-TERRAIN = TERRAIN_CHOICES[DEFAULT_TERRAIN_CHOICE]
 
 SEED = None
 TREE_CHANCE = 0.006
@@ -168,13 +163,8 @@ GRASS_CHANCE = 0.05
 #
 # Biome
 #
-DESERT, PLAINS, MOUNTAINS, SNOW, FOREST = range(5)
-OLD_BIOME = DEFAULT_TERRAIN_CHOICE
-NEW_BIOME = 'plains'
-# THE LARGER THE NUMBER, THE MORE TO WALK TO  ANEW BIOME
-BIOME_BLOCK_TRIGGER = 80
-BIOME_NEGATIVE_BLOCK_TRIGGER = -80
-BIOME_BLOCK_COUNT = 0
+DESERT, PLAINS, MOUNTAINS, SNOW, FOREST, ISLAND, NETHER = range(7)
+
 #
 # Graphical rendering
 #
