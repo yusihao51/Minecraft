@@ -55,9 +55,9 @@ def save_sector_to_string(blocks, secpos):
         for y in xrange(cy, cy+8):
             for z in xrange(cz, cz+8):
                 blk = blocks.get((x,y,z), air).id
-                if blk:
-                    if isinstance(blk, int):
-                        blk = BlockID(blk)
+                if blk is not air:
+                    #if isinstance(blk, int): # When does this occur? Its expensive and I don't see it triggering
+                    #    blk = BlockID(blk)
                     fstr += structuchar2.pack(blk.main, blk.sub)
                 else:
                     fstr += null2
@@ -131,10 +131,11 @@ def load_region(world, world_name=None, region=None, sector=None):
                                 for z in xrange(cz, cz+8):
                                     read = fstr[fpos:fpos+2]
                                     fpos += 2
-                                    unpacked = structuchar2.unpack(read)
-                                    if read != null2 and unpacked in BLOCKS_DIR:
+                                    if read != null2:
                                         position = x,y,z
-                                        blocks[position] = BLOCKS_DIR[unpacked]
+                                        try: blocks[position] = BLOCKS_DIR[structuchar2.unpack(read)]
+                                        except KeyError as e:
+                                            print "load_region: Invalid Block", e
                                         sectors[(x/SECTOR_SIZE, y/SECTOR_SIZE, z/SECTOR_SIZE)].append(position)
 
 def load_player(player, world):
