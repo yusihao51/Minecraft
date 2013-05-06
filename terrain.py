@@ -27,7 +27,7 @@ __all__ = (
 
 # Factory class utilizing perlin.SimplexNoise
 class SimplexNoiseGen(object):
-    def __init__(self, seed, octaves=6, zoom_level=0.002):
+    def __init__(self, seed, octaves=6, zoom_level=0.002):  # octaves = 6,
         perm = range(255)
         random.Random(seed).shuffle(perm)
         self.noise = SimplexNoise(permutation_table=perm).noise2

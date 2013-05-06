@@ -11,9 +11,11 @@ import operator
 import os
 import random
 
+
 # Third-party packages
 import threading
 from pyglet.gl import *
+from pyglet import image
 
 # Modules from this project
 from blocks import *
@@ -26,10 +28,10 @@ from player import Player
 from model import PlayerModel
 from skydome import Skydome
 import utils
-from utils import vec, sectorize, normalize
+from utils import vec, sectorize, normalize, load_image, image_sprite
 from views import MainMenuView, OptionsView, ControlsView, TexturesView
 from world import World
-
+from terrain import BiomeGenerator
 
 __all__ = (
     'Controller', 'MainMenuController', 'GameController',
@@ -442,6 +444,11 @@ class GameController(Controller):
             path = 'screencaptures/' + filename
             pyglet.image.get_buffer_manager().get_color_buffer().save(path)
            # self.send_info("Screen capture saved to '%s'" % path)
+
+        if symbol == G.MAP_KEY:
+            print("Map")
+            self.show_map()
+
         self.last_key = symbol
 
     def on_key_release(self, symbol, modifiers):
@@ -589,3 +596,38 @@ class GameController(Controller):
     def on_close(self):
         G.save_config()
         self.world.packetreceiver.stop()  # Disconnect from the server so the process can close
+
+    def show_map(self):
+        print("map called...")
+         # taken from Nebual's biome_explorer, this is ment to be a full screen map that uses mini tiles to make a full 2d map.
+        b = BiomeGenerator(G.SEED)
+        x, y, z = self.player.position
+        curx =  x
+        cury = y
+        map = []
+        xsize = 79
+        ysize = 28
+        pbatch = pyglet.graphics.Batch()
+        DESERT, PLAINS, MOUNTAINS, SNOW, FOREST = range(5)
+        letters = ["D","P","M","S","F"]
+
+        #  temp background pic...
+        image = load_image('resources', 'textures', 'main_menu_background.png')
+        frame_size = G.WINDOW_HEIGHT
+        map_frame = image_sprite(image, pbatch, 0, y=G.WINDOW_WIDTH, height=G.WINDOW_HEIGHT)
+
+        for y in range(cury,cury+ysize):
+         for x in range(curx,curx+xsize):
+             #string += letters[b.get_biome_type(x,y)]
+            tmap = letters[b.get_biome_type(x,y)]
+            tile_map = image.load('resources', 'textures', tmap +'.png')
+            tile_map.anchor_x = G.WINDOW_WIDTH
+            tile_map.anchor_Y = G.WINDOW_HEIGHT
+            map = image_sprite(tile_map, pbatch, 3, x * 8, y * 8, 8, 8)
+            tile_map.blit(x *8, y * 8)
+            tile_map.draw()
+        # map.append(tmap)
+            map.draw()
+            pbatch.draw()
+        #            string += "\n"
+        #        print string + "Current position: (%s-%s %s-%s)" % (curx*8, (curx+xsize)*8, cury*8, (cury+ysize)*8)
