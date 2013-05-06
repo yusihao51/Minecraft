@@ -26,3 +26,9 @@ cdef class SimplexNoise(BaseNoise):
                    perm=tuple, ii=int, jj=int, gi0=int, gi1=int, gi2=int,
                    tt=double, g=tuple, noise=double)
     cpdef double noise2(self, double x, double y)
+    @cython.locals(s=double, i=double, j=double, k=double, t=double, x0=double, y0=double, z0=double,
+                   i1=int, j1=int, k1=int, i2=int, j2=int, k2=int, 
+                   x1=double, y1=double, z1=double, x2=double, y2=double, z3=double, x3=double, y3=double, z3=double,
+                   perm=tuple, ii=int, jj=int, kk=int, gi0=int, gi1=int, gi2=int, gi3=int,
+                   tt=double, g=tuple, noise=double)
+    cpdef double noise3(self, double x, double y, double z)
