@@ -443,12 +443,8 @@ class GameController(Controller):
                 os.makedirs('screencaptures')
             path = 'screencaptures/' + filename
             pyglet.image.get_buffer_manager().get_color_buffer().save(path)
-           # self.send_info("Screen capture saved to '%s'" % path)
-
-        if symbol == G.MAP_KEY:
-            print("Map")
+        elif symbol == G.SHOWMAP_KEY:
             self.show_map()
-
         self.last_key = symbol
 
     def on_key_release(self, symbol, modifiers):
@@ -600,34 +596,55 @@ class GameController(Controller):
     def show_map(self):
         print("map called...")
          # taken from Nebual's biome_explorer, this is ment to be a full screen map that uses mini tiles to make a full 2d map.
-        b = BiomeGenerator(G.SEED)
+        with open(os.path.join(G.game_dir, "world", "seed"), "rb") as f:
+            SEED = f.read()
+        b = BiomeGenerator(SEED)
         x, y, z = self.player.position
         curx =  x
         cury = y
-        map = []
         xsize = 79
         ysize = 28
         pbatch = pyglet.graphics.Batch()
+        pgroup = pyglet.graphics.OrderedGroup(1)
         DESERT, PLAINS, MOUNTAINS, SNOW, FOREST = range(5)
         letters = ["D","P","M","S","F"]
 
         #  temp background pic...
         image = load_image('resources', 'textures', 'main_menu_background.png')
-        frame_size = G.WINDOW_HEIGHT
-        map_frame = image_sprite(image, pbatch, 0, y=G.WINDOW_WIDTH, height=G.WINDOW_HEIGHT)
-
-        for y in range(cury,cury+ysize):
-         for x in range(curx,curx+xsize):
+        #map_frame = image_sprite(image, pbatch, 0, y=G.WINDOW_WIDTH, height=G.WINDOW_HEIGHT)
+        #sprite = pyglet.sprite.Sprite(image)
+        #sprite.image(image)
+        #sprite.visible = True
+       # map_frame.draw()
+       # map_frame.visible = True
+        for y in range(int(cury),int(cury+ysize)):
+         for x in range(int(curx),int(curx+xsize)):
              #string += letters[b.get_biome_type(x,y)]
             tmap = letters[b.get_biome_type(x,y)]
-            tile_map = image.load('resources', 'textures', tmap +'.png')
-            tile_map.anchor_x = G.WINDOW_WIDTH
-            tile_map.anchor_Y = G.WINDOW_HEIGHT
-            map = image_sprite(tile_map, pbatch, 3, x * 8, y * 8, 8, 8)
+            tile_map = load_image('resources', 'textures', tmap +'.png')
+            tile_map.anchor_x = x * 8
+            tile_map.anchor_Y = y * 8
+
+            map = image_sprite(tile_map, pbatch, pgroup, x * 8, y * 8, 8, 8)
+
             tile_map.blit(x *8, y * 8)
-            tile_map.draw()
-        # map.append(tmap)
+
+            #tile_map.draw()
+            #map.append(tmap)
             map.draw()
             pbatch.draw()
+            ## Save to file, did not work...
+        #map.image.save('mapX.png')
+
+        # map_streamX = open('mapX2.png', 'wb')
+        # tile_map.save('mapX2.png', file=map_streamX)
+        # #tile_map.image_data = map.image
+        # map.visible = True
+        # map_stream2 = open('map2.png', 'wb')
+        # tile_map.save('map2.png', file=map_stream2)
+        # map_stream = open('map.png', 'wb')
+        # #map.save('map_test.png', file=map_stream)
+        # tile_map.save('map.png', file=map_stream)
+
         #            string += "\n"
         #        print string + "Current position: (%s-%s %s-%s)" % (curx*8, (curx+xsize)*8, cury*8, (cury+ysize)*8)
