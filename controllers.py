@@ -611,6 +611,7 @@ class GameController(Controller):
 
         #  temp background pic...
         image = load_image('resources', 'textures', 'main_menu_background.png')
+
         #map_frame = image_sprite(image, pbatch, 0, y=G.WINDOW_WIDTH, height=G.WINDOW_HEIGHT)
         #sprite = pyglet.sprite.Sprite(image)
         #sprite.image(image)
@@ -624,18 +625,19 @@ class GameController(Controller):
             tile_map = load_image('resources', 'textures', tmap +'.png')
             tile_map.anchor_x = x * 8
             tile_map.anchor_Y = y * 8
-
-            map = image_sprite(tile_map, pbatch, pgroup, x * 8, y * 8, 8, 8)
+            sprite = pyglet.sprite.Sprite(tile_map, x=x * 8, y=y * 8, batch=pbatch)
+            game_map = image_sprite(tile_map, pbatch, pgroup, x * 8, y * 8, 8, 8)
+            game_map = pyglet.sprite.Sprite(image,x=G.WINDOW_WIDTH, y=G.WINDOW_HEIGHT,batch=pbatch, group=pgroup)
+            game_map = pyglet.sprite.Sprite(tile_map,x=x*8, y=y*8,batch=pbatch, group=pgroup)
 
             tile_map.blit(x *8, y * 8)
 
             #tile_map.draw()
             #map.append(tmap)
-            map.draw()
+            game_map.draw()
             pbatch.draw()
             ## Save to file, did not work...
         #map.image.save('mapX.png')
-
         # map_streamX = open('mapX2.png', 'wb')
         # tile_map.save('mapX2.png', file=map_streamX)
         # #tile_map.image_data = map.image
