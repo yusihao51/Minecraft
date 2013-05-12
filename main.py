@@ -102,6 +102,12 @@ def main(options):
     window = Window(resizable=True, vsync=False)
     pyglet.app.run()
 
+    if G.SERVER:
+        print 'Shutting down internal server...'
+        G.main_timer.stop()
+        G.CLIENT.stop()
+        G.SERVER._stop.set()
+        G.SERVER.shutdown()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Play a Python made Minecraft clone.')
