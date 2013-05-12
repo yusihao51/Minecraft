@@ -29,7 +29,7 @@ from model import PlayerModel
 from skydome import Skydome
 import utils
 from utils import vec, sectorize, normalize, load_image, image_sprite
-from views import MainMenuView, OptionsView, ControlsView, TexturesView
+from views import MainMenuView, OptionsView, ControlsView, TexturesView, MultiplayerView
 from world import World
 from terrain import BiomeGenerator
 from server import start_server
@@ -101,11 +101,15 @@ class MainMenuController(Controller):
         self.main_menu = partial(self.switch_view_class, MainMenuView)
         self.controls = partial(self.switch_view_class, ControlsView)
         self.textures = partial(self.switch_view_class, TexturesView)
-        self.start_multiplayer_game = partial(self.switch_controller_class, GameController)
+        self.multiplayer = partial(self.switch_view_class, MultiplayerView)
         self.exit_game = pyglet.app.exit
 
     def start_singleplayer_game(self):
         G.SINGLEPLAYER = True
+        self.switch_controller_class(GameController)
+
+    def start_multiplayer_game(self):
+        G.SINGLEPLAYER = False
         self.switch_controller_class(GameController)
 
 class GameController(Controller):

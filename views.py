@@ -19,7 +19,7 @@ from utils import image_sprite
 
 
 __all__ = (
-    'View', 'MainMenuView', 'OptionsView', 'ControlsView', 'TexturesView',
+    'View', 'MainMenuView', 'OptionsView', 'ControlsView', 'TexturesView', 'MultiplayerView'
 )
 
 
@@ -114,15 +114,8 @@ class MainMenuView(MenuView):
         MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
 
-        self.text_input = TextWidget(self.controller.window, G.IP_ADDRESS, 0, 0, width=160, height=20, font_name='Arial', batch=self.batch)
-        self.controller.window.push_handlers(self.text_input)
-        self.text_input.focus()
-        def text_input_callback(symbol, modifier):
-            G.IP_ADDRESS = self.text_input.text
-        self.text_input.push_handlers(key_released=text_input_callback)
-
         self.buttons.append(self.Button(caption="Singleplayer",on_click=self.controller.start_singleplayer_game))
-        self.buttons.append(self.Button(caption="Multiplayer",on_click=self.controller.start_multiplayer_game))
+        self.buttons.append(self.Button(caption="Multiplayer",on_click=self.controller.multiplayer))
         self.buttons.append(self.Button(caption="Options...",on_click=self.controller.game_options))
         self.buttons.append(self.Button(caption="Exit game",on_click=self.controller.exit_game))
         self.label = Label(G.APP_NAME, font_name='ChunkFive Roman', font_size=50, x=width/2, y=self.frame.y + self.frame.height,
@@ -131,21 +124,10 @@ class MainMenuView(MenuView):
 
         self.on_resize(width, height)
 
-    def launch_server(self):
-        if os.name == 'nt':
-            subprocess.Popen([sys.executable, "server.py"], creationflags=subprocess.CREATE_NEW_CONSOLE)
-        else:
-            subprocess.Popen([sys.executable, "server.py"])
-        localip = [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][0]
-        self.text_input.text = localip
-        G.IP_ADDRESS = localip
-
     def on_resize(self, width, height):
         MenuView.on_resize(self, width, height)
         self.label.y = self.frame.y + self.frame.height - 15
         self.label.x = width / 2
-        self.text_input.resize(x=self.frame.x + (self.frame.width - self.text_input.width) / 2 + 5, y=self.frame.y + (self.frame.height) / 2 + 75, width=150)
-
 
 class OptionsView(MenuView):
     def setup(self):
@@ -165,7 +147,9 @@ class OptionsView(MenuView):
         self.buttons.append(self.Button(caption="Controls...", on_click=self.controller.controls))
         self.buttons.append(self.Button(caption="Textures", on_click=self.controller.textures, enabled=os.path.exists(texturepacks_dir)))
         self.buttons.append(self.Button(caption="Done", on_click=self.controller.main_menu))
-
+        self.label = Label('Options', font_name='ChunkFive Roman', font_size=25, x=width/2, y=self.frame.y + self.frame.height,
+            anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
+            group=self.labels_group)
         self.on_resize(width, height)
 
     def on_resize(self, width, height):
@@ -250,6 +234,9 @@ class TexturesView(MenuView):
             self.texture_buttons.append(button)
         self.button_return = self.Button(caption="Done",on_click=self.controller.game_options)
         self.buttons.append(self.button_return)
+        self.label = Label('Select Texture Pack', font_name='ChunkFive Roman', font_size=25, x=width/2, y=self.frame.y + self.frame.height,
+            anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
+            group=self.labels_group)
 
         self.on_resize(width, height)
 
@@ -264,3 +251,37 @@ class TexturesView(MenuView):
 
                 G.save_config()
                 button.toggled = False
+
+class MultiplayerView(MenuView):
+    def setup(self):
+        MenuView.setup(self)
+        width, height = self.controller.window.width, self.controller.window.height
+
+        self.text_input = TextWidget(self.controller.window, G.IP_ADDRESS, 0, 0, width=160, height=20, font_name='Arial', batch=self.batch)
+        self.controller.window.push_handlers(self.text_input)
+        self.text_input.focus()
+        def text_input_callback(symbol, modifier):
+            G.IP_ADDRESS = self.text_input.text
+        self.text_input.push_handlers(key_released=text_input_callback)
+
+        self.buttons.append(self.Button(caption="Connect to server", on_click=self.controller.start_multiplayer_game))
+        self.buttons.append(self.Button(caption="Launch server", on_click=self.launch_server))
+        self.buttons.append(self.Button(caption="Done", on_click=self.controller.main_menu))
+        self.label = Label('Play Multiplayer', font_name='ChunkFive Roman', font_size=25, x=width/2, y=self.frame.y + self.frame.height,
+            anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
+            group=self.labels_group)
+
+        self.on_resize(width, height)
+
+    def launch_server(self):
+        if os.name == 'nt':
+            subprocess.Popen([sys.executable, "server.py"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        else:
+            subprocess.Popen([sys.executable, "server.py"])
+        localip = [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][0]
+        self.text_input.text = localip
+        G.IP_ADDRESS = localip
+
+    def on_resize(self, width, height):
+        MenuView.on_resize(self, width, height)
+        self.text_input.resize(x=self.frame.x + (self.frame.width - self.text_input.width) / 2 + 5, y=self.frame.y + (self.frame.height) / 2 + 75, width=150)
