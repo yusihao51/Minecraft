@@ -49,7 +49,8 @@ class World(dict):
     # Add the block clientside, then tell the server about the new block
     def add_block(self, position, block, sync=True, force=True):
         self._add_block(position, block)  # For Prediction
-        self.packetreceiver.add_block(position, block)
+        if sync:
+            self.packetreceiver.add_block(position, block)
 
     # Clientside, add the block
     def _add_block(self, position, block):
@@ -72,7 +73,8 @@ class World(dict):
         if sound and player is not None:
             self[position].play_break_sound(player, position)
         self._remove_block(position, sync=sync)
-        self.packetreceiver.remove_block(position)
+        if sync:
+            self.packetreceiver.remove_block(position)
 
     # Clientside, delete the block
     def _remove_block(self, position, sync=True):

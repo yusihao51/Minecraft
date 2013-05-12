@@ -10,6 +10,7 @@ import struct
 # Modules from this project
 # Nothing for now...
 import globals as G
+from physics import physics_manager
 
 
 __all__ = (
@@ -219,7 +220,7 @@ class RedstoneTorchEntity(TileEntity):
 
 class DroppedBlockEntity(Entity):
     def __init__(self, world, position, item):
-        super(TileEntity, self).__init__(position, rotation=(0,0))
+        super(DroppedBlockEntity, self).__init__(position, rotation=(0,0))
         self.world = world
         self.item_stack = item
 
@@ -232,3 +233,15 @@ class DroppedBlockEntity(Entity):
             pass
             # entity_manager.remove_entity(self.entity_id)
 
+class FallingBlockEntity(Entity):
+    def __init__(self, world, position):
+        super(FallingBlockEntity, self).__init__(position, rotation=(0,0))
+        self.world = world
+        self.falling_block = world[position]
+
+        physics_manager.do_physics(position, (0, -9.8, 0), self)
+
+    def update_position(self, position):
+        self.world.remove_block(None, self.position, sync=False)
+        self.position = tuple(position)
+        self.world.add_block(self.position, self.falling_block, sync=False)

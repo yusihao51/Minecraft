@@ -11,7 +11,7 @@
 from timer import Timer
 
 __all__ = (
-    'PhysicsTask', 'PhysicsManager',
+    'PhysicsTask', 'PhysicsManager', 'physics_manager',
 )
 
 PHYSICS_TIMER_INTERVAL = PHYSICS_TICK = 0.1
@@ -26,9 +26,8 @@ class PhysicsTask(object):
 		self.position = list(position)
 
 class PhysicsManager(object):
-	def __init__(self, world):
-		#self.world = world
-		self.timer = Timer(PHYSICS_TIMER_INTERVAL)
+	def __init__(self):
+		self.timer = Timer(PHYSICS_TIMER_INTERVAL, "physics_timer")
 		self.started = False
 		self.tasks = []
 
@@ -60,4 +59,6 @@ class PhysicsManager(object):
 		if not self.started:
 			self.started = True
 			self.timer.add_task(PHYSICS_TICK, self.update)
-			self.timer.run()		
+			self.timer.start()
+
+physics_manager = PhysicsManager()
