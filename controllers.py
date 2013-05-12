@@ -32,6 +32,7 @@ from utils import vec, sectorize, normalize, load_image, image_sprite
 from views import MainMenuView, OptionsView, ControlsView, TexturesView
 from world import World
 from terrain import BiomeGenerator
+from server import start_server
 
 __all__ = (
     'Controller', 'MainMenuController', 'GameController',
@@ -100,8 +101,12 @@ class MainMenuController(Controller):
         self.main_menu = partial(self.switch_view_class, MainMenuView)
         self.controls = partial(self.switch_view_class, ControlsView)
         self.textures = partial(self.switch_view_class, TexturesView)
-        self.start_game = partial(self.switch_controller_class, GameController)
+        self.start_multiplayer_game = partial(self.switch_controller_class, GameController)
         self.exit_game = pyglet.app.exit
+
+    def start_singleplayer_game(self):
+        G.SINGLEPLAYER = True
+        self.switch_controller_class(GameController)
 
 class GameController(Controller):
     def __init__(self, window):
@@ -207,16 +212,32 @@ class GameController(Controller):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     def setup(self):
-        try:
-            #Make sure the address they want to connect to works
-            ipport = G.IP_ADDRESS.split(":")
-            if len(ipport) == 1: ipport.append(1486)
-            sock = socket.socket()
-            sock.connect(tuple(ipport))
-        except socket.error as e:
-            print "Socket Error:", e
-            #Otherwise back to the main menu we go
-            return False
+        if G.SINGLEPLAYER:
+            try:
+                print 'Starting internal server...'
+                # TODO: create world menu
+                G.SAVE_FILENAME = "world"
+                start_server(internal=True)
+                sock = socket.socket()
+                sock.connect(("localhost", 1486))
+            except socket.error as e:
+                print "Socket Error:", e
+                #Otherwise back to the main menu we go
+                return False
+            except:
+                print 'Unable to start internal server'
+                return False
+        else:
+            try:
+                #Make sure the address they want to connect to works
+                ipport = G.IP_ADDRESS.split(":")
+                if len(ipport) == 1: ipport.append(1486)
+                sock = socket.socket()
+                sock.connect((tuple(ipport)))
+            except socket.error as e:
+                print "Socket Error:", e
+                #Otherwise back to the main menu we go
+                return False
 
         self.init_gl()
 

@@ -192,14 +192,21 @@ class Server(socketserver.ThreadingTCPServer):
             player.sendpacket(12 + value_size, "\x0A" + struct.pack("iii", *position) + value)
 
 
-def start_server():
-    localip = [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][0]
-    server = Server((localip, 1486), ThreadedTCPRequestHandler)
+def start_server(internal=False):
+    if internal:
+        server = Server(("localhost", 1486), ThreadedTCPRequestHandler)
+    else:
+        localip = [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][0]
+        server = Server((localip, 1486), ThreadedTCPRequestHandler)
     G.SERVER = server
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.start()
 
     threading.Thread(target=server.world.content_update, name="world_server.content_update").start()
+
+    # start server timer
+    G.main_timer = timer.Timer(G.TIMER_INTERVAL, name="G.main_timer")
+    G.main_timer.start()
 
     return server, server_thread
 
@@ -215,9 +222,6 @@ if __name__ == '__main__':
 
     ip, port = server.server_address
     print "Listening on",ip,port
-
-    G.main_timer = timer.Timer(G.TIMER_INTERVAL, name="G.main_timer")
-    G.main_timer.start()
 
     helptext = "Available commands: " + ", ".join(["say", "stop", "save"])
     while 1:

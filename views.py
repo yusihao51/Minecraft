@@ -121,8 +121,8 @@ class MainMenuView(MenuView):
             G.IP_ADDRESS = self.text_input.text
         self.text_input.push_handlers(key_released=text_input_callback)
 
-        self.buttons.append(self.Button(caption="Connect to Server",on_click=self.controller.start_game))
-        self.buttons.append(self.Button(caption="Launch Server",on_click=self.launch_server))
+        self.buttons.append(self.Button(caption="Singleplayer",on_click=self.controller.start_singleplayer_game))
+        self.buttons.append(self.Button(caption="Multiplayer",on_click=self.controller.start_multiplayer_game))
         self.buttons.append(self.Button(caption="Options...",on_click=self.controller.game_options))
         self.buttons.append(self.Button(caption="Exit game",on_click=self.controller.exit_game))
         self.label = Label(G.APP_NAME, font_name='ChunkFive Roman', font_size=50, x=width/2, y=self.frame.y + self.frame.height,
