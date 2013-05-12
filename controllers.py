@@ -221,9 +221,19 @@ class GameController(Controller):
         self.init_gl()
 
         sky_rotation = -20.0  # -20.0
-        print 'loading sky'
+
+       # TERRAIN_CHOICE = self.biome_generator.get_biome_type(sector[0], sector[2])
+        default_skybox = 'skydome.jpg'
+        #if TERRAIN_CHOICE == G.NETHER:
+        #    default_skybox = 'skydome_nether.jpg'
+        #else:
+        #    default_skybox = 'skybox.jpg'
+
+        print 'loading ' + default_skybox
+
         self.skydome = Skydome(
-            'resources/skydome.jpg',
+            'resources/' + default_skybox,
+            #'resources/skydome.jpg',
             0.7,
             100.0,
             sky_rotation,

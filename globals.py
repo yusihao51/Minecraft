@@ -23,7 +23,7 @@ from pyglet.resource import get_settings_path
 # Nothing for now...
 
 
-APP_NAME = 'pyCraftr'  # should I stay or should I go?
+APP_NAME = 'pyCraft'  # should I stay or should I go?
 
 DEBUG = False
 
