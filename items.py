@@ -162,16 +162,22 @@ class SugarItem(Item):
     name = "Sugar"
 
 class SeedItem(Item):
-    id = 295
-    max_stack_size = 64
-    name = "Seed"
+    block_type = None
+    soil_type = None
 
     def on_right_click(self, world, player):
         block, previous = world.hit_test(player.position, player.get_sight_vector(), player.attack_range)
         if previous:
-            if world[block].id == farm_block.id: # plant wheat
-                world.add_block(previous, wheat_crop_block)
+            if world[block].id == self.soil_type.id: # plant
+                world.add_block(previous, self.block_type)
                 return True # remove from inventory
+
+class WheatSeedItem(SeedItem):
+    block_type = wheat_crop_block
+    soil_type = farm_block
+    id = 295
+    max_stack_size = 64
+    name = "Seed"
 
 class WheatItem(Item):
     id = 296
@@ -577,6 +583,6 @@ ladder_item = LadderItem()
 reddye_item = RedDyeItem()
 sugar_item = SugarItem()
 paper_item = PaperItem()
-seed_item = SeedItem()
+wheat_seed_item = WheatSeedItem()
 wheat_item = WheatItem()
 bread_item = BreadItem()

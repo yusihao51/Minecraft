@@ -194,6 +194,8 @@ class Block(object):
     # How long does it take to smelt this item (-1 for unsmeltable items)
     smelting_time = -1
 
+    render_as_normal_block = True
+
     def __init__(self, width=None, height=None):
         self.id = BlockID(self.id or 0)
         self.drop_id = self.id
@@ -202,6 +204,11 @@ class Block(object):
             self.width = width
         if height is not None:
             self.height = height
+
+        G.BLOCKS_DIR[self.id] = self
+
+        if not self.render_as_normal_block:
+            return
 
         if self.texture_name and G.TEXTURE_PACK != 'default':
             self.group = TextureGroupIndividual(self.texture_name)
@@ -218,8 +225,6 @@ class Block(object):
                 if v:
                     setattr(self, k, get_texture_coordinates(*v))
             self.texture_data = self.get_texture_data()
-
-        G.BLOCKS_DIR[self.id] = self
 
     def __str__(self):
         return self.name
@@ -1378,22 +1383,16 @@ class WheatCropBlock(Block):
     amount_label_color = 0, 0, 0, 255
 
     growth_stage = 0
-    # FIXME: A class attribute should never be mutable.
-    texture_list = []
+    max_growth_stage = 7
     entity_type = WheatCropEntity
     entity = None
 
-    # FIXME: This constructor contains many heresies.  The parent class
-    # constructor is not called and it contains hard-coded values.
+    render_as_normal_block = False
+
     def __init__(self):
-        self.id = BlockID(self.id or 0)
+        super(WheatCropBlock, self).__init__()
         self.top_texture = get_texture_coordinates(-1, -1)
         self.bottom_texture = get_texture_coordinates(-1, -1)
-        for i in range(0, 8):
-            self.side_texture = get_texture_coordinates(14, i)
-            self.front_texture = self.side_texture
-            self.texture_list.append(self.get_texture_data())
-        G.BLOCKS_DIR[self.id] = self
 
     def __del__(self):
         if self.entity is not None:
@@ -1402,7 +1401,9 @@ class WheatCropBlock(Block):
     # special hack to return different texture, which depends on the growth stage
     @property
     def texture_data(self):
-        return self.texture_list[self.growth_stage]
+        self.side_texture = get_texture_coordinates(14, self.growth_stage)
+        self.front_texture = self.side_texture
+        return self.get_texture_data()
 
     @texture_data.setter
     def texture_data(self, value):
@@ -1410,7 +1411,7 @@ class WheatCropBlock(Block):
 
     @property
     def drop_id(self):
-        if self.growth_stage == 7:
+        if self.growth_stage == self.max_growth_stage:
             return BlockID(296) # wheat
         else:
             return BlockID(295) #seed
