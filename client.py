@@ -147,7 +147,7 @@ class PacketReceiver(Thread):
                     durability = -1
                     if id_main >= G.ITEM_ID_MIN and (id_main, id_sub) not in G.ITEMS_DIR:
                         #The subid must be durability
-                        durability = id_sub * G.ITEMS_DIR[(id_main, 0)].max_durability / 255
+                        durability = id_sub * G.ITEMS_DIR[(id_main, 0)].durability / 255
                         id_sub = 0
                     inventory[i] = ItemStack(type=BlockID(id_main, id_sub), amount=amount, durability=durability)
             self.controller.item_list.update_items()

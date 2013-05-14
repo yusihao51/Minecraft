@@ -7,7 +7,7 @@
 # Nothing for now...
 
 # Modules from this project
-from blocks import BlockID, dirt_block, farm_block, grass_block, wheat_crop_block
+from blocks import BlockID, dirt_block, farm_block, grass_block, wheat_crop_block, potato_block, carrot_block
 import globals as G
 
 
@@ -178,6 +178,24 @@ class WheatSeedItem(SeedItem):
     id = 295
     max_stack_size = 64
     name = "Seed"
+
+class PotatoItem(SeedItem):
+    block_type = potato_block
+    soil_type = farm_block
+    id = 142
+    max_stack_size = 64
+    name = "Potato"
+    regenerated_health = 1
+
+# class CookedPotatoItem(Item):
+
+class CarrotItem(SeedItem):
+    block_type = carrot_block
+    soil_type = farm_block
+    id = 141
+    max_stack_size = 64
+    name = "Carrot"
+    regenerated_health = 1
 
 class WheatItem(Item):
     id = 296
@@ -586,3 +604,5 @@ paper_item = PaperItem()
 wheat_seed_item = WheatSeedItem()
 wheat_item = WheatItem()
 bread_item = BreadItem()
+potato_item = PotatoItem()
+carrot_item = CarrotItem()
