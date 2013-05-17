@@ -19,7 +19,7 @@ from utils import load_image
 import globals as G
 from random import randint
 import sounds
-from entity import WheatCropEntity, FurnaceEntity
+from entity import CropEntity, FurnaceEntity
 
 BLOCK_TEXTURE_DIR = {}
 
@@ -1339,58 +1339,23 @@ class ReedBlock(Block):
     max_stack_size = 16
     amount_label_color = 0, 0, 0, 255
 
-class PotatoBlock(Block):
-    top_texture = -1, -1
-    bottom_texture = -1, -1
-    side_texture = 10, 3
-    vertex_mode = G.VERTEX_GRID
-    hardness = 0.0
-    transparent = True
-    id = 142
-    name = "Potato"
-    max_stack_size = 16
-    break_sound = sounds.leaves_break
-    regenerated_health = 1
-    amount_label_color = 0, 0, 0, 255
-
-class CarrotBlock(Block):
-    top_texture = -1, -1
-    bottom_texture = -1, -1
-    side_texture = 10, 2
-    vertex_mode = G.VERTEX_GRID
-    hardness = 0.0
-    transparent = True
-    id = 141
-    name = "Carrot"
-    regenerated_health = 2
-    break_sound = sounds.leaves_break
-    max_stack_size = 16
-    amount_label_color = 0, 0, 0, 255
-
-
-# TODO: Rewrite this from scratch.
-class WheatCropBlock(Block):
+class CropBlock(Block):
     top_texture = -1, -1
     bottom_texture = -1, -1
     side_texture = -1, -1
     vertex_mode = G.VERTEX_GRID
     hardness = 0.0
     transparent = True
-    id = 59, 0
-    name = "Wheat Crop"
     break_sound = sounds.leaves_break
-    max_stack_size = 16
-    amount_label_color = 0, 0, 0, 255
 
     growth_stage = 0
-    max_growth_stage = 7
-    entity_type = WheatCropEntity
+    entity_type = CropEntity
     entity = None
 
     render_as_normal_block = False
 
     def __init__(self):
-        super(WheatCropBlock, self).__init__()
+        super(CropBlock, self).__init__()
         self.top_texture = get_texture_coordinates(-1, -1)
         self.bottom_texture = get_texture_coordinates(-1, -1)
 
@@ -1398,11 +1363,8 @@ class WheatCropBlock(Block):
         if self.entity is not None:
             del self.entity
 
-    # special hack to return different texture, which depends on the growth stage
     @property
     def texture_data(self):
-        self.side_texture = get_texture_coordinates(14, self.growth_stage)
-        self.front_texture = self.side_texture
         return self.get_texture_data()
 
     @texture_data.setter
@@ -1425,6 +1387,77 @@ class WheatCropBlock(Block):
         # update the texture
         self.entity.world.hide_block(self.entity.position)
         self.entity.world.show_block(self.entity.position)
+
+class PotatoBlock(CropBlock):
+    id = 142
+    name = "Potato"
+    max_stack_size = 16
+    amount_label_color = 0, 0, 0, 255
+
+    max_growth_stage = 3
+
+    @property
+    def texture_data(self):
+        self.side_texture = get_texture_coordinates(self.growth_stage + 4, 9)
+        self.front_texture = self.side_texture
+        return self.get_texture_data()
+
+    @property
+    def drop_id(self):
+        return BlockID(392) # wheat
+
+    @drop_id.setter
+    def drop_id(self, value):
+        self._drop_id = value
+
+class CarrotBlock(CropBlock):
+    id = 141
+    name = "Carrot"
+    max_stack_size = 16
+    amount_label_color = 0, 0, 0, 255
+
+    max_growth_stage = 3
+
+    @property
+    def texture_data(self):
+        self.side_texture = get_texture_coordinates(self.growth_stage, 9)
+        self.front_texture = self.side_texture
+        return self.get_texture_data()
+
+    @property
+    def drop_id(self):
+        return BlockID(391) # wheat
+
+    @drop_id.setter
+    def drop_id(self, value):
+        self._drop_id = value
+
+
+class WheatCropBlock(CropBlock):
+    id = 59
+    name = "Wheat Crop"
+    max_stack_size = 16
+    amount_label_color = 0, 0, 0, 255
+
+    max_growth_stage = 7
+
+    # special hack to return different texture, which depends on the growth stage
+    @property
+    def texture_data(self):
+        self.side_texture = get_texture_coordinates(14, self.growth_stage)
+        self.front_texture = self.side_texture
+        return self.get_texture_data()
+
+    @property
+    def drop_id(self):
+        if self.growth_stage == self.max_growth_stage:
+            return BlockID(296) # wheat
+        else:
+            return BlockID(295) #seed
+
+    @drop_id.setter
+    def drop_id(self, value):
+        self._drop_id = value
 
 class TallGrassBlock(Block):
     width = 0.9

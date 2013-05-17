@@ -14,7 +14,7 @@ from physics import physics_manager
 
 
 __all__ = (
-    'Entity', 'TileEntity', 'WheatCropEntity', 'FurnaceEntity',
+    'Entity', 'TileEntity', 'CropEntity', 'FurnaceEntity',
 )
 
 
@@ -85,13 +85,13 @@ class TileEntity(Entity):
         self.world = world
 
 # server-side only
-class WheatCropEntity(TileEntity):
+class CropEntity(TileEntity):
     # seconds per stage
     grow_time = 10
     grow_task = None
     
     def __init__(self, world, position):
-        super(WheatCropEntity, self).__init__(world, position)
+        super(CropEntity, self).__init__(world, position)
         self.grow_task = G.main_timer.add_task(self.grow_time, self.grow_callback)
 
     def __del__(self):
@@ -109,7 +109,7 @@ class WheatCropEntity(TileEntity):
         else:
             # the block ceased to exist
             return
-        if self.world[self.position].growth_stage < 7:
+        if self.world[self.position].growth_stage < self.world[self.position].max_growth_stage:
             self.grow_task = G.main_timer.add_task(self.grow_time, self.grow_callback)
         else:
             self.grow_task = None

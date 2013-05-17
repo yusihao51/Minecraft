@@ -182,7 +182,7 @@ class WheatSeedItem(SeedItem):
 class PotatoItem(SeedItem):
     block_type = potato_block
     soil_type = farm_block
-    id = 142
+    id = 392
     max_stack_size = 64
     name = "Potato"
     regenerated_health = 1
@@ -192,7 +192,7 @@ class PotatoItem(SeedItem):
 class CarrotItem(SeedItem):
     block_type = carrot_block
     soil_type = farm_block
-    id = 141
+    id = 391
     max_stack_size = 64
     name = "Carrot"
     regenerated_health = 1
