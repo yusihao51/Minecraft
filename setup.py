@@ -18,6 +18,7 @@ excluded_modules = (
     'gui',
     'views',
     'controllers',
+	'setup-py2exe',
     'pyglet.gl.glext_arb',
     'pyglet.gl.glext_nv',
     'pyglet.image.codecs',

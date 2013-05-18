@@ -102,10 +102,12 @@ def main(options):
     window = Window(resizable=True, vsync=False)
     pyglet.app.run()
 
+    if G.CLIENT:
+        G.CLIENT.stop()
+        
     if G.SERVER:
         print 'Shutting down internal server...'
         G.main_timer.stop()
-        G.CLIENT.stop()
         G.SERVER._stop.set()
         G.SERVER.shutdown()
 

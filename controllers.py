@@ -192,10 +192,17 @@ class GameController(Controller):
                 if self.item_list.get_current_block_item().durability <= 0:
                     self.item_list.remove_current_block()
                     self.item_list.update_items()
-            if hit_block.drop_id is not None \
-                    and self.player.add_item(hit_block.drop_id):
-                self.item_list.update_items()
-                self.inventory_list.update_items()
+            if hit_block.drop_id is None:
+                return
+            if type(hit_block.drop_id) == list:
+                for index, item in enumerate(hit_block.drop_id):
+                    if not self.player.add_item(item, quantity=hit_block.drop_quantity[index]):
+                        return
+            else:
+                if not self.player.add_item(hit_block.drop_id, quantity=hit_block.drop_quantity):
+                    return
+            self.item_list.update_items()
+            self.inventory_list.update_items()
 
     def init_gl(self):
         glEnable(GL_ALPHA_TEST)

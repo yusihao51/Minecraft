@@ -48,10 +48,10 @@ class Player(Entity):
             self.model = PlayerModel(position)
             self.momentum = (0,0,0)
 
-    def add_item(self, item_id):
-        if self.quick_slots.add_item(item_id):
+    def add_item(self, item_id, quantity=1):
+        if self.quick_slots.add_item(item_id, quantity=quantity):
             return True
-        elif self.inventory.add_item(item_id):
+        elif self.inventory.add_item(item_id, quantity=quantity):
             return True
         return False
 

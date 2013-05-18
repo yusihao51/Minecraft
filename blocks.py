@@ -142,6 +142,7 @@ class Block(object):
                # when creating a new "official" block.
 
     _drop_id = None
+    _drop_quantity = None
     player_damage = 0
 
     @property
@@ -151,6 +152,14 @@ class Block(object):
     @drop_id.setter
     def drop_id(self, value):
         self._drop_id = value
+
+    @property
+    def drop_quantity(self):
+        return self._drop_quantity
+
+    @drop_quantity.setter
+    def drop_quantity(self, value):
+        self._drop_quantity = value
 
     _texture_data = None
 
@@ -199,6 +208,7 @@ class Block(object):
     def __init__(self, width=None, height=None):
         self.id = BlockID(self.id or 0)
         self.drop_id = self.id
+        self.drop_quantity = 1
 
         if width is not None:
             self.width = width
@@ -1404,7 +1414,7 @@ class PotatoBlock(CropBlock):
 
     @property
     def drop_id(self):
-        return BlockID(392) # wheat
+        return BlockID(392)
 
     @drop_id.setter
     def drop_id(self, value):
@@ -1426,7 +1436,7 @@ class CarrotBlock(CropBlock):
 
     @property
     def drop_id(self):
-        return BlockID(391) # wheat
+        return BlockID(391)
 
     @drop_id.setter
     def drop_id(self, value):
