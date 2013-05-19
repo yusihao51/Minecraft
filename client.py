@@ -194,6 +194,9 @@ class PacketReceiver(Thread):
         self.sock.sendall("\x08"+struct.pack("fff", *momentum) + struct.pack("ddd", *position))
     def send_jump(self):
         self.sock.sendall("\x09")
+    def update_tile_entity(self, position, value):
+        self.sock.sendall("\x0A" + struct.pack("iii", *position) + struct.pack("i", len(value)) + value)
+
 
     def stop(self):
         self._stop.set()

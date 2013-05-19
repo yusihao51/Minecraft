@@ -116,6 +116,10 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     if address is self.client_address: continue  # He told us, we don't need to tell him
                     #TODO: Only send to nearby players
                     players[address].sendpacket(2, "\x09" + struct.pack("H", self.id))
+            elif packettype == 10: # Update Tile Entity
+                block_pos = struct.unpack("iii", self.request.recv(4*3))
+                ent_size = struct.unpack("i", self.request.recv(4))[0]
+                world[block_pos].update_tile_entity(self.request.recv(ent_size))
             elif packettype == 255:  # Initial Login
                 txtlen = struct.unpack("i", self.request.recv(4))[0]
                 self.username = self.request.recv(txtlen).decode('utf-8')
@@ -187,9 +191,9 @@ class Server(socketserver.ThreadingTCPServer):
             #TODO: Only if they're in range
             player.sendpacket(12, "\4" + struct.pack("iii", *position))
 
-    def update_tile_entity(self, position, value, value_size):
+    def update_tile_entity(self, position, value):
         for player in self.players.itervalues():
-            player.sendpacket(12 + value_size, "\x0A" + struct.pack("iii", *position) + value)
+            player.sendpacket(12 + len(value), "\x0A" + struct.pack("iii", *position) + value)
 
 
 def start_server(internal=False):

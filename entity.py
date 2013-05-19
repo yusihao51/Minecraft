@@ -11,6 +11,7 @@ import struct
 # Nothing for now...
 import globals as G
 from physics import physics_manager
+from utils import make_nbt_from_dict
 
 
 __all__ = (
@@ -105,7 +106,7 @@ class CropEntity(TileEntity):
     def grow_callback(self):
         if self.position in self.world:
             self.world[self.position].growth_stage = self.world[self.position].growth_stage + 1
-            G.SERVER.update_tile_entity(self.position, struct.pack("i", self.world[self.position].growth_stage), 4)
+            G.SERVER.update_tile_entity(self.position, make_nbt_from_dict({'growth_stage': self.world[self.position].growth_stage}))
         else:
             # the block ceased to exist
             return
@@ -113,6 +114,17 @@ class CropEntity(TileEntity):
             self.grow_task = G.main_timer.add_task(self.grow_time, self.grow_callback)
         else:
             self.grow_task = None
+
+    # called on server side
+    def fertilize(self):
+        if self.grow_task is not None:
+            G.main_timer.remove_task(self.grow_task)
+        if self.position in self.world:
+            self.world[self.position].growth_stage = self.world[self.position].max_growth_stage
+            G.SERVER.update_tile_entity(self.position, make_nbt_from_dict({'growth_stage': self.world[self.position].growth_stage}))
+        else:
+            # the block ceased to exist
+            return
 
 class FurnaceEntity(TileEntity):
     fuel = None

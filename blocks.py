@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 # Imports, sorted alphabetically.
 
@@ -13,7 +13,7 @@ import struct   # for update_tile_entity
 import pyglet
 from pyglet.gl import *
 from pyglet.image.atlas import TextureAtlas
-from utils import load_image
+from utils import load_image, make_nbt_from_dict, extract_nbt
 
 # Modules from this project
 import globals as G
@@ -1392,11 +1392,25 @@ class CropBlock(Block):
     def drop_id(self, value):
         self._drop_id = value
 
+    # called on client side
+    def fertilize(self):
+        if self.growth_stage == self.max_growth_stage:
+            return False
+        G.CLIENT.update_tile_entity(self.entity.position, make_nbt_from_dict({'action'.encode(): 'fertilize'.encode()}))
+        return True
+        
     def update_tile_entity(self, value):
-        self.growth_stage = struct.unpack("i", value)[0]
-        # update the texture
-        self.entity.world.hide_block(self.entity.position)
-        self.entity.world.show_block(self.entity.position)
+        nbt = extract_nbt(value)
+        # client side
+        if 'growth_stage' in nbt:
+            self.growth_stage = nbt['growth_stage']
+            # update the texture
+            self.entity.world.hide_block(self.entity.position)
+            self.entity.world.show_block(self.entity.position)
+        # server side
+        elif 'action' in nbt:
+            if nbt['action'] == 'fertilize':
+                self.entity.fertilize()
 
 class PotatoBlock(CropBlock):
     id = 142

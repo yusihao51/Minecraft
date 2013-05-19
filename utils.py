@@ -2,6 +2,7 @@
 
 # Python packages
 import os
+import struct
 
 # Third-party packages
 import pyglet
@@ -15,7 +16,7 @@ __all__ = (
     'load_image', 'image_sprite', 'hidden_image_sprite', 'vec', 'FastRandom',
     'init_resources', 'init_font', 'get_block_icon',
     'FACES', 'FACES_WITH_DIAGONALS', 'normalize_float', 'normalize',
-    'sectorize', 'TextureGroup', 
+    'sectorize', 'TextureGroup', 'make_nbt_from_dict', 'extract_nbt'
 )
 
 
@@ -156,3 +157,59 @@ class TextureGroup(pyglet.graphics.Group):
 
     def unset_state(self):
         glDisable(self.texture.target)
+
+# Named Binary Tag
+def make_int_packet(i):
+    return struct.pack('i', i)
+
+def extract_int_packet(packet):
+    return packet[4:], struct.unpack('i', packet[:4])[0]
+
+def make_string_packet(s):
+    return struct.pack('i', len(s)) + s
+
+def extract_string_packet(packet):
+    strlen = struct.unpack('i', packet[:4])[0]
+    packet = packet[4:]
+    s = packet [:strlen]
+    packet = packet[strlen:]
+    return packet, s
+
+def make_packet(obj):
+    if type(obj) == int:
+        return make_int_packet(obj)
+    elif type(obj) == str:
+        return make_string_packet(obj)
+    else:
+        print('make_packet: unsupported type: ' + str(type(obj)))
+        return None
+
+def extract_packet(packet):
+    tag, packet = struct.unpack('B', packet[:1])[0], packet[1:]
+    if tag == 0:
+        return extract_int_packet(packet)
+    elif tag == 1:
+        return extract_string_packet(packet)
+
+def type_tag(t):
+    tag = 0
+    if t == int:
+        tag = 0
+    elif t == str:
+        tag = 1
+    return struct.pack('B', tag)
+
+def make_nbt_from_dict(d):
+    packet = ''
+    for key in d.keys():
+        packet += make_string_packet(key) + type_tag(type(d[key])) + make_packet(d[key])
+    return packet
+
+def extract_nbt(nbt):
+    result = {}
+    while len(nbt) > 0:
+        nbt, key = extract_string_packet(nbt)
+        nbt, value = extract_packet(nbt)
+        result[key] = value
+
+    return result

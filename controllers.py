@@ -198,8 +198,7 @@ class GameController(Controller):
                 for index, item in enumerate(hit_block.drop_id):
                     if not self.player.add_item(item, quantity=hit_block.drop_quantity[index]):
                         return
-            else:
-                if not self.player.add_item(hit_block.drop_id, quantity=hit_block.drop_quantity):
+            elif not self.player.add_item(hit_block.drop_id, quantity=hit_block.drop_quantity):
                     return
             self.item_list.update_items()
             self.inventory_list.update_items()

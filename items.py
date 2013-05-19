@@ -156,6 +156,18 @@ class RedDyeItem(Item):
     max_stack_size = 64
     name = "Red Dye"
 
+class BoneMeal(Item):
+    id = 351,15
+    max_stack_size = 64
+    name = "Bone Meal"
+
+    def on_right_click(self, world, player):
+        block, previous = world.hit_test(player.position, player.get_sight_vector(), player.attack_range)
+        if hasattr(world[block], 'fertilize'):
+            return world[block].fertilize()
+        else:
+            return False
+
 class SugarItem(Item):
     id = 353
     max_stack_size = 64
@@ -205,7 +217,7 @@ class WheatItem(Item):
 class PaperItem(Item):
     id = 339
     max_stack_size = 64
-    name = "Cactus Green Dye"
+    name = "Paper"
 
 class Tool(Item):
     material = None
@@ -606,3 +618,4 @@ wheat_item = WheatItem()
 bread_item = BreadItem()
 potato_item = PotatoItem()
 carrot_item = CarrotItem()
+bone_meal_item = BoneMeal()
