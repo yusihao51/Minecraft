@@ -210,15 +210,15 @@ class GameController(Controller):
         glEnable(GL_BLEND)
         
         glEnable(GL_LINE_SMOOTH)
-        #glEnable(GL_POLYGON_SMOOTH)
-        #glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST)
+        glEnable(GL_POLYGON_SMOOTH)
+        glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
 
-        glClampColorARB(GL_CLAMP_VERTEX_COLOR_ARB, GL_FALSE)
-        glClampColorARB(GL_CLAMP_FRAGMENT_COLOR_ARB, GL_FALSE)
-        glClampColorARB(GL_CLAMP_READ_COLOR_ARB, GL_FALSE)
+        #glClampColorARB(GL_CLAMP_VERTEX_COLOR_ARB, GL_FALSE)
+        #glClampColorARB(GL_CLAMP_FRAGMENT_COLOR_ARB, GL_FALSE)
+        #glClampColorARB(GL_CLAMP_READ_COLOR_ARB, GL_FALSE)
             
-        glClearColor(0, 0, 0, 0)
+        #glClearColor(0, 0, 0, 0)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     def setup(self):
