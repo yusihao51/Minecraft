@@ -335,7 +335,20 @@ class StoneBlock(HardBlock):
         self.drop_id = BlockID(CobbleBlock.id)
 
 
+PIXEL_PER_LINE = 256
+BYTE_PER_LINE = PIXEL_PER_LINE * 3
+
 class GrassBlock(Block):
+
+    class GrassColorizer(object):
+        def __init__(self):
+            self.color_data = pyglet.image.load('resources/textures/grasscolor.png').get_image_data()
+            self.color_data = self.color_data.get_data('RGB', self.color_data.width * 3)
+
+        def get_color(self, temperature, humidity):
+            pos = int((1 - temperature) * 256 * BYTE_PER_LINE + 3 * humidity * 256) + 1
+            return [ ord(self.color_data[x]) for x in range(pos, pos + 3) ]
+
     top_texture = 1, 0
     bottom_texture = 0, 1
     side_texture = 0, 0
@@ -345,11 +358,14 @@ class GrassBlock(Block):
     break_sound = sounds.dirt_break
     name = 'Grass'
     digging_tool = G.SHOVEL
+    colorizer = GrassColorizer()
 
     def __init__(self):
         super(GrassBlock, self).__init__()
         self.drop_id = BlockID(DirtBlock.id)
 
+    def get_color(self, temperature, humidity):
+        return self.colorizer.get_color(temperature, humidity)
 
 class DirtBlock(Block):
     top_texture = 0, 1

@@ -2,6 +2,7 @@
 
 # Python packages
 # Nothin for now...
+from math import pi
 
 # Third-party packages
 import pyglet
@@ -31,6 +32,7 @@ class BoxModel(object):
     texture_data = None
     display = None
     position = (0,0,0)
+    rotate_angle = (0, 0, 0)
 
     def __init__(self, length, width, height, filename, pixel_length, pixel_width, pixel_height, texture_height, texture_width):
         self.image = pyglet.image.load(filename)
@@ -82,6 +84,9 @@ class BoxModel(object):
         glBindTexture(self.image.texture.target, self.image.texture.id)
         glEnable(self.image.texture.target)
         glTranslatef(*self.position)
+        glRotatef(self.rotate_angle[0] * (180 / float(pi)), 1.0, 0.0, 0.0)
+        glRotatef(self.rotate_angle[1] * (180 / float(pi)), 0.0, 1.0, 0.0)
+        glRotatef(self.rotate_angle[-1] * (180 / float(pi)), 0.0, 0.0, 1.0)
         self.display.draw(GL_QUADS)
         glPopMatrix()
 
@@ -125,7 +130,7 @@ class PlayerModel(object):
         self.position = position
         x,y,z = position
         foot_height = y - 1.25
-
+        
         self.head.position =    (x - HEAD_LENGTH / 2,              foot_height + LEG_HEIGHT + BODY_HEIGHT, z - HEAD_WIDTH / 2)
         self.body.position =    (x - BODY_LENGTH / 2,              foot_height + LEG_HEIGHT              , z - BODY_WIDTH / 2)
         self.left_arm.position =(x - BODY_LENGTH / 2 - ARM_LENGTH, foot_height + LEG_HEIGHT              , z - BODY_WIDTH / 2)

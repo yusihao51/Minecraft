@@ -200,4 +200,7 @@ class PacketReceiver(Thread):
 
     def stop(self):
         self._stop.set()
-        self.sock.shutdown(SHUT_RDWR)
+        try:
+            self.sock.shutdown(SHUT_RDWR)
+        except:
+            pass

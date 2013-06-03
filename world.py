@@ -178,9 +178,16 @@ class World(dict):
 
         # create vertex list
         batch = self.transparency_batch if block.transparent else self.batch
-        self._shown[position] = batch.add(count, GL_QUADS, block.group or self.group,
+        if not hasattr(block, 'get_color'):
+            self._shown[position] = batch.add(count, GL_QUADS, block.group or self.group,
                                           ('v3f/static', vertex_data),
                                           ('t2f/static', texture_data))
+        else:
+            # do something else
+            self._shown[position] = batch.add(count, GL_QUADS, block.group or self.group,
+                                          ('v3f/static', vertex_data),
+                                          ('t2f/static', texture_data))
+
     def show_sector(self, sector):
         if sector in self.sectors:
             self._show_sector(sector)
@@ -207,12 +214,15 @@ class World(dict):
         after_set = set()
         pad = G.VISIBLE_SECTORS_RADIUS
         x, y, z = after
-        for dx in xrange(-pad, pad + 1):
-            for dy in xrange(-4, 4):
-                for dz in xrange(-pad, pad + 1):
-                    if dx ** 2 + dy ** 2 + dz ** 2 > (pad + 1) ** 2:
+        for distance in xrange(0, pad + 1):
+            for dx in xrange(-distance, distance + 1):
+                for dz in xrange(-distance, distance + 1):
+                    if abs(dx) != distance and abs(dz) != distance:
                         continue
-                    after_set.add((x + dx, y + dy, z + dz))
+                    for dy in xrange(-4, 4):
+                        if dx ** 2 + dy ** 2 + dz ** 2 > (pad + 1) ** 2:
+                            continue
+                        after_set.add((x + dx, y + dy, z + dz))
         for sector in (after_set - before_set):
             self.show_sector(sector)
         #for sector in (before_set - after_set):
