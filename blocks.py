@@ -44,7 +44,7 @@ class TextureGroupIndividual(pyglet.graphics.Group):
         i=0
         for name in names:
             if not name in BLOCK_TEXTURE_DIR:
-                if G.TEXTURE_PACK != 'default':
+                if G.TEXTURE_PACK.capitalize() != 'Default':
                     BLOCK_TEXTURE_DIR[name] = load_image('resources', 'texturepacks', G.TEXTURE_PACK, 'textures', 'blocks', name + '.png')
                 else:
                     BLOCK_TEXTURE_DIR[name] = load_image('resources', 'texturepacks', 'textures', 'blocks', name + '.png')
@@ -347,7 +347,7 @@ class GrassBlock(Block):
 
         def get_color(self, temperature, humidity):
             pos = int((1 - temperature) * 256 * BYTE_PER_LINE + 3 * humidity * 256) + 1
-            return [ ord(self.color_data[x]) for x in range(pos, pos + 3) ]
+            return float(ord(self.color_data[pos])) / 255, float(ord(self.color_data[pos + 1])) / 255, float(ord(self.color_data[pos + 2])) / 255
 
     top_texture = 1, 0
     bottom_texture = 0, 1
