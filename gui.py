@@ -141,15 +141,33 @@ Button.register_event_type('on_click')
 
 
 class ToggleButton(Button):
+
+    _toggled = False
+
+    @property
+    def toggled(self):
+        return self._toggled
+
+    @toggled.setter
+    def toggled(self, value):
+        self._toggled = value
+        if self.label:
+            if self._toggled:
+                color = (100, 0, 100, 255)
+            else:
+                color = (255, 255, 255, 255)
+            self.label.color = color
+
     def __init__(self, parent, x, y, width, height, image=None, image_highlighted=None, caption=None, batch=None, group=None, label_group=None, font_name=G.DEFAULT_FONT, enabled=True):
         super(ToggleButton, self).__init__(parent, x, y, width, height, image=image, image_highlighted=image_highlighted, caption=caption, batch=batch, group=group, label_group=label_group, font_name=font_name, enabled=enabled)
-        self.toggled = False
 
     def on_mouse_click(self, x, y, button, modifiers):
         if self.enabled and self.hit_test(x, y):
-            self.toggled = not self.toggled
+            self.toggled = not self._toggled
+            self.dispatch_event('on_toggle')
         super(ToggleButton, self).on_mouse_click( x, y, button, modifiers)
 
+ToggleButton.register_event_type('on_toggle')
 
 class Control(pyglet.event.EventDispatcher):
     def __init__(self, parent, visible=True, *args, **kwargs):
