@@ -14,6 +14,8 @@ from globals import BLOCKS_DIR, SECTOR_SIZE
 from items import ItemStack
 from player import Player
 from savingsystem import null2, structuchar2, sector_to_blockpos
+from utils import extract_string_packet
+from terrain import BiomeGenerator
 
 class PacketReceiver(Thread):
     def __init__ (self, world, controller, sock):
@@ -35,10 +37,11 @@ class PacketReceiver(Thread):
                 raise e
         self.controller.back_to_main_menu.set()
 
+    # loop() is run once in its own thread
     def loop(self):
         packetcache, packetsize = "", 0
 
-        main_thread = self.world.sector_packets.append
+        append_to_sector_packets = self.world.sector_packets.append
         while 1:
             resp = self.sock.recv(16384)
             if self._stop.isSet() or not resp:
@@ -46,63 +49,32 @@ class PacketReceiver(Thread):
                 self.sock.shutdown(SHUT_RDWR)
                 return
 
+            # Sometimes data is sent in multiple pieces, just because sock.recv returned data doesn't mean its complete
+            # So we write the datalength in the beginning of all messages, and don't look at the packet until we have enough data
             packetcache += resp
             if not packetsize:
                 packetsize = struct.unpack("i", packetcache[:4])[0]
 
+            # Sometimes we get multiple packets in a single burst, so loop through packetcache until we lack the data
             while packetsize and len(packetcache) >= packetsize:
                 #Once we've obtained the whole packet
                 packetid = struct.unpack("B",packetcache[4])[0]  # Server Packet Type
                 packet = packetcache[5:packetsize]
 
-                #Preprocess the packet as much as possible in this thread
-                #There isn't a lot of cases where we can do much processing outside of the main thread...
-                #We could consider removing this section and just let the main thread do the unpacking too
-                if packetid == 1:    # Receiving sector
-                    with self.lock:
-                        main_thread((packetid, packet))
-                elif packetid == 2:  # Receiving blank sector
-                    with self.lock:
-                        main_thread((packetid, struct.unpack("iii", packet)))
-                elif packetid == 3:  # Add Block
-                    with self.lock:
-                        main_thread((packetid,
-                                     (struct.unpack("iii", packet[:12]),
-                                     BLOCKS_DIR[struct.unpack("BB", packet[12:])])))
-                elif packetid == 4:  # Remove Block
-                    with self.lock:
-                        main_thread((packetid, struct.unpack("iii", packet)))
-                elif packetid == 5:  # Print Chat
-                    with self.lock:
-                        main_thread((packetid, (packet[:-4].decode('utf-8'), struct.unpack("BBBB", packet[-4:]))))
-                elif packetid == 6:  # Inventory
-                    with self.lock:
-                        main_thread((packetid, packet))
-                elif packetid == 7:  # New player connected
-                    with self.lock:
-                        main_thread((packetid, (struct.unpack("H", packet[:2])[0], packet[2:].decode('utf-8'))))
-                elif packetid == 8:  # Player Movement
-                    with self.lock:
-                        main_thread((packetid, (struct.unpack("H", packet[:2])[0], struct.unpack("fff", packet[2:14]), struct.unpack("ddd", packet[14:]))))
-                elif packetid == 9:  # Player Jump
-                    with self.lock:
-                        main_thread((packetid, struct.unpack("H", packet)[0]))
-                elif packetid == 10:  # Update Tile Entity
-                    with self.lock:
-                        main_thread((packetid, packet))
-                elif packetid == 255:  # Spawn Position
-                    with self.lock:
-                        main_thread((packetid, struct.unpack("iii", packet)))
-                else:
-                    warn("Received unknown packetid %s, there's probably a version mismatch between client and server!" % packetid)
-                packetcache = packetcache[packetsize:]
-                packetsize = struct.unpack("i", packetcache[:4])[0] if packetcache else 0
+                with self.lock:
+                    append_to_sector_packets((packetid, packet))
 
-    #The following functions are run by the Main Thread
+                packetcache = packetcache[packetsize:]  # Cut off the part we just read
+                packetsize = struct.unpack("i", packetcache[:4])[0] if packetcache else 0  # Get the next packet's size
+
+
+    #=== The following functions are run by the Main Thread ===#
+
+    # Process a packet off the stack that was received by loop()
     def dequeue_packet(self):
         with self.lock:
             packetid, packet = self.world.sector_packets.popleft()
-        if packetid == 1:  # Sector
+        if packetid == 1:  # Entire Sector
             blocks, sectors = self.world, self.world.sectors
             secpos = struct.unpack("iii", packet[:12])
             sector = sectors[secpos]
@@ -125,13 +97,14 @@ class PacketReceiver(Thread):
             if secpos in self.world.sector_queue:
                 del self.world.sector_queue[secpos] #Delete any hide sector orders
         elif packetid == 2:  # Blank Sector
-            self.world.sectors[packet] = []
+            self.world.sectors[struct.unpack("iii", packet)] = []
         elif packetid == 3:  # Add Block
-            self.world._add_block(packet[0], packet[1])
+            self.world._add_block(struct.unpack("iii", packet[:12]),
+                BLOCKS_DIR[struct.unpack("BB", packet[12:])])
         elif packetid == 4:  # Remove Block
-            self.world._remove_block(packet)
+            self.world._remove_block(struct.unpack("iii", packet))
         elif packetid == 5:  # Chat Print
-            self.controller.write_line(packet[0], color=packet[1])
+            self.controller.write_line(packet[:-4].decode('utf-8'), color=struct.unpack("BBBB", packet[-4:]))
             if not self.controller.text_input.visible:
                 self.controller.chat_box.visible = True
                 pyglet.clock.unschedule(self.controller.hide_chat_box)
@@ -153,22 +126,30 @@ class PacketReceiver(Thread):
             self.controller.item_list.update_items()
             self.controller.inventory_list.update_items()
         elif packetid == 7:  # New player connected
-            if packet[0] not in self.controller.player_ids:
-                self.controller.player_ids[packet[0]] = Player(username=packet[1], local_player=False)
-            elif packet[1] == '\0':
-                del self.controller.player_ids[packet[0]]
+            plyid, name = struct.unpack("H", packet[:2])[0], packet[2:].decode('utf-8')
+            if plyid not in self.controller.player_ids:
+                self.controller.player_ids[plyid] = Player(username=name, local_player=False)
+            elif name == '\0':
+                del self.controller.player_ids[plyid]
         elif packetid == 8:  # Player Movement
-            ply = self.controller.player_ids[packet[0]]
-            ply.momentum = packet[1]
-            ply.position = packet[2]
+            ply = self.controller.player_ids[struct.unpack("H", packet[:2])[0]]
+            ply.momentum = struct.unpack("fff", packet[2:14])
+            ply.position = struct.unpack("ddd", packet[14:])
         elif packetid == 9:  # Player Jump
-            self.controller.player_ids[packet].dy = 0.016
+            self.controller.player_ids[struct.unpack("H", packet)[0]].dy = 0.016
         elif packetid == 10: # Update Tile Entity
             self.world[struct.unpack("iii", packet[:12])].update_tile_entity(packet[12:])
         elif packetid == 255:  # Spawn Position
-            self.controller.player.position = packet
+            self.controller.player.position = struct.unpack("iii", packet[:12])
+            packet = packet[12:]
+            packet, seed = extract_string_packet(packet)
+            self.world.biome_generator = BiomeGenerator(seed)
             #Now that we know where the player should be, we can enable .update again
             self.controller.update = self.controller.update_disabled
+        else:
+            warn("Received unknown packetid %s, there's probably a version mismatch between client and server!" % packetid)
+
+    # Helper Functions for sending data to the Server
 
     def request_sector(self, sector):
         self.sock.sendall("\1"+struct.pack("iii", *sector))

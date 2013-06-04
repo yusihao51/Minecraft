@@ -360,7 +360,7 @@ class GrassBlock(Block):
             self.color_data = self.color_data.get_data('RGB', self.color_data.width * 3)
 
         def get_color(self, temperature, humidity):
-            pos = int((1 - temperature) * 256 * BYTE_PER_LINE + 3 * humidity * 256) + 1
+            pos = int(humidity * 256 * BYTE_PER_LINE + 3 * (1-temperature) * 256) + 1
             return float(ord(self.color_data[pos])) / 255, float(ord(self.color_data[pos + 1])) / 255, float(ord(self.color_data[pos + 2])) / 255
 
     top_texture = 1, 0
@@ -379,7 +379,11 @@ class GrassBlock(Block):
         self.drop_id = BlockID(DirtBlock.id)
 
     def get_color(self, temperature, humidity):
-        return self.colorizer.get_color(temperature, humidity)
+        ret = []
+        # colorize only the top of the grass block
+        ret.extend(list(self.colorizer.get_color(temperature, humidity)) * 4)
+        ret.extend([1] * 60)
+        return ret
 
 class DirtBlock(Block):
     top_texture = 0, 1

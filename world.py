@@ -45,6 +45,8 @@ class World(dict):
 
         self.packetreceiver = None
         self.sector_packets = deque()
+        # biome generator for colorizer, set by packet receiver
+        self.biome_generator = None
 
     # Add the block clientside, then tell the server about the new block
     def add_block(self, position, block, sync=True, force=True):
@@ -178,16 +180,19 @@ class World(dict):
 
         # create vertex list
         batch = self.transparency_batch if block.transparent else self.batch
-        if not hasattr(block, 'get_color'):
-            self._shown[position] = batch.add(count, GL_QUADS, block.group or self.group,
-                                          ('v3f/static', vertex_data),
-                                          ('t2f/static', texture_data))
-        else:
-            # do something else
+        if hasattr(block, 'get_color') and self.biome_generator is not None:
+            temp = self.biome_generator.get_temperature(position[0], position[-1])
+            humidity = self.biome_generator.get_humidity(position[0], position[-1])
             self._shown[position] = batch.add(count, GL_QUADS, block.group or self.group,
                                           ('v3f/static', vertex_data),
                                           ('t2f/static', texture_data),
-                                          ('c3f/static', block.get_color(2, 0.4) * (len(vertex_data) / 3)))
+                                          ('c3f/static', block.get_color(2, 0.4)))
+                                        # can't do this yet
+                                          #('c3f/static', block.get_color(temp, humidity)))
+        else:
+            self._shown[position] = batch.add(count, GL_QUADS, block.group or self.group,
+                                          ('v3f/static', vertex_data),
+                                          ('t2f/static', texture_data))
 
     def show_sector(self, sector):
         if sector in self.sectors:
