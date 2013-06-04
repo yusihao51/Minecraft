@@ -20,6 +20,7 @@ import globals as G
 from random import randint
 import sounds
 from entity import CropEntity, FurnaceEntity
+from textures import TexturePackList
 
 BLOCK_TEXTURE_DIR = {}
 
@@ -38,24 +39,35 @@ def get_texture_coordinates(x, y, tileset_size=G.TILESET_SIZE):
 class TextureGroupIndividual(pyglet.graphics.Group):
     def __init__(self, names):
         super(TextureGroupIndividual, self).__init__()
-        atlas = TextureAtlas(64*len(names), 64)
-        self.texture = atlas.texture
+        atlas = None
+        # self.texture = atlas.texture
         self.texture_data = []
         i=0
+        texture_pack_list = TexturePackList()
+        texture_pack = texture_pack_list.selected_texture_pack
         for name in names:
             if not name in BLOCK_TEXTURE_DIR:
                 if G.TEXTURE_PACK.capitalize() != 'Default':
-                    BLOCK_TEXTURE_DIR[name] = load_image('resources', 'texturepacks', G.TEXTURE_PACK, 'textures', 'blocks', name + '.png')
+                    BLOCK_TEXTURE_DIR[name] = texture_pack.load_texture(['textures', 'blocks', name + '.png'])
                 else:
                     BLOCK_TEXTURE_DIR[name] = load_image('resources', 'texturepacks', 'textures', 'blocks', name + '.png')
 
             if not BLOCK_TEXTURE_DIR[name]:
-                return None
+                continue
+            
+            texture_size = BLOCK_TEXTURE_DIR[name].width
 
-            subtex = atlas.add(BLOCK_TEXTURE_DIR[name].get_region(0,0,64,64))
+            if atlas == None:
+                atlas = TextureAtlas(texture_size * len(names), texture_size)
+                self.texture = atlas.texture
+
+            subtex = atlas.add(BLOCK_TEXTURE_DIR[name].get_region(0,0,texture_size,texture_size))
             for val in subtex.tex_coords:
                 i += 1
                 if i % 3 != 0: self.texture_data.append(val) #tex_coords has a z component we don't utilize
+        if atlas == None:
+            atlas = TextureAtlas(1, 1)
+        self.texture = atlas.texture
         #Repeat the last texture for the remaining sides
         # (top, bottom, side, side, side, side)
         # ie: ("dirt",) ("grass_top","dirt","grass_side")
@@ -63,13 +75,15 @@ class TextureGroupIndividual(pyglet.graphics.Group):
         self.texture_data += self.texture_data[-8:]*(6-len(names))
 
     def set_state(self):
-        glBindTexture(self.texture.target, self.texture.id)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-        glEnable(self.texture.target)
+        if self.texture:
+            glBindTexture(self.texture.target, self.texture.id)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+            glEnable(self.texture.target)
 
     def unset_state(self):
-        glDisable(self.texture.target)
+        if self.texture:
+            glDisable(self.texture.target)
 
 
 class BlockID(object):
@@ -220,7 +234,7 @@ class Block(object):
         if not self.render_as_normal_block:
             return
 
-        if self.texture_name and G.TEXTURE_PACK != 'default':
+        if self.texture_name and G.TEXTURE_PACK.capitalize() != 'Default':
             self.group = TextureGroupIndividual(self.texture_name)
 
             if self.group:

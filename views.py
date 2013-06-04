@@ -15,6 +15,7 @@ from pyglet.gl import *
 import globals as G
 from gui import frame_image, Rectangle, backdrop, Button, button_image, \
     button_highlighted, ToggleButton, TextWidget
+from textures import TexturePackList
 from utils import image_sprite
 
 
@@ -91,10 +92,12 @@ class MenuView(View):
             button.push_handlers(on_click=on_click)
         return button
 
-    def ToggleButton(self, x=0, y=0, width=160, height=50, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, enabled=True):
+    def ToggleButton(self, x=0, y=0, width=160, height=50, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, on_toggle=None, enabled=True):
         button = ToggleButton(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
         if on_click:
             button.push_handlers(on_click=on_click)
+        if on_toggle:
+            button.push_handlers(on_toggle=on_toggle)
         return button
 
     def on_resize(self, width, height):
@@ -214,43 +217,38 @@ class TexturesView(MenuView):
     def setup(self):
         MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
-
+        
+        self.list = TexturePackList()
         self.texture_buttons = []
+        self.current_toggled = None
 
-        button = self.ToggleButton(caption='Default')
-        button.id = 'default'
-        self.buttons.append(button)
-        self.texture_buttons.append(button)
+        texture_packs = self.list.available_texture_packs
 
-        texturepacks_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'texturepacks')
-
-        for directories in os.listdir(texturepacks_dir):
-            dir = os.path.join(texturepacks_dir, directories)
-            pack_name = os.path.basename(dir)
-
-            button = self.ToggleButton(caption=pack_name)
-            button.id = pack_name
+        for texture_pack in texture_packs:
+            button = self.ToggleButton(caption=texture_pack.texture_pack_file_name,on_toggle=self.on_button_toggle)
+            button.id = texture_pack.texture_pack_file_name
+            button.toggled = self.list.selected_texture_pack == texture_pack
+            if button.toggled:
+                self.current_toggled = button
             self.buttons.append(button)
             self.texture_buttons.append(button)
+
         self.button_return = self.Button(caption="Done",on_click=self.controller.game_options)
         self.buttons.append(self.button_return)
-        self.label = Label('Select Texture Pack', font_name='ChunkFive Roman', font_size=25, x=width/2, y=self.frame.y + self.frame.height,
-            anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
-            group=self.labels_group)
 
         self.on_resize(width, height)
 
-    def on_mouse_press(self, x, y, button, modifiers):
-        super(TexturesView, self).on_mouse_press(x, y, button, modifiers)
+    def on_button_toggle(self):
         for button in self.texture_buttons:
-            if button.toggled:
+            if button != self.current_toggled and button.toggled:
+                self.current_toggled.toggled = False
+                self.current_toggled = button
                 G.config.set("Graphics", "texture_pack", button.id)
                 G.TEXTURE_PACK = button.id
-                for block in G.BLOCKS_DIR.values():
-                    block.__init__() #Reload textures
+                # for block in G.BLOCKS_DIR.values():
+                #     block.__init__() #Reload textures
 
                 G.save_config()
-                button.toggled = False
 
 class MultiplayerView(MenuView):
     def setup(self):
