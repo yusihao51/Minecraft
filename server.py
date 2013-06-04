@@ -182,12 +182,12 @@ class Server(socketserver.ThreadingTCPServer):
 
     def show_block(self, position, block):
         blockid = block.id
-        for player in server.players.itervalues():
+        for player in self.players.itervalues():
             #TODO: Only if they're in range
             player.sendpacket(14, "\3" + struct.pack("iiiBB", *(position+(blockid.main, blockid.sub))))
 
     def hide_block(self, position):
-        for player in server.players.itervalues():
+        for player in self.players.itervalues():
             #TODO: Only if they're in range
             player.sendpacket(12, "\4" + struct.pack("iii", *position))
 

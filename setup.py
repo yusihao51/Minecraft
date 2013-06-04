@@ -24,11 +24,12 @@ excluded_modules = (
     'pyglet.image.codecs',
     'pyglet.image.codecs.pypng',
     'pyglet.media',
+    'pyglet.media.drivers.alsa.asound',
     'pyglet.window',
     'pyglet.window.xlib.xlib',
 )
 
-
+ 
 def get_modules(path=None):
     first = False
     if path is None:
@@ -44,7 +45,7 @@ def get_modules(path=None):
         else:
             f = f_or_d
             if f.endswith(('.py', 'pyx')):
-                name = '.'.join(s for s in f.split('.')[0].split('/')
+                name = '.'.join(s for s in f.split('.')[0].replace("\\","/").split('/')
                                 if s != '__init__')
                 if name and name not in excluded_modules:
                     yield name, f
