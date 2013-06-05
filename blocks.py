@@ -43,14 +43,10 @@ class TextureGroupIndividual(pyglet.graphics.Group):
         # self.texture = atlas.texture
         self.texture_data = []
         i=0
-        texture_pack_list = TexturePackList()
-        texture_pack = texture_pack_list.selected_texture_pack
+        texture_pack = G.texture_pack_list.selected_texture_pack
         for name in names:
             if not name in BLOCK_TEXTURE_DIR:
-                if G.TEXTURE_PACK.capitalize() != 'Default':
-                    BLOCK_TEXTURE_DIR[name] = texture_pack.load_texture(['textures', 'blocks', name + '.png'])
-                else:
-                    BLOCK_TEXTURE_DIR[name] = load_image('resources', 'texturepacks', 'textures', 'blocks', name + '.png')
+                BLOCK_TEXTURE_DIR[name] = texture_pack.load_texture(['textures', 'blocks', name + '.png'])
 
             if not BLOCK_TEXTURE_DIR[name]:
                 continue
@@ -234,7 +230,7 @@ class Block(object):
         if not self.render_as_normal_block:
             return
 
-        if self.texture_name and G.TEXTURE_PACK.capitalize() != 'Default':
+        if self.texture_name:
             self.group = TextureGroupIndividual(self.texture_name)
 
             if self.group:
@@ -356,7 +352,7 @@ class GrassBlock(Block):
 
     class GrassColorizer(object):
         def __init__(self):
-            self.color_data = pyglet.image.load('resources/textures/grasscolor.png').get_image_data()
+            self.color_data = G.texture_pack_list.selected_texture_pack.load_texture(['misc', 'grasscolor.png'])
             self.color_data = self.color_data.get_data('RGB', self.color_data.width * 3)
 
         def get_color(self, temperature, humidity):
@@ -784,11 +780,28 @@ class TallCactusBlock(Block):
 
 
 class LeafBlock(Block):
+
+    class LeafColorizer(object):
+        def __init__(self):
+            self.color_data = G.texture_pack_list.selected_texture_pack.load_texture(['misc', 'foliagecolor.png'])
+            self.color_data = self.color_data.get_data('RGB', self.color_data.width * 3)
+
+        def get_color(self, temperature, humidity):
+            pos = int(humidity * 256 * BYTE_PER_LINE + 3 * (1-temperature) * 256) + 1
+            return float(ord(self.color_data[pos])) / 255, float(ord(self.color_data[pos + 1])) / 255, float(ord(self.color_data[pos + 2])) / 255
+
     break_sound = sounds.leaves_break
+    colorizer = LeafColorizer()
 
     def __init__(self):
         super(LeafBlock, self).__init__()
         self.drop_id = None
+
+    def get_color(self, temperature, humidity):
+        ret = []
+        # colorize only the top of the grass block
+        ret.extend(list(self.colorizer.get_color(temperature, humidity)) * 24)
+        return ret
 
 
 class OakLeafBlock(LeafBlock):

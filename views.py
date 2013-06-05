@@ -137,7 +137,7 @@ class OptionsView(MenuView):
         MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
 
-        texturepacks_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'texturepacks')
+        textures_enabled = len(G.texture_pack_list.available_texture_packs) > 1
 
         self.text_input = TextWidget(self.controller.window, G.USERNAME, 0, 0, width=160, height=20, font_name='Arial', batch=self.batch)
         self.controller.window.push_handlers(self.text_input)
@@ -148,7 +148,7 @@ class OptionsView(MenuView):
         self.text_input.push_handlers(key_released=text_input_callback)
 
         self.buttons.append(self.Button(caption="Controls...", on_click=self.controller.controls))
-        self.buttons.append(self.Button(caption="Textures", on_click=self.controller.textures, enabled=os.path.exists(texturepacks_dir)))
+        self.buttons.append(self.Button(caption="Textures", on_click=self.controller.textures, enabled=textures_enabled))
         self.buttons.append(self.Button(caption="Done", on_click=self.controller.main_menu))
         self.label = Label('Options', font_name='ChunkFive Roman', font_size=25, x=width/2, y=self.frame.y + self.frame.height,
             anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
@@ -218,16 +218,15 @@ class TexturesView(MenuView):
         MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
         
-        self.list = TexturePackList()
         self.texture_buttons = []
         self.current_toggled = None
 
-        texture_packs = self.list.available_texture_packs
+        texture_packs = G.texture_pack_list.available_texture_packs
 
         for texture_pack in texture_packs:
             button = self.ToggleButton(caption=texture_pack.texture_pack_file_name,on_toggle=self.on_button_toggle)
             button.id = texture_pack.texture_pack_file_name
-            button.toggled = self.list.selected_texture_pack == texture_pack
+            button.toggled = G.texture_pack_list.selected_texture_pack == texture_pack
             if button.toggled:
                 self.current_toggled = button
             self.buttons.append(button)
@@ -249,6 +248,17 @@ class TexturesView(MenuView):
                 #     block.__init__() #Reload textures
 
                 G.save_config()
+
+    def on_resize(self, width, height):
+        self.background.scale = 1.0
+        self.background.scale = max(float(width) / self.background.width, float(height) / self.background.height)
+        self.background.x, self.background.y = 0, 0
+        self.frame.x, self.frame.y = (width - self.frame.width) / 2, (height - self.frame.height) / 2
+        button_x, button_y = 0, self.frame.y + self.frame.height - 80
+        for button in self.buttons:
+            button_x = self.frame.x + (self.frame.width - button.width) / 2
+            button.position = button_x, button_y
+            button_y -= button.height + 10
 
 class MultiplayerView(MenuView):
     def setup(self):
