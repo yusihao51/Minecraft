@@ -512,9 +512,6 @@ class CraftTableBlock(WoodBlock):
     burning_time = 15
 
 class MetaBlock(WoodBlock): # this is a experimental block.
-    top_texture = 9, 0
-    bottom_texture = 9, 0
-    side_texture = 9, 0
     hardness = 2.5
     id = 0.1
     name = "Action"
