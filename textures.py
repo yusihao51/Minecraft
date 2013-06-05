@@ -145,9 +145,8 @@ class TexturePackDefault(TexturePackImplementation):
         return self.open_file(path, True)
 
     def read_file(self, path):
-        file_path = os.path.join("resources", *path)
         if self.file_exists(path):
-            return open(file_path, "r")
+            return open(os.path.join("resources", *path), "r")
 
     def file_exists(self, path):
         file_path = os.path.join("resources", *path)
