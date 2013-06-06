@@ -185,6 +185,7 @@ class World(dict):
             humidity = self.biome_generator.get_humidity(position[0], position[-1])
             self._shown[position] = batch.add(count, GL_QUADS, block.group or self.group,
                                           ('v3f/static', vertex_data),
+                                          ('t2f/static', texture_data),
                                           ('c3f/static', block.get_color(temp, humidity)))
         else:
             self._shown[position] = batch.add(count, GL_QUADS, block.group or self.group,
