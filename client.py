@@ -14,6 +14,8 @@ from globals import BLOCKS_DIR, SECTOR_SIZE
 from items import ItemStack
 from player import Player
 from savingsystem import null2, structuchar2, sector_to_blockpos
+from utils import extract_string_packet
+from terrain import BiomeGenerator
 
 class PacketReceiver(Thread):
     def __init__ (self, world, controller, sock):
@@ -138,7 +140,10 @@ class PacketReceiver(Thread):
         elif packetid == 10: # Update Tile Entity
             self.world[struct.unpack("iii", packet[:12])].update_tile_entity(packet[12:])
         elif packetid == 255:  # Spawn Position
-            self.controller.player.position = struct.unpack("iii", packet)
+            self.controller.player.position = struct.unpack("iii", packet[:12])
+            packet = packet[12:]
+            packet, seed = extract_string_packet(packet)
+            self.world.biome_generator = BiomeGenerator(seed)
             #Now that we know where the player should be, we can enable .update again
             self.controller.update = self.controller.update_disabled
         else:

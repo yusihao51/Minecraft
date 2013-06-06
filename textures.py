@@ -32,8 +32,9 @@ class TexturePackImplementation(object):
         self.__texture_pack_file_name = texture_pack_file_name
         self.texture_pack_file = texture_pack_file
         self.__default_texture_pack = default_texture_pack
-        self.load_thumbnail_image()
-        self.load_description()
+        if self.is_compatible():
+            self.load_thumbnail_image()
+            self.load_description()
     
     def load_thumbnail_image(self):
         try:
@@ -43,7 +44,6 @@ class TexturePackImplementation(object):
                     fo = pyglet.image.load("pack.png", file=fo)
 
                 self.thumbnail_image = fo
-                print self.thumbnail_image
         except:
             return
     
@@ -73,9 +73,6 @@ class TexturePackImplementation(object):
             if self.__default_texture_pack and fallback:
                 return self.__default_texture_pack.open_file(path, True)
 
-    def get_resource_as_stream(self, path):
-        return self.open_file(path, True)
-
     def delete_texture_pack(self):
         if self.thumbnail_image and self.__thumbnail_texture_name != -1:
             glDeleteTextures(self.__thumbnail_texture_name)
@@ -102,49 +99,39 @@ class TexturePackCustom(TexturePackImplementation):
 
     def __init__(self, texture_pack_id, texture_pack_path, default_texture_pack):
         super(TexturePackCustom, self).__init__(texture_pack_id, texture_pack_path, os.path.basename(texture_pack_path), default_texture_pack)
-
-    def delete_texture_pack():
-        super(TexturePackCustom, self).delete_texture_pack()
-
-        if self.__texture_pack_zip_file:
-            self.__texture_pack_zip_file.close()
-
-        self.__texture_pack_zip_file = None
-
-    def read_file(self, path):
-        self.open_texture_pack_file()
-        print "/".join(path)
         
-        zip_location = pyglet.resource.ZIPLocation(self.__texture_pack_zip_file, "/".join(path[:-1]))
-        ret = zip_location.open(path[-1])
-        #pic = pyglet.image.load(path[-1], file=ret)
-        #return pic.get_image_data()
-        return pyglet.image.load(path[-1], file=ret)
+    def read_file(self, path):
+        zipfile = self.open_texture_pack_file()
+
+        zip_location = pyglet.resource.ZIPLocation(zipfile, "/".join(path[:-1]))
+        return pyglet.image.load(path[-1], file=zip_location.open(path[-1]))
 
     def file_exists(self, path):
         try:
-            self.open_texture_pack_file()
-            return self.__texture_pack_zip_file.getinfo("/".join(path))
+            zipfile = self.open_texture_pack_file()
+            return zipfile.getinfo("/".join(path))
         except KeyError:
             return False
 
     def open_texture_pack_file(self):
-        if not self.__texture_pack_zip_file:
-            self.__texture_pack_zip_file = ZipFile(self.texture_pack_file, 'r')
+        return ZipFile(self.texture_pack_file, "r")
 
     def is_compatible(self):
-        self.open_texture_pack_file()
+        zipfile = self.open_texture_pack_file()
         
-        with self.__texture_pack_zip_file as zipfile:
-            file_names = zipfile.namelist()
-            
-            for name in file_names:
-                if name.startswith("textures/"):
-                    return True
+        file_names = zipfile.namelist()
+        
+        for name in file_names:
+            if name.startswith("textures/"):
+                return True
+
+        # file_exists = self.file_exists(["terrain.png"]) or self.file_exists(["gui", "items.png"])
+        
+        # return not file_exists
 
         file_exists = self.file_exists(["terrain.png"]) or self.file_exists(["gui", "items.png"])
-        
-        return not file_exists
+
+        return file_exists
 
 
 class TexturePackDefault(TexturePackImplementation):
@@ -154,14 +141,19 @@ class TexturePackDefault(TexturePackImplementation):
     def load_description(self):
         self.__first_description_line = "The default look of %s" % G.APP_NAME
 
+    def get_resource_as_stream(self, path):
+        return self.open_file(path, True)
+
+    def read_file(self, path):
+        if self.file_exists(path):
+            return open(os.path.join("resources", *path), "r")
+
     def file_exists(self, path):
-        return self.get_resource_as_stream(path)
+        file_path = os.path.join("resources", *path)
+        return os.path.exists(file_path) and os.path.isfile(file_path)
 
     def is_compatible(self):
         return True
-       
-    def read_file(self, path):
-        return self.get_resource_as_stream(path)
             
 
 class TexturePackFolder(TexturePackImplementation):
@@ -225,12 +217,14 @@ class TexturePackList:
                         texture_pack = TexturePackFolder(texture_pack_id, texture_pack_path, default_texture_pack)
                     else:
                         texture_pack = TexturePackCustom(texture_pack_id, texture_pack_path, default_texture_pack)
+
+                if texture_pack and texture_pack.is_compatible():
                     self.texture_pack_cache[texture_pack_id] = texture_pack
 
-                if texture_pack.texture_pack_file_name == G.TEXTURE_PACK:
-                    self.__selected_texture_pack = texture_pack
+                    if texture_pack.texture_pack_file_name == G.TEXTURE_PACK:
+                        self.__selected_texture_pack = texture_pack
                   
-                texture_packs.append(texture_pack)
+                    texture_packs.append(texture_pack)
         
         self.__available_texture_packs = [texture_pack for texture_pack in self.__available_texture_packs if texture_pack not in texture_packs]
         
@@ -257,3 +251,5 @@ class TexturePackList:
     @property
     def selected_texture_pack(self):
         return self.__selected_texture_pack
+
+G.texture_pack_list = TexturePackList()

@@ -198,6 +198,7 @@ FAR_CLIP_DISTANCE = 200.0  # Maximum render distance,
 MOTION_BLUR = False
 
 TEXTURE_PACK = 'default'
+texture_pack_list = None
 
 HUD_ENABLED = True
 

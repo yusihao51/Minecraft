@@ -18,7 +18,7 @@ from savingsystem import save_sector_to_string, save_blocks, save_world, load_pl
 from world_server import WorldServer
 import blocks
 from commands import CommandParser, COMMAND_HANDLED, CommandException, COMMAND_ERROR_COLOR
-from utils import sectorize
+from utils import sectorize, make_string_packet
 
 #This class is effectively a serverside "Player" object
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
@@ -150,8 +150,9 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 msg = struct.pack("iii",*sector) + save_sector_to_string(world, sector) + world.get_exposed_sector(sector)
                 self.sendpacket(len(msg), "\1" + msg)
 
-                #Send them their spawn position
-                self.sendpacket(12, struct.pack("B",255) + struct.pack("iii", *position))
+                #Send them their spawn position and world seed(for client side biome generator)
+                seed_packet = make_string_packet(G.SEED)
+                self.sendpacket(12 + len(seed_packet), struct.pack("B",255) + struct.pack("iii", *position) + seed_packet)
                 self.sendpacket(4*40, "\6" + self.inventory)
             else:
                 print "Received unknown packettype", packettype
