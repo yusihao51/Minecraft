@@ -230,8 +230,8 @@ class ItemSelector(AbstractInventory):
         self.num_keys = [getattr(G, 'INVENTORY_%d_KEY' % i)
                          for i in range(1, 10)]
 
-        image = load_image('resources', 'textures', 'slots.png')
-        heart_image = load_image('resources', 'textures', 'heart.png')
+        image = load_image('resources', 'gui', 'slots.png')
+        heart_image = load_image('resources', 'gui', 'heart.png')
         frame_size = image.height / 2
         self.frame = image_sprite(image, self.batch, 0, y=frame_size, height=frame_size)
         self.active = image_sprite(image, self.batch, 2, width=frame_size, height=frame_size)
@@ -384,11 +384,11 @@ class InventorySelector(AbstractInventory):
 
     def change_image(self):
         if self.mode == 0:
-            image = load_image('resources', 'textures', 'inventory.png')
+            image = load_image('resources', 'gui', 'inventory.png')
         elif self.mode == 1:
-            image = load_image('resources', 'textures', 'inventory_when_crafting_table.png')
+            image = load_image('resources', 'gui', 'crafting.png')
         elif self.mode == 2:
-            image = load_image('resources', 'textures', 'inventory_when_furnace.png')
+            image = load_image('resources', 'gui', 'furnace.png')
         self.frame = image_sprite(image, self.batch, 0)
         self.frame.x = (self.parent.window.width - self.frame.width) / 2
         self.frame.y = self.icon_size / 2 - 4
