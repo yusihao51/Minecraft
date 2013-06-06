@@ -4,6 +4,7 @@
 
 # Future imports
 from __future__ import unicode_literals
+from math import floor
 
 # Python packages
 # Nothing for now...
@@ -350,7 +351,7 @@ class GrassBlock(Block):
             self.color_data = self.color_data.get_data('RGB', self.color_data.width * 3)
 
         def get_color(self, temperature, humidity):
-            pos = int(humidity * 256 * BYTE_PER_LINE + 3 * (1-temperature) * 256) + 1
+            pos = int(floor(humidity * 255) * BYTE_PER_LINE + 3 * floor((1-temperature) * 255))
             return float(ord(self.color_data[pos])) / 255, float(ord(self.color_data[pos + 1])) / 255, float(ord(self.color_data[pos + 2])) / 255
 
     texture_name = "grass_top", "dirt", "grass_side"
@@ -690,7 +691,7 @@ class LeafBlock(Block):
             self.color_data = self.color_data.get_data('RGB', self.color_data.width * 3)
 
         def get_color(self, temperature, humidity):
-            pos = int(humidity * 256 * BYTE_PER_LINE + 3 * (1-temperature) * 256) + 1
+            pos = int(floor(humidity * 255) * BYTE_PER_LINE + 3 * floor((1-temperature) * 255))
             return float(ord(self.color_data[pos])) / 255, float(ord(self.color_data[pos + 1])) / 255, float(ord(self.color_data[pos + 2])) / 255
 
     break_sound = sounds.leaves_break
