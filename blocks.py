@@ -312,6 +312,14 @@ class Block(object):
     def update_tile_entity(self, value):
         pass
 
+class BlockColorizer(object):
+        def __init__(self, filename):
+            self.color_data = G.texture_pack_list.selected_texture_pack.load_texture(['misc', filename])
+            self.color_data = self.color_data.get_data('RGB', self.color_data.width * 3)
+
+        def get_color(self, temperature, humidity):
+            pos = int(floor(humidity * 255) * BYTE_PER_LINE + 3 * floor((1-temperature) * 255))
+            return float(ord(self.color_data[pos])) / 255, float(ord(self.color_data[pos + 1])) / 255, float(ord(self.color_data[pos + 2])) / 255
 
 class AirBlock(Block):
     max_stack_size = 0
@@ -338,29 +346,26 @@ class StoneBlock(HardBlock):
     def __init__(self):
         super(StoneBlock, self).__init__()
         self.drop_id = BlockID(CobbleBlock.id)
+    
+    colorizer = BlockColorizer('stonecolor.png')
+
+    def get_color(self, temperature, humidity):
+        ret = []
+        ret.extend(list(self.colorizer.get_color(temperature, humidity)) * 24)
+        return ret
 
 
 PIXEL_PER_LINE = 256
 BYTE_PER_LINE = PIXEL_PER_LINE * 3
 
 class GrassBlock(Block):
-
-    class GrassColorizer(object):
-        def __init__(self):
-            self.color_data = G.texture_pack_list.selected_texture_pack.load_texture(['misc', 'grasscolor.png'])
-            self.color_data = self.color_data.get_data('RGB', self.color_data.width * 3)
-
-        def get_color(self, temperature, humidity):
-            pos = int(floor(humidity * 255) * BYTE_PER_LINE + 3 * floor((1-temperature) * 255))
-            return float(ord(self.color_data[pos])) / 255, float(ord(self.color_data[pos + 1])) / 255, float(ord(self.color_data[pos + 2])) / 255
-
     texture_name = "grass_top", "dirt", "grass_side"
     hardness = 0.6
     id = 2
     break_sound = sounds.dirt_break
     name = 'Grass'
     digging_tool = G.SHOVEL
-    colorizer = GrassColorizer()
+    colorizer = BlockColorizer('grasscolor.png')
 
     def __init__(self):
         super(GrassBlock, self).__init__()
@@ -397,6 +402,12 @@ class SandBlock(Block):
     name = "Sand"
     digging_tool = G.SHOVEL
     break_sound = sounds.sand_break
+    colorizer = BlockColorizer('sandcolor.png')
+
+    def get_color(self, temperature, humidity):
+        ret = []
+        ret.extend(list(self.colorizer.get_color(temperature, humidity)) * 24)
+        return ret
 
 
 class GoldOreBlock(HardBlock):
@@ -504,6 +515,12 @@ class WaterBlock(Block):
     name = "Water"
     break_sound = sounds.water_break
 
+    colorizer = BlockColorizer('watercolor.png')
+
+    def get_color(self, temperature, humidity):
+        ret = []
+        ret.extend(list(self.colorizer.get_color(temperature, humidity)) * 24)
+        return ret
 
 class CraftTableBlock(WoodBlock):
     texture_name = "workbench_top","wood","workbench_front","workbench_side",
@@ -684,18 +701,8 @@ class TallCactusBlock(Block):
 
 
 class LeafBlock(Block):
-
-    class LeafColorizer(object):
-        def __init__(self):
-            self.color_data = G.texture_pack_list.selected_texture_pack.load_texture(['misc', 'foliagecolor.png'])
-            self.color_data = self.color_data.get_data('RGB', self.color_data.width * 3)
-
-        def get_color(self, temperature, humidity):
-            pos = int(floor(humidity * 255) * BYTE_PER_LINE + 3 * floor((1-temperature) * 255))
-            return float(ord(self.color_data[pos])) / 255, float(ord(self.color_data[pos + 1])) / 255, float(ord(self.color_data[pos + 2])) / 255
-
     break_sound = sounds.leaves_break
-    colorizer = LeafColorizer()
+    colorizer = BlockColorizer('foliagecolor.png')
 
     def __init__(self):
         super(LeafBlock, self).__init__()
@@ -703,7 +710,6 @@ class LeafBlock(Block):
 
     def get_color(self, temperature, humidity):
         ret = []
-        # colorize only the top of the grass block
         ret.extend(list(self.colorizer.get_color(temperature, humidity)) * 24)
         return ret
 
