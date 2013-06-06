@@ -96,8 +96,9 @@ class BlockID(object):
 
     main = 0
     sub = 0  # A.k.a. DataID, damageID, etc
+    icon_name = None
 
-    def __init__(self, main, sub=0):
+    def __init__(self, main, sub=0, icon_name=None):
         if isinstance(main, tuple):
             self.main, self.sub = main
         elif isinstance(main, basestring):
@@ -118,6 +119,8 @@ class BlockID(object):
         else:
             self.main = int(main)
             self.sub = int(sub)
+
+        self.icon_name = icon_name
 
     def __repr__(self):
         return '%d.%d' % (self.main, self.sub)
@@ -143,8 +146,9 @@ class BlockID(object):
         return self.main > 255
 
     def filename(self):
-        if self.sub == 0: return str(self.main)
-        return '%d.%d' % (self.main, self.sub)
+        if self.icon_name != None: return ["textures", "blocks" if self.main < G.ITEM_ID_MIN else "items", str(self.icon_name) + ".png"]
+        if self.sub == 0: return ["textures", "icons", str(self.main) + ".png"]
+        return ["textures", "icons", '%d.%d.png' % (self.main, self.sub)]
 
 
 class Block(object):
@@ -193,6 +197,7 @@ class Block(object):
     vertex_mode = G.VERTEX_CUBE
     group = None  # The texture (group) the block renders from
     texture_name = None  # A list of block faces, named what Mojang names their blocks/"file".png
+    icon_name = None
 
     # Sounds
     break_sound = sounds.wood_break
@@ -217,7 +222,7 @@ class Block(object):
     render_as_normal_block = True
 
     def __init__(self, width=None, height=None):
-        self.id = BlockID(self.id or 0)
+        self.id = BlockID(self.id or 0, 0, self.icon_name)
         self.drop_id = self.id
         self.drop_quantity = 1
 
@@ -380,6 +385,7 @@ class GrassBlock(Block):
 
 class DirtBlock(Block):
     texture_name = "dirt",
+    icon_name = "dirt"
     hardness = 0.5
     id = 3
     name = "Dirt"
@@ -783,6 +789,7 @@ class YFlowersBlock(Block):
     transparent = True
     density = 0.3
     id = 37
+    icon_name = "flower"
     name = "Dandelion"
     break_sound = sounds.leaves_break
 

@@ -568,10 +568,20 @@ class GameController(Controller):
                 if hit_block.hardness > 0.0:
                     self.show_cracks(hit_block, vertex_data)
 
-                glColor3d(0, 0, 0)
+                glEnable(GL_BLEND)
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                glColor4f(0.0, 0.0, 0.0, 0.4)
+                glLineWidth(2.0)
+                glDisable(GL_TEXTURE_2D)
+                glDepthMask(False)
+
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
                 pyglet.graphics.draw(24, GL_QUADS, ('v3f/static', vertex_data))
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+                glDepthMask(True)
+                glEnable(GL_TEXTURE_2D)
+                glDisable(GL_BLEND)
 
     def draw_label(self):
         x, y, z = self.player.position

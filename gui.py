@@ -225,16 +225,26 @@ class ItemSelector(AbstractInventory):
         self.world = world
         self.player = player
         self.max_items = 9
-        self.icon_size = self.world.group.texture.width / G.TILESET_SIZE
+        self.icon_size = 32
         self.visible = True
         self.num_keys = [getattr(G, 'INVENTORY_%d_KEY' % i)
                          for i in range(1, 10)]
 
-        image = load_image('resources', 'gui', 'slots.png')
+        image = load_image('resources', 'gui', 'gui.png')
+        image_scale = image.height / 256
+        x_size = 182 * image_scale
+        y_size = 22 * image_scale
+        self.frame = image_sprite(image, self.batch, 0, y=image.height - y_size, height=y_size, x=0, width=x_size)
+        self.frame.scale = (1.0 / image_scale) * 2
+        self.frame.x = (self.parent.window.width - self.frame.width) / 2
+
         heart_image = load_image('resources', 'gui', 'heart.png')
         frame_size = image.height / 2
-        self.frame = image_sprite(image, self.batch, 0, y=frame_size, height=frame_size)
-        self.active = image_sprite(image, self.batch, 2, width=frame_size, height=frame_size)
+
+        x_size = 24 * image_scale
+        y_size = 22 * image_scale
+        self.active = image_sprite(image, self.batch, 0, y=(image.height - (y_size + 22)), height=y_size, x=0, width=x_size)
+        self.active.scale = (1.0 / image_scale) * 2
         self.hearts = []
         for i in range(0, 10):
             heart = image_sprite(heart_image, self.batch, 0)
@@ -247,25 +257,27 @@ class ItemSelector(AbstractInventory):
         for amount_label in self.amount_labels:
             amount_label.delete()
         self.amount_labels = []
-        x = self.frame.x + 3
+        x = self.frame.x + 6
         items = self.player.quick_slots.get_items()
         items = items[:self.max_items]
         for item in items:
             if not item:
-                x += (self.icon_size * 0.5) + 3
+                x += self.icon_size + 8
                 continue
-            icon = image_sprite(get_block_icon(item.get_object(), self.icon_size, self.world), self.batch, self.group)
-            icon.scale = 0.5
+            img = get_block_icon(item.get_object(), self.icon_size, self.world)
+            icon = image_sprite(img, self.batch, self.group)
+            image_scale = 1.0 / (img.width / self.icon_size)
+            icon.scale = image_scale
             icon.x = x
-            icon.y = self.frame.y + 3
+            icon.y = self.frame.y + 8
             item.quickslots_x = icon.x
             item.quickslots_y = icon.y
-            x += (self.icon_size * 0.5) + 3
+            x += self.icon_size + 8
             if item.max_durability != -1 and item.durability != -1:
                 icon.opacity = min(item.max_durability, item.durability + 1) * 255 / item.max_durability
             amount_label = pyglet.text.Label(
                 str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
-                x=icon.x + 3, y=icon.y, anchor_x='left', anchor_y='bottom',
+                x=icon.x + 8, y=icon.y, anchor_x='left', anchor_y='bottom',
                 color=item.get_object().amount_label_color, batch=self.batch,
                 group=self.labels_group)
             self.amount_labels.append(amount_label)
@@ -282,7 +294,7 @@ class ItemSelector(AbstractInventory):
                 anchor_x='center', anchor_y='bottom',
                 color=(255, 255, 255, 255), batch=self.batch,
                 group=self.labels_group)
-        self.active.x = self.frame.x + (self.current_index * 35)
+        self.active.x = self.frame.x + (self.current_index * 40) - 2
 
     def update_health(self):
         hearts_to_show = self.player.health
@@ -349,7 +361,7 @@ class ItemSelector(AbstractInventory):
 
     def on_resize(self, width, height):
         self.frame.x = (width - self.frame.width) / 2
-        self.frame.y = self.icon_size * 0.5
+        self.frame.y = 0
         self.active.y = self.frame.y
         if self.visible:
             self.update_health()
@@ -369,7 +381,8 @@ class InventorySelector(AbstractInventory):
         self.player = player
         self.max_items = self.player.inventory.slot_count
         self.current_index = 1
-        self.icon_size = self.world.group.texture.width / G.TILESET_SIZE
+        # self.icon_size = self.world.group.texture.width / G.TILESET_SIZE
+        self.icon_size = 32
         self.selected_item = None
         self.selected_item_icon = None
         self.mode = 0 # 0 - Normal inventory, 1 - Crafting Table, 2 - Furnace
@@ -385,46 +398,58 @@ class InventorySelector(AbstractInventory):
     def change_image(self):
         if self.mode == 0:
             image = load_image('resources', 'gui', 'inventory.png')
+            image_scale = image.height / 256
+            x_size = 176 * image_scale
+            y_size = 166 * image_scale
+            self.frame = image_sprite(image, self.batch, 0, y=image.height - y_size, height=y_size, x=0, width=x_size)
+            self.frame.scale = (1.0 / image_scale) * 2
+            self.frame.x = (self.parent.window.width - self.frame.width) / 2
+            self.frame.y = 74
+
+            return
         elif self.mode == 1:
             image = load_image('resources', 'gui', 'crafting.png')
         elif self.mode == 2:
             image = load_image('resources', 'gui', 'furnace.png')
+
         self.frame = image_sprite(image, self.batch, 0)
         self.frame.x = (self.parent.window.width - self.frame.width) / 2
         self.frame.y = self.icon_size / 2 - 4
 
     def update_items(self):
         rows = floor(self.max_items / 9)
-        inventory_y = 43
-        inventory_height = (rows * (self.icon_size * 0.5)) + ((rows+1) * 3)
+        inventory_y = self.frame.y - 16
+        inventory_height = (rows * self.icon_size) + ((rows+1) * 3)
         self.icons = []
         for amount_label in self.amount_labels:
             amount_label.delete()
         self.amount_labels = []
-        x = self.frame.x + 7
+        x = self.frame.x + 16
         y = self.frame.y + inventory_y + inventory_height
         items = self.player.inventory.get_items()
         items = items[:self.max_items]
         for i, item in enumerate(items):
             if not item:
-                x += (self.icon_size * 0.5) + 3
-                if x >= (self.frame.x + self.frame.width) - 7:
-                    x = self.frame.x + 7
-                    y -= (self.icon_size * 0.5) + 3
+                x += self.icon_size + 4
+                if x >= (self.frame.x + self.frame.width) - 16:
+                    x = self.frame.x + 16
+                    y -= self.icon_size + 4
                 continue
-            icon = image_sprite(get_block_icon(item.get_object(), self.icon_size, self.world), self.batch, self.group)
-            icon.scale = 0.5
+            img = get_block_icon(item.get_object(), self.icon_size, self.world)
+            icon = image_sprite(img, self.batch, self.group)
+            image_scale = 1.0 / (img.width / self.icon_size)
+            icon.scale = image_scale
             icon.x = x
             icon.y = y - icon.height
-            x += (self.icon_size * 0.5) + 3
-            if x >= (self.frame.x + self.frame.width) - 7:
-                x = self.frame.x + 7
-                y -= (self.icon_size * 0.5) + 3
+            x += self.icon_size + 4
+            if x >= (self.frame.x + self.frame.width) - 16:
+                x = self.frame.x + 16
+                y -= self.icon_size + 4
             if item.max_durability != -1 and item.durability != -1:
                 icon.opacity = min(item.max_durability, item.durability + 1) * 255 / item.max_durability
             amount_label = pyglet.text.Label(
                 str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
-                x=icon.x + 3, y=icon.y, anchor_x='left', anchor_y='bottom',
+                x=icon.x + 4, y=icon.y, anchor_x='left', anchor_y='bottom',
                 color=item.get_object().amount_label_color, batch=self.batch,
                 group=self.labels_group)
             self.amount_labels.append(amount_label)
@@ -432,22 +457,25 @@ class InventorySelector(AbstractInventory):
 
         items = self.player.quick_slots.get_items()
         items = items[:self.player.quick_slots.slot_count]
+        x = self.frame.x + 16
         for i, item in enumerate(items):
             if not item:
-                x += (self.icon_size * 0.5) + 3
+                x += self.icon_size + 4
                 continue
-            icon = image_sprite(get_block_icon(item.get_object(), self.icon_size, self.world), self.batch, self.group)
-            icon.scale = 0.5
+            img = get_block_icon(item.get_object(), self.icon_size, self.world)
+            icon = image_sprite(img, self.batch, self.group)
+            image_scale = 1.0 / (img.width / self.icon_size)
+            icon.scale = image_scale
             icon.x = x
-            icon.y = self.frame.y + 7
+            icon.y = self.frame.y + 16
             item.quickslots_x = icon.x
             item.quickslots_y = icon.y
-            x += (self.icon_size * 0.5) + 3
+            x += self.icon_size + 4
             if item.max_durability != -1 and item.durability != -1:
                 icon.opacity = min(item.max_durability, item.durability + 1) * 255 / item.max_durability
             amount_label = pyglet.text.Label(
                 str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
-                x=icon.x + 3, y=icon.y, anchor_x='left', anchor_y='bottom',
+                x=icon.x + 4, y=icon.y, anchor_x='left', anchor_y='bottom',
                 color=item.get_object().amount_label_color, batch=self.batch,
                 group=self.labels_group)
             self.amount_labels.append(amount_label)
@@ -455,21 +483,23 @@ class InventorySelector(AbstractInventory):
 
         items = self.player.armor.get_items()
         items = items[:4]
-        x = self.frame.x + 7
-        y = inventory_y + inventory_height + 10 + 4 * self.icon_size * 0.5 + 9
+        x = self.frame.x + 16
+        y = inventory_y + inventory_height + 10 + 4 * self.icon_size + 9
         for i, item in enumerate(items):
             if not item:
-                y -= (self.icon_size * 0.5) + 3
+                y -= self.icon_size + 4
                 continue
-            icon = image_sprite(get_block_icon(item.get_object(), self.icon_size, self.world), self.batch, self.group)
-            icon.scale = 0.5
+            img = get_block_icon(item.get_object(), self.icon_size, self.world)
+            icon = image_sprite(img, self.batch, self.group)
+            image_scale = 1.0 / (img.width / self.icon_size)
+            icon.scale = image_scale
             icon.x = x
             icon.y = y
             if item.max_durability != -1 and item.durability != -1:
                 icon.opacity = min(item.max_durability, item.durability + 1) * 255 / item.max_durability
             amount_label = pyglet.text.Label(
                 str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
-                x=icon.x + 3, y=icon.y, anchor_x='left', anchor_y='bottom',
+                x=icon.x + 4, y=icon.y, anchor_x='left', anchor_y='bottom',
                 color=item.get_object().amount_label_color, batch=self.batch,
                 group=self.labels_group)
             self.amount_labels.append(amount_label)
@@ -477,8 +507,8 @@ class InventorySelector(AbstractInventory):
 
         crafting_y = inventory_y + inventory_height + (42 if self.mode == 0 else 14 if self.mode == 1 else 32)
         crafting_rows = (2 if self.mode == 0 else 3 if self.mode == 1 else 2)
-        crafting_height = (crafting_rows * (self.icon_size * 0.5)) + (crafting_rows * 3)
-        x = self.frame.x + (165 if self.mode == 0 else 72 if self.mode == 1 else 63)
+        crafting_height = (crafting_rows * self.icon_size) + (crafting_rows * 3)
+        x = self.frame.x + (0 if self.mode == 0 else 72 if self.mode == 1 else 63)
         y = self.frame.y + crafting_y + crafting_height
         items = self.crafting_panel.get_items() if self.mode == 0 else self.crafting_table_panel.get_items() if self.mode == 1 else self.furnace_panel.get_items()
         items = items[:self.crafting_panel.slot_count] if self.mode == 0 else items[:self.crafting_table_panel.slot_count] if self.mode == 1 else items[:self.furnace_panel.slot_count]
@@ -488,26 +518,28 @@ class InventorySelector(AbstractInventory):
             if not item:
                 # placeholder
                 crafting_ingredients[int(floor(i / (2 if self.mode == 0 else 3 if self.mode == 1 else 1)))].append(air_block)
-                x += (self.icon_size * 0.5) + 3
-                if x >= (self.frame.x + (165 if self.mode == 0 else 72 if self.mode == 1 else 63)) + 35 * ((2 if self.mode == 0 else 3 if self.mode == 1 else 1)):
-                    x = self.frame.x + (165 if self.mode == 0 else 72 if self.mode == 1 else 63)
-                    y -= (self.icon_size * 0.5) + 3
+                x += self.icon_size + 4
+                if x >= (self.frame.x + (0 if self.mode == 0 else 72 if self.mode == 1 else 63)) + 35 * ((2 if self.mode == 0 else 3 if self.mode == 1 else 1)):
+                    x = self.frame.x + (0 if self.mode == 0 else 72 if self.mode == 1 else 63)
+                    y -= self.icon_size + 4
                 continue
-            icon = image_sprite(get_block_icon(item.get_object(), self.icon_size, self.world), self.batch, self.group)
-            icon.scale = 0.5
+            img = get_block_icon(item.get_object(), self.icon_size, self.world)
+            icon = image_sprite(img, self.batch, self.group)
+            image_scale = 1.0 / (img.width / self.icon_size)
+            icon.scale = image_scale
             icon.x = x
             icon.y = y - icon.height
             item.quickslots_x = icon.x
             item.quickslots_y = icon.y
-            x += (self.icon_size * 0.5) + 3
-            if x >= (self.frame.x + (165 if self.mode == 0 else 72 if self.mode == 1 else 63)) + 35 * ((2 if self.mode == 0 else 3 if self.mode == 1 else 1)):
-                x = self.frame.x + (165 if self.mode == 0 else 72 if self.mode == 1 else 63)
-                y -= (self.icon_size * 0.5) + 3
+            x += self.icon_size + 4
+            if x >= (self.frame.x + (0 if self.mode == 0 else 72 if self.mode == 1 else 63)) + 35 * ((2 if self.mode == 0 else 3 if self.mode == 1 else 1)):
+                x = self.frame.x + (0 if self.mode == 0 else 72 if self.mode == 1 else 63)
+                y -= self.icon_size + 4
             if item.max_durability != -1 and item.durability != -1:
                 icon.opacity = min(item.max_durability, item.durability + 1) * 255 / item.max_durability
             amount_label = pyglet.text.Label(
                 str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
-                x=icon.x + 3, y=icon.y, anchor_x='left', anchor_y='bottom',
+                x=icon.x + 4, y=icon.y, anchor_x='left', anchor_y='bottom',
                 color=item.get_object().amount_label_color, batch=self.batch,
                 group=self.labels_group)
             self.amount_labels.append(amount_label)
@@ -554,27 +586,27 @@ class InventorySelector(AbstractInventory):
         crafting_rows = (2 if self.mode == 0 else 3 if self.mode == 1 else 2)
         quick_slots_y = self.frame.y + 4
         inventory_y = quick_slots_y + 42
-        inventory_height = (inventory_rows * (self.icon_size * 0.5)) + (inventory_rows * 3)
+        inventory_height = (inventory_rows * self.icon_size) + (inventory_rows * 3)
         crafting_items_per_row = (2 if self.mode == 0 else 3 if self.mode == 1 else 1)
         crafting_y = inventory_y + inventory_height + (42 if self.mode == 0 else 14 if self.mode == 1 else 32)
-        crafting_x = self.frame.x + (165 if self.mode == 0 else 72 if self.mode == 1 else 63)
-        crafting_height = (crafting_rows * (self.icon_size * 0.5)) + (crafting_rows * 3)
-        crafting_width = (crafting_items_per_row * (self.icon_size * 0.5)) + (crafting_items_per_row-1) * 3
+        crafting_x = self.frame.x + (0 if self.mode == 0 else 72 if self.mode == 1 else 63)
+        crafting_height = (crafting_rows * self.icon_size) + (crafting_rows * 3)
+        crafting_width = (crafting_items_per_row * self.icon_size) + (crafting_items_per_row-1) * 3
 
         armor_y = inventory_y + inventory_height + 10
-        armor_x = self.frame.x + 7
-        armor_height = 4 * (self.icon_size * 0.5 + 3)
-        armor_width = self.icon_size * 0.5
+        armor_x = self.frame.x + 16
+        armor_height = 4 * (self.icon_size + 4)
+        armor_width = self.icon_size
 
         crafting_outcome_y = inventory_y + inventory_height + (60 if self.mode == 0 else 42 if self.mode == 1 else 57)
         crafting_outcome_x = self.frame.x + (270 if self.mode == 0 else 222)
-        crafting_outcome_width = crafting_outcome_height = self.icon_size * 0.5
+        crafting_outcome_width = crafting_outcome_height = self.icon_size
         # out of bound
 
-        if (x <= self.frame.x + 7) or (x >= (self.frame.x + self.frame.width) - 7) or (y <= quick_slots_y) or y >= (armor_y + armor_height):
+        if (x <= self.frame.x + 16) or (x >= (self.frame.x + self.frame.width) - 16) or (y <= quick_slots_y) or y >= (armor_y + armor_height):
             return -1, -1
 
-        x_offset = x - (self.frame.x + 7)
+        x_offset = x - (self.frame.x + 16)
 
         if y <= quick_slots_y + 35:
             row = 0.0
@@ -582,7 +614,7 @@ class InventorySelector(AbstractInventory):
             items_per_row = 9
         elif y <= inventory_y + inventory_height and y >= inventory_y:
             y_offset = (y - (inventory_y + inventory_height)) * -1
-            row = floor(y_offset // (self.icon_size * 0.5 + 3))
+            row = floor(y_offset // (self.icon_size + 4))
             if self.mode == 0:
                 self.crafting_panel.remove_unnecessary_stacks()
             elif self.mode == 1:
@@ -594,7 +626,7 @@ class InventorySelector(AbstractInventory):
         elif crafting_y <= y <= crafting_y + crafting_height and x >= crafting_x \
             and x <= crafting_x + crafting_width:
             y_offset = (y - (crafting_y + crafting_height)) * -1
-            row = floor(y_offset // (self.icon_size * 0.5 + 3))
+            row = floor(y_offset // (self.icon_size + 4))
             if self.mode == 0:
                 self.crafting_panel.remove_unnecessary_stacks()
                 inventory = self.crafting_panel
@@ -613,13 +645,13 @@ class InventorySelector(AbstractInventory):
         elif armor_y <= y <= armor_y + armor_height and \
             armor_x <= x <= armor_x + armor_width:
             items_per_row = 1
-            row = floor((armor_y + armor_height - y) // (self.icon_size * 0.5))
+            row = floor((armor_y + armor_height - y) // self.icon_size)
             x_offset = 0
             inventory = self.player.armor
         else:
             return -1, -1
 
-        col = x_offset // (self.icon_size * 0.5 + 3)
+        col = x_offset // (self.icon_size + 4)
 
         return inventory, int(row * items_per_row + col)
 
@@ -663,7 +695,7 @@ class InventorySelector(AbstractInventory):
 
         self.crafting_outcome_label = pyglet.text.Label(
             str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
-            x= self.crafting_outcome_icon.x + 3, y= self.crafting_outcome_icon.y, anchor_x='left', anchor_y='bottom',
+            x= self.crafting_outcome_icon.x + 4, y= self.crafting_outcome_icon.y, anchor_x='left', anchor_y='bottom',
             color=item.get_object().amount_label_color,
             group=self.group)
 
@@ -701,7 +733,7 @@ class InventorySelector(AbstractInventory):
                 self.set_selected_item(self.crafting_outcome)
                 # set coordinates
                 inventory_rows = floor(self.max_items / 9)
-                inventory_height = (inventory_rows * (self.icon_size * 0.5)) + (inventory_rows * 3)
+                inventory_height = (inventory_rows * self.icon_size) + (inventory_rows * 3)
                 quick_slots_y = self.frame.y + 4
                 inventory_y = quick_slots_y + (42 if self.mode == 0 else 14 if self.mode == 1 else 32)
                 self.selected_item_icon.y = inventory_y + inventory_height + (60 if self.mode == 0 else 42 if self.mode == 1 else 57)
@@ -809,7 +841,7 @@ class InventorySelector(AbstractInventory):
 
     def on_resize(self, width, height):
         self.frame.x = (width - self.frame.width) / 2
-        self.frame.y = self.icon_size / 2 - 4
+        self.frame.y = 74
         if self.visible:
             self.update_items()
 
