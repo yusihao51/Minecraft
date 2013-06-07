@@ -8,6 +8,7 @@ import argparse
 import os
 import random
 import time
+import gettext
 
 # Third-party packages
 import pyglet
@@ -94,6 +95,10 @@ def main(options):
 
     if options.fast:
         G.TIME_RATE /= 20
+
+    if G.LANGUAGE != 'default':
+        translation = gettext.translation(G.APP_NAME, 'locale', languages=[LANGUAGE])
+        G._ = translation.gettext
 
     # try:
         # window_config = Config(sample_buffers=1, samples=4) #, depth_size=8)  #, double_buffer=True) #TODO Break anti-aliasing/multisampling into an explicit menu option

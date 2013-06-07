@@ -114,10 +114,10 @@ class MainMenuView(MenuView):
         MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
 
-        self.buttons.append(self.Button(caption="Singleplayer",on_click=self.controller.start_singleplayer_game))
-        self.buttons.append(self.Button(caption="Multiplayer",on_click=self.controller.multiplayer))
-        self.buttons.append(self.Button(caption="Options...",on_click=self.controller.game_options))
-        self.buttons.append(self.Button(caption="Exit game",on_click=self.controller.exit_game))
+        self.buttons.append(self.Button(caption=G._("Singleplayer"),on_click=self.controller.start_singleplayer_game))
+        self.buttons.append(self.Button(caption=G._("Multiplayer"),on_click=self.controller.multiplayer))
+        self.buttons.append(self.Button(caption=G._("Options..."),on_click=self.controller.game_options))
+        self.buttons.append(self.Button(caption=G._("Exit game"),on_click=self.controller.exit_game))
         self.label = Label(G.APP_NAME, font_name='ChunkFive Roman', font_size=50, x=width/2, y=self.frame.y + self.frame.height,
             anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
             group=self.labels_group)
@@ -144,9 +144,9 @@ class OptionsView(MenuView):
             G.USERNAME = self.text_input.text
         self.text_input.push_handlers(key_released=text_input_callback)
 
-        self.buttons.append(self.Button(caption="Controls...", on_click=self.controller.controls))
-        self.buttons.append(self.Button(caption="Textures", on_click=self.controller.textures, enabled=os.path.exists(texturepacks_dir)))
-        self.buttons.append(self.Button(caption="Done", on_click=self.controller.main_menu))
+        self.buttons.append(self.Button(caption=G._("Controls..."), on_click=self.controller.controls))
+        self.buttons.append(self.Button(caption=G._("Textures"), on_click=self.controller.textures, enabled=os.path.exists(texturepacks_dir)))
+        self.buttons.append(self.Button(caption=G._("Done"), on_click=self.controller.main_menu))
         self.label = Label('Options', font_name='ChunkFive Roman', font_size=25, x=width/2, y=self.frame.y + self.frame.height,
             anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
             group=self.labels_group)
@@ -168,7 +168,7 @@ class ControlsView(MenuView):
             button.id = identifier
             self.buttons.append(button)
             self.key_buttons.append(button)
-        self.button_return = self.Button(caption="Done",on_click=self.controller.game_options)
+        self.button_return = self.Button(caption=G._("Done"),on_click=self.controller.game_options)
         self.buttons.append(self.button_return)
 
         self.on_resize(width, height)
@@ -264,9 +264,9 @@ class MultiplayerView(MenuView):
             G.IP_ADDRESS = self.text_input.text
         self.text_input.push_handlers(key_released=text_input_callback)
 
-        self.buttons.append(self.Button(caption="Connect to server", on_click=self.controller.start_multiplayer_game))
-        self.buttons.append(self.Button(caption="Launch server", on_click=self.launch_server))
-        self.buttons.append(self.Button(caption="Done", on_click=self.controller.main_menu))
+        self.buttons.append(self.Button(caption=G._("Connect to server"), on_click=self.controller.start_multiplayer_game))
+        self.buttons.append(self.Button(caption=G._("Launch server"), on_click=self.launch_server))
+        self.buttons.append(self.Button(caption=G._("Done"), on_click=self.controller.main_menu))
         self.label = Label('Play Multiplayer', font_name='ChunkFive Roman', font_size=25, x=width/2, y=self.frame.y + self.frame.height,
             anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
             group=self.labels_group)

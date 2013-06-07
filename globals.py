@@ -242,6 +242,12 @@ main_timer = None
 CHAT_FADE_TIME = 8
 
 #
+# Localization
+#
+LANGUAGE = 'default'
+_ = lambda x:x
+
+#
 # Global files & directories
 #
 
@@ -314,7 +320,7 @@ def initialize_config():
     #
     # General
     #
-    global DEBUG, FULLSCREEN, WINDOW_WIDTH, WINDOW_HEIGHT, DRAW_DISTANCE_CHOICE, DRAW_DISTANCE_CHOICES, DRAW_DISTANCE, MOTION_BLUR, TEXTURE_PACK, USERNAME, IP_ADDRESS
+    global DEBUG, FULLSCREEN, WINDOW_WIDTH, WINDOW_HEIGHT, DRAW_DISTANCE_CHOICE, DRAW_DISTANCE_CHOICES, DRAW_DISTANCE, MOTION_BLUR, TEXTURE_PACK, USERNAME, IP_ADDRESS, LANGUAGE
 
     general = 'General'
 
@@ -374,6 +380,15 @@ def initialize_config():
             pyglet_key = get_key(default_key_name)
             config.set(controls, control, default_key_name)
         globals()[control.upper() + '_KEY'] = pyglet_key
+
+    #
+    # Localization
+    #
+
+    localization = 'Localization'
+    
+    LANGUAGE = get_or_update_config(
+        localization, 'language', LANGUAGE, conv=str)
 
     save_config()
 
