@@ -244,8 +244,8 @@ class TexturesView(MenuView):
                 self.current_toggled = button
                 G.config.set("Graphics", "texture_pack", button.id)
                 G.TEXTURE_PACK = button.id
-                # for block in G.BLOCKS_DIR.values():
-                #     block.__init__() #Reload textures
+                for block in G.BLOCKS_DIR.values():
+                    block.update_texture() #Reload textures
 
                 G.save_config()
 

@@ -236,21 +236,7 @@ class Block(object):
         if not self.render_as_normal_block:
             return
 
-        if self.texture_name:
-            self.group = TextureGroupIndividual(self.texture_name)
-
-            if self.group:
-                self.texture_data = self.group.texture_data
-        
-        if self.front_texture is None:
-            self.front_texture = self.side_texture
-        if not self.texture_data:
-            # Applies get_texture_coordinates to each of the faces to be textured.
-            for k in ('top_texture', 'bottom_texture', 'side_texture', 'front_texture'):
-                v = getattr(self, k)
-                if v:
-                    setattr(self, k, get_texture_coordinates(*v))
-            self.texture_data = self.get_texture_data()
+        self.update_texture()
 
     def __str__(self):
         return self.name
@@ -316,6 +302,23 @@ class Block(object):
 
     def update_tile_entity(self, value):
         pass
+
+    def update_texture(self):
+        if self.texture_name:
+            self.group = TextureGroupIndividual(self.texture_name)
+
+            if self.group:
+                self.texture_data = self.group.texture_data
+        
+        if self.front_texture is None:
+            self.front_texture = self.side_texture
+        if not self.texture_data:
+            # Applies get_texture_coordinates to each of the faces to be textured.
+            for k in ('top_texture', 'bottom_texture', 'side_texture', 'front_texture'):
+                v = getattr(self, k)
+                if v:
+                    setattr(self, k, get_texture_coordinates(*v))
+            self.texture_data = self.get_texture_data()
 
 class BlockColorizer(object):
         def __init__(self, filename):

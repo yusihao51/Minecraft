@@ -50,12 +50,14 @@ class TexturePackImplementation(object):
     def load_texture(self, path):
         try:
             fo = self.open_file(path, False)
+
             if fo:
                 if not isinstance(fo, pyglet.image.ImageData):
                     fo = pyglet.image.load(path[-1], file=fo)
 
                 return fo
         except:
+            print 'Texture not found \'' + '/'.join(path) + '\''
             return None
 
     def load_description(self):
@@ -146,7 +148,7 @@ class TexturePackDefault(TexturePackImplementation):
 
     def read_file(self, path):
         if self.file_exists(path):
-            return open(os.path.join("resources", *path), "r")
+            return open(os.path.join("resources", *path), "rb")
 
     def file_exists(self, path):
         file_path = os.path.join("resources", *path)
@@ -154,6 +156,9 @@ class TexturePackDefault(TexturePackImplementation):
 
     def is_compatible(self):
         return True
+
+    def __repr__(self):
+        return "The default look of %s" % G.APP_NAME
             
 
 class TexturePackFolder(TexturePackImplementation):
