@@ -9,6 +9,7 @@ import os
 import random
 import time
 import gettext
+import sys
 
 # Third-party packages
 import pyglet
@@ -97,8 +98,14 @@ def main(options):
         G.TIME_RATE /= 20
 
     if G.LANGUAGE != 'default':
-        translation = gettext.translation(G.APP_NAME, 'locale', languages=[LANGUAGE])
-        G._ = translation.gettext
+        reload(sys)
+        sys.setdefaultencoding('UTF-8')
+        gettext.install(True, localedir=None, unicode=1)
+        gettext.find(G.APP_NAME.lower(), 'locale')
+        gettext.textdomain(G.APP_NAME.lower())
+        gettext.bind_textdomain_codeset(G.APP_NAME.lower(), 'UTF-8')
+        language = gettext.translation(G.APP_NAME.lower(), 'locale', languages=[G.LANGUAGE], fallback=True)
+        G._ = lambda s: language.ugettext(s)
 
     # try:
         # window_config = Config(sample_buffers=1, samples=4) #, depth_size=8)  #, double_buffer=True) #TODO Break anti-aliasing/multisampling into an explicit menu option
