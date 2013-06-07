@@ -230,7 +230,7 @@ class ItemSelector(AbstractInventory):
         self.num_keys = [getattr(G, 'INVENTORY_%d_KEY' % i)
                          for i in range(1, 10)]
 
-        image = load_image('resources', 'gui', 'gui.png')
+        image = G.texture_pack_list.selected_texture_pack.load_texture(['gui', 'gui.png'])
         image_scale = image.height / 256
         x_size = 182 * image_scale
         y_size = 22 * image_scale
@@ -397,7 +397,7 @@ class InventorySelector(AbstractInventory):
 
     def change_image(self):
         if self.mode == 0:
-            image = load_image('resources', 'gui', 'inventory.png')
+            image = G.texture_pack_list.selected_texture_pack.load_texture(['gui', 'inventory.png'])
             image_scale = image.height / 256
             x_size = 176 * image_scale
             y_size = 166 * image_scale
