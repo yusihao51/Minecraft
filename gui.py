@@ -3,6 +3,7 @@
 # Python packages
 import random
 from math import floor, ceil
+from functools import partial
 
 # Third-party packages
 from pyglet.gl import *
@@ -169,6 +170,64 @@ class ToggleButton(Button):
 
 ToggleButton.register_event_type('on_toggle')
 
+class Slot(pyglet.event.EventDispatcher, Rectangle):
+
+    _item = None
+
+    def __init__(self, parent, x, y, width, height, is_quickslot=False, world=None, batch=None, group=None, label_group=None):
+        super(Slot, self).__init__(x, y, width, height)
+        parent.push_handlers(self)
+        self.batch, self.group = batch, group
+        self.label_group = label_group
+        self.position = x, y
+        self.world = world
+        self.amount_label = None
+        self.is_quickslot = is_quickslot
+        self.icon = None
+
+    @property
+    def item(self):
+        return self._item
+
+    @item.setter
+    def item(self, value):
+        self._item = value
+        if self.amount_label:
+            self.amount_label.delete()
+        self.amount_label = None
+        if not value:
+            self.icon = None
+            return
+        img = get_block_icon(self._item.get_object(), self.width, self.world)
+        self.icon = image_sprite(img, self.batch, self.group)
+        image_scale = 1.0 / (img.width / self.width)
+        self.icon.scale = image_scale
+        self.icon.x = self.x
+        self.icon.y = self.y
+        if self.is_quickslot:
+            self._item.quickslots_x = self.icon.x
+            self._item.quickslots_y = self.icon.y
+        if self._item.max_durability != -1 and self._item.durability != -1:
+            self.icon.opacity = min(self._item.max_durability, self._item.durability + 1) * 255 / self._item.max_durability
+
+        self.amount_label = pyglet.text.Label(
+            str(self._item.amount), font_name=G.DEFAULT_FONT, font_size=9,
+            x=self.icon.x + 8, y=self.icon.y, anchor_x='left', anchor_y='bottom',
+            color=self._item.get_object().amount_label_color, batch=self.batch,
+            group=self.label_group)
+
+    def draw(self):
+        if self.icon:
+            self.icon.draw()
+        if self.amount_label:
+            self.amount_label.draw()
+
+    def on_mouse_click(self, x, y, button, modifiers):
+        if self.hit_test(x, y):
+            self.dispatch_event('on_click')
+
+Slot.register_event_type('on_click')
+
 class Control(pyglet.event.EventDispatcher):
     def __init__(self, parent, visible=True, *args, **kwargs):
         self.parent = parent
@@ -243,9 +302,19 @@ class ItemSelector(AbstractInventory):
 
         x_size = 24 * image_scale
         y_size = 22 * image_scale
-        self.active = image_sprite(image, self.batch, 0, y=(image.height - (y_size + 22)), height=y_size, x=0, width=x_size)
+
+        self.active = image_sprite(image, self.batch, 0, y=(image.height - (y_size + (22 * image_scale))), height=y_size, x=0, width=x_size)
         self.active.scale = (1.0 / image_scale) * 2
+        self.slots = []
+        
+        slot_x = self.frame.x + 8
+        slot_y = self.frame.y + 8
+        for i in range(1, self.max_items + 1):
+            self.slots.append(Slot(self, slot_x, slot_y, self.icon_size, self.icon_size, is_quickslot=True, world=self.world, batch=self.batch, group=self.group, label_group=self.labels_group))
+            slot_x += self.icon_size + 8
+
         self.hearts = []
+
         for i in range(0, 10):
             heart = image_sprite(heart_image, self.batch, 0)
             self.hearts.append(heart)
@@ -253,35 +322,12 @@ class ItemSelector(AbstractInventory):
 
     def update_items(self):
         self.player.quick_slots.remove_unnecessary_stacks()
-        self.icons = []
-        for amount_label in self.amount_labels:
-            amount_label.delete()
-        self.amount_labels = []
-        x = self.frame.x + 6
         items = self.player.quick_slots.get_items()
         items = items[:self.max_items]
+        i = 0
         for item in items:
-            if not item:
-                x += self.icon_size + 8
-                continue
-            img = get_block_icon(item.get_object(), self.icon_size, self.world)
-            icon = image_sprite(img, self.batch, self.group)
-            image_scale = 1.0 / (img.width / self.icon_size)
-            icon.scale = image_scale
-            icon.x = x
-            icon.y = self.frame.y + 8
-            item.quickslots_x = icon.x
-            item.quickslots_y = icon.y
-            x += self.icon_size + 8
-            if item.max_durability != -1 and item.durability != -1:
-                icon.opacity = min(item.max_durability, item.durability + 1) * 255 / item.max_durability
-            amount_label = pyglet.text.Label(
-                str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
-                x=icon.x + 8, y=icon.y, anchor_x='left', anchor_y='bottom',
-                color=item.get_object().amount_label_color, batch=self.batch,
-                group=self.labels_group)
-            self.amount_labels.append(amount_label)
-            self.icons.append(icon)
+            self.slots[i].item = item
+            i += 1
         self.update_current()
 
     def update_current(self):
@@ -362,7 +408,13 @@ class ItemSelector(AbstractInventory):
     def on_resize(self, width, height):
         self.frame.x = (width - self.frame.width) / 2
         self.frame.y = 0
-        self.active.y = self.frame.y
+        self.active.y = self.frame.y + 2
+        slot_x = self.frame.x + 8
+        slot_y = self.frame.y + 8
+        for slot in self.slots:
+            slot.x = slot_x
+            slot_x += self.icon_size + 8
+
         if self.visible:
             self.update_health()
             self.update_current()
@@ -394,6 +446,29 @@ class InventorySelector(AbstractInventory):
         self.crafting_table_panel = Inventory(9)
         self.furnace_panel = None   # should be a FurnaceBlock
         self.visible = False
+        self.slots = []
+        
+        rows = floor(self.max_items / 9)
+        inventory_y = self.frame.y - 16
+        inventory_height = (rows * self.icon_size) + ((rows+1) * 3)
+        slot_x = self.frame.x + 16
+        slot_y = self.frame.y + inventory_y + inventory_height
+        for i in range(1, self.max_items + 1):
+            slot = Slot(self, slot_x, slot_y, self.icon_size, self.icon_size, is_quickslot=False, world=self.world, batch=self.batch, group=self.group, label_group=self.labels_group)
+            slot_x += self.icon_size + 4
+            if slot_x >= (self.frame.x + self.frame.width) - 16:
+                slot_x = self.frame.x + 16
+                slot_y -= self.icon_size + 4
+            on_slot_click = partial(self.on_slot_click, slot)
+            slot.push_handlers(on_click=on_slot_click)
+            self.slots.append(slot)
+
+        slot_x = self.frame.x + 16
+        slot_y = self.frame.y + 16
+        for i in range(1, self.player.quick_slots.slot_count + 1):
+            slot = Slot(self, slot_x, slot_y, self.icon_size, self.icon_size, is_quickslot=True, world=self.world, batch=self.batch, group=self.group, label_group=self.labels_group)
+            slot_x += self.icon_size + 4
+            self.slots.append(slot)
 
     def change_image(self):
         if self.mode == 0:
@@ -426,60 +501,11 @@ class InventorySelector(AbstractInventory):
         self.amount_labels = []
         x = self.frame.x + 16
         y = self.frame.y + inventory_y + inventory_height
-        items = self.player.inventory.get_items()
-        items = items[:self.max_items]
-        for i, item in enumerate(items):
-            if not item:
-                x += self.icon_size + 4
-                if x >= (self.frame.x + self.frame.width) - 16:
-                    x = self.frame.x + 16
-                    y -= self.icon_size + 4
-                continue
-            img = get_block_icon(item.get_object(), self.icon_size, self.world)
-            icon = image_sprite(img, self.batch, self.group)
-            image_scale = 1.0 / (img.width / self.icon_size)
-            icon.scale = image_scale
-            icon.x = x
-            icon.y = y - icon.height
-            x += self.icon_size + 4
-            if x >= (self.frame.x + self.frame.width) - 16:
-                x = self.frame.x + 16
-                y -= self.icon_size + 4
-            if item.max_durability != -1 and item.durability != -1:
-                icon.opacity = min(item.max_durability, item.durability + 1) * 255 / item.max_durability
-            amount_label = pyglet.text.Label(
-                str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
-                x=icon.x + 4, y=icon.y, anchor_x='left', anchor_y='bottom',
-                color=item.get_object().amount_label_color, batch=self.batch,
-                group=self.labels_group)
-            self.amount_labels.append(amount_label)
-            self.icons.append(icon)
-
-        items = self.player.quick_slots.get_items()
-        items = items[:self.player.quick_slots.slot_count]
-        x = self.frame.x + 16
-        for i, item in enumerate(items):
-            if not item:
-                x += self.icon_size + 4
-                continue
-            img = get_block_icon(item.get_object(), self.icon_size, self.world)
-            icon = image_sprite(img, self.batch, self.group)
-            image_scale = 1.0 / (img.width / self.icon_size)
-            icon.scale = image_scale
-            icon.x = x
-            icon.y = self.frame.y + 16
-            item.quickslots_x = icon.x
-            item.quickslots_y = icon.y
-            x += self.icon_size + 4
-            if item.max_durability != -1 and item.durability != -1:
-                icon.opacity = min(item.max_durability, item.durability + 1) * 255 / item.max_durability
-            amount_label = pyglet.text.Label(
-                str(item.amount), font_name=G.DEFAULT_FONT, font_size=9,
-                x=icon.x + 4, y=icon.y, anchor_x='left', anchor_y='bottom',
-                color=item.get_object().amount_label_color, batch=self.batch,
-                group=self.labels_group)
-            self.amount_labels.append(amount_label)
-            self.icons.append(icon)
+        items = self.player.inventory.get_items()[:self.max_items] + self.player.quick_slots.get_items()[:self.player.quick_slots.slot_count]
+        i = 0
+        for item in items:
+            self.slots[i].item = item
+            i += 1
 
         items = self.player.armor.get_items()
         items = items[:4]
@@ -719,6 +745,9 @@ class InventorySelector(AbstractInventory):
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.visible:
             return pyglet.event.EVENT_HANDLED
+
+    def on_slot_click(self, slot):
+        print slot
 
     def on_mouse_press(self, x, y, button, modifiers):
         if not self.visible:
