@@ -310,6 +310,9 @@ class Block(object):
             if self.group:
                 self.texture_data = self.group.texture_data
         
+        if self.top_texture == ():
+            return
+            
         if self.front_texture is None:
             self.front_texture = self.side_texture
         if not self.texture_data:
