@@ -9,7 +9,7 @@ import pyglet
 from pyglet.gl import *
 
 # Modules from this project
-# Nothing for now...
+from utils import load_image
 
 __all__ = (
     'BoxModel',
@@ -34,13 +34,13 @@ class BoxModel(object):
     position = (0,0,0)
     rotate_angle = (0, 0, 0)
 
-    def __init__(self, length, width, height, filename, pixel_length, pixel_width, pixel_height, texture_height, texture_width):
-        self.image = pyglet.image.load(filename)
+    def __init__(self, length, width, height, texture, pixel_length, pixel_width, pixel_height):
+        self.image = texture
 
         self.length, self.width, self.height = length, width, height
         self.pixel_length, self.pixel_width, self.pixel_height = pixel_length, pixel_width, pixel_height
-        self.texture_height = texture_height
-        self.texture_width = texture_width
+        self.texture_height = self.image.height
+        self.texture_width = self.image.width
 
     def get_texture_data(self):
         texture_data = []
@@ -106,22 +106,22 @@ LEG_WIDTH = BODY_WIDTH
 class PlayerModel(object):
     def __init__(self, position):
         self.position = None
-
+        image = load_image('resources', 'mob', 'char.png')
         # head
-        self.head = BoxModel(HEAD_LENGTH, HEAD_WIDTH, HEAD_HEIGHT, 'resources/textures/char.png', 32, 32, 32, 128, 256)
+        self.head = BoxModel(HEAD_LENGTH, HEAD_WIDTH, HEAD_HEIGHT, image, 32, 32, 32)
         self.head.update_texture_data([(32, 96), (64, 96), (0, 64), (64, 64), (32, 64), (96, 64)])
         # body
-        self.body = BoxModel(BODY_LENGTH, BODY_WIDTH, BODY_HEIGHT, 'resources/textures/char.png', 32, 16, 48, 128, 256)
+        self.body = BoxModel(BODY_LENGTH, BODY_WIDTH, BODY_HEIGHT, image, 32, 16, 48)
         self.body.update_texture_data([(80, 48), (112, 48), (64, 0), (112, 0), (80, 0), (128, 0)])
         # left/right arm
-        self.left_arm = BoxModel(ARM_LENGTH, ARM_WIDTH, ARM_HEIGHT, 'resources/textures/char.png', 16, 16, 48, 128, 256)
+        self.left_arm = BoxModel(ARM_LENGTH, ARM_WIDTH, ARM_HEIGHT, image, 16, 16, 48)
         self.left_arm.update_texture_data([(176, 48), (176 + 16, 48), (176, 0), (176 + 32, 0), (176 - 16, 0), (176 + 16, 0)])
-        self.right_arm = BoxModel(ARM_LENGTH, ARM_WIDTH, ARM_HEIGHT, 'resources/textures/char.png', 16, 16, 48, 128, 256)
+        self.right_arm = BoxModel(ARM_LENGTH, ARM_WIDTH, ARM_HEIGHT, image, 16, 16, 48)
         self.right_arm.update_texture_data([(176, 48), (176 + 16, 48), (176, 0), (176 + 32, 0), (176 - 16, 0), (176 + 16, 0)])
         # left/right leg
-        self.left_leg = BoxModel(LEG_LENGTH, LEG_WIDTH, LEG_HEIGHT, 'resources/textures/char.png', 16, 16, 48, 128, 256)
+        self.left_leg = BoxModel(LEG_LENGTH, LEG_WIDTH, LEG_HEIGHT, image, 16, 16, 48)
         self.left_leg.update_texture_data([(16, 48), (16 + 16, 48), (0, 0), (32, 0), (16, 0), (48, 0)])
-        self.right_leg = BoxModel(LEG_LENGTH, LEG_WIDTH, LEG_HEIGHT, 'resources/textures/char.png', 16, 16, 48, 128, 256)
+        self.right_leg = BoxModel(LEG_LENGTH, LEG_WIDTH, LEG_HEIGHT, image, 16, 16, 48)
         self.right_leg.update_texture_data([(16, 48), (16 + 16, 48), (0, 0), (32, 0), (16, 0), (48, 0)])
 
         self.update_position(position)
@@ -145,3 +145,4 @@ class PlayerModel(object):
         self.right_arm.draw()
         self.left_leg.draw()
         self.right_leg.draw()
+        

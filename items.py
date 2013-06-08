@@ -41,6 +41,7 @@ class Item(object):
     id = None
     max_stack_size = 0
     amount_label_color = 255, 255, 255, 255
+    icon_name = None
     name = "Item"
     group = None
 
@@ -50,7 +51,7 @@ class Item(object):
     smelting_time = -1
 
     def __init__(self):
-        self.id = BlockID(self.id)
+        self.id = BlockID(self.id, 0, self.icon_name)
         G.ITEMS_DIR[self.id] = self
 
     def on_right_click(self, world, player):
@@ -60,7 +61,7 @@ class ItemStack(object):
     def __init__(self, type = 0, amount = 1, durability = -1):
         if amount < 1:
             amount = 1
-        self.type = BlockID(type)
+        self.type = BlockID(type, 0, get_item(type).icon_name)
         self.amount = amount
         if durability == -1:
             self.durability = -1 if not hasattr(self.get_object(), 'durability') else self.get_object().durability
@@ -100,6 +101,7 @@ class ItemStack(object):
 
 class CoalItem(Item):
     id = 263
+    icon_name = "coal"
     max_stack_size = 64
     name = "Coal"
     burning_time = 80
@@ -111,16 +113,19 @@ class LadderItem(Item):
 
 class DiamondItem(Item):
     id = 264
+    icon_name = "diamond"
     max_stack_size = 64
     name = "Diamond"
 
 class IronIngotItem(Item):
     id = 265
+    icon_name = "ingotIron"
     max_stack_size = 64
     name = "Iron Ingot"
 
 class GoldIngotItem(Item):
     id = 266
+    icon_name = "ingotGold"
     max_stack_size = 64
     name = "Gold Ingot"
 
@@ -132,12 +137,14 @@ class StickItem(Item):
 
 class BreadItem(Item):
     id = 297
+    icon_name = "bread"
     max_stack_size = 64
     name = "Bread"
     regenerated_health = 3
 
 class FlintItem(Item):
     id = 318
+    icon_name = "flint"
     max_stack_size = 64
     name = "Flint"
 
@@ -170,6 +177,7 @@ class BoneMeal(Item):
 
 class SugarItem(Item):
     id = 353
+    icon_name = "sugar"
     max_stack_size = 64
     name = "Sugar"
 
@@ -188,6 +196,7 @@ class WheatSeedItem(SeedItem):
     block_type = wheat_crop_block
     soil_type = farm_block
     id = 295
+    icon_name = "seeds"
     max_stack_size = 64
     name = "Seed"
 
@@ -195,6 +204,7 @@ class PotatoItem(SeedItem):
     block_type = potato_block
     soil_type = farm_block
     id = 392
+    icon_name = "potato"
     max_stack_size = 64
     name = "Potato"
     regenerated_health = 1
@@ -205,17 +215,20 @@ class CarrotItem(SeedItem):
     block_type = carrot_block
     soil_type = farm_block
     id = 391
+    icon_name = "carrots"
     max_stack_size = 64
     name = "Carrot"
     regenerated_health = 1
 
 class WheatItem(Item):
     id = 296
+    icon_name = "wheat"
     max_stack_size = 64
     name = "Wheat"
 
 class PaperItem(Item):
     id = 339
+    icon_name = "paper"
     max_stack_size = 64
     name = "Paper"
 

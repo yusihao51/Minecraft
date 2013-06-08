@@ -186,9 +186,7 @@ class World(dict):
             self._shown[position] = batch.add(count, GL_QUADS, block.group or self.group,
                                           ('v3f/static', vertex_data),
                                           ('t2f/static', texture_data),
-                                          ('c3f/static', block.get_color(2, 0.4)))
-                                        # can't do this yet
-                                          #('c3f/static', block.get_color(temp, humidity)))
+                                          ('c3f/static', block.get_color(temp, humidity)))
         else:
             self._shown[position] = batch.add(count, GL_QUADS, block.group or self.group,
                                           ('v3f/static', vertex_data),
