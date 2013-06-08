@@ -173,8 +173,9 @@ ToggleButton.register_event_type('on_toggle')
 class Slot(pyglet.event.EventDispatcher, Rectangle):
 
     _item = None
+    _hightlight = None
 
-    def __init__(self, parent, x, y, width, height, is_quickslot=False, world=None, batch=None, group=None, label_group=None):
+    def __init__(self, parent, x, y, width, height, inventory=None, index=0, is_quickslot=False, world=None, batch=None, group=None, label_group=None):
         super(Slot, self).__init__(x, y, width, height)
         parent.push_handlers(self)
         self.batch, self.group = batch, group
@@ -184,6 +185,9 @@ class Slot(pyglet.event.EventDispatcher, Rectangle):
         self.amount_label = None
         self.is_quickslot = is_quickslot
         self.icon = None
+        self.inventory = inventory
+        self.index = index
+        self.vertex_list = None
 
     @property
     def item(self):
@@ -216,11 +220,20 @@ class Slot(pyglet.event.EventDispatcher, Rectangle):
             color=self._item.get_object().amount_label_color, batch=self.batch,
             group=self.label_group)
 
-    def draw(self):
-        if self.icon:
-            self.icon.draw()
-        if self.amount_label:
-            self.amount_label.draw()
+    @property
+    def highlighted(self):
+        return self._hightlight
+
+    @highlighted.setter
+    def highlighted(self, value):
+        if self.vertex_list:
+            self.vertex_list.delete()
+            self.vertex_list = None
+
+        if value:
+            self.vertex_list = self.batch.add(4, GL_QUADS, self.group,
+                                     ('v2f', [self.x, self.y, self.x + self.width, self.y, self.x + self.width, self.y + self.height, self.x, self.y + self.height]),
+                                     ('c4B', (255, 255, 255, 100) * 4))
 
     def on_mouse_click(self, x, y, button, modifiers):
         if self.hit_test(x, y):
@@ -310,7 +323,7 @@ class ItemSelector(AbstractInventory):
         slot_x = self.frame.x + 8
         slot_y = self.frame.y + 8
         for i in range(1, self.max_items + 1):
-            self.slots.append(Slot(self, slot_x, slot_y, self.icon_size, self.icon_size, is_quickslot=True, world=self.world, batch=self.batch, group=self.group, label_group=self.labels_group))
+            self.slots.append(Slot(self, slot_x, slot_y, self.icon_size, self.icon_size, inventory=self.player.quick_slots, index=i-1, is_quickslot=True, world=self.world, batch=self.batch, group=self.group, label_group=self.labels_group))
             slot_x += self.icon_size + 8
 
         self.hearts = []
@@ -449,12 +462,12 @@ class InventorySelector(AbstractInventory):
         self.slots = []
         
         rows = floor(self.max_items / 9)
-        inventory_y = self.frame.y - 16
-        inventory_height = (rows * self.icon_size) + ((rows+1) * 3)
+        inventory_y = 0
+        inventory_height = (rows * (self.icon_size + 8)) + ((rows+1) * 3)
         slot_x = self.frame.x + 16
         slot_y = self.frame.y + inventory_y + inventory_height
         for i in range(1, self.max_items + 1):
-            slot = Slot(self, slot_x, slot_y, self.icon_size, self.icon_size, is_quickslot=False, world=self.world, batch=self.batch, group=self.group, label_group=self.labels_group)
+            slot = Slot(self, slot_x, slot_y, self.icon_size, self.icon_size, inventory=self.player.inventory, index=i-1, is_quickslot=False, world=self.world, batch=self.batch, group=self.group, label_group=self.labels_group)
             slot_x += self.icon_size + 4
             if slot_x >= (self.frame.x + self.frame.width) - 16:
                 slot_x = self.frame.x + 16
@@ -466,7 +479,7 @@ class InventorySelector(AbstractInventory):
         slot_x = self.frame.x + 16
         slot_y = self.frame.y + 16
         for i in range(1, self.player.quick_slots.slot_count + 1):
-            slot = Slot(self, slot_x, slot_y, self.icon_size, self.icon_size, is_quickslot=True, world=self.world, batch=self.batch, group=self.group, label_group=self.labels_group)
+            slot = Slot(self, slot_x, slot_y, self.icon_size, self.icon_size, inventory=self.player.quick_slots, index=i-1, is_quickslot=True, world=self.world, batch=self.batch, group=self.group, label_group=self.labels_group)
             slot_x += self.icon_size + 4
             self.slots.append(slot)
 
@@ -634,22 +647,7 @@ class InventorySelector(AbstractInventory):
 
         x_offset = x - (self.frame.x + 16)
 
-        if y <= quick_slots_y + 35:
-            row = 0.0
-            inventory = self.player.quick_slots
-            items_per_row = 9
-        elif y <= inventory_y + inventory_height and y >= inventory_y:
-            y_offset = (y - (inventory_y + inventory_height)) * -1
-            row = floor(y_offset // (self.icon_size + 4))
-            if self.mode == 0:
-                self.crafting_panel.remove_unnecessary_stacks()
-            elif self.mode == 1:
-                self.crafting_table_panel.remove_unnecessary_stacks()
-            elif self.mode == 2:
-                self.furnace_panel.remove_unnecessary_stacks()
-            inventory = self.player.inventory
-            items_per_row = 9
-        elif crafting_y <= y <= crafting_y + crafting_height and x >= crafting_x \
+        if crafting_y <= y <= crafting_y + crafting_height and x >= crafting_x \
             and x <= crafting_x + crafting_width:
             y_offset = (y - (crafting_y + crafting_height)) * -1
             row = floor(y_offset // (self.icon_size + 4))
@@ -754,7 +752,15 @@ class InventorySelector(AbstractInventory):
             return False
         if x < 0.0 or y < 0.0:
             return pyglet.event.EVENT_HANDLED
-        inventory, index = self.mouse_coords_to_index(x, y)
+        inventory = None
+        index = -1
+        for slot in self.slots:
+            if slot.hit_test(x, y):
+                inventory = slot.inventory
+                index = slot.index
+                break
+        if index == -1:
+            inventory, index = self.mouse_coords_to_index(x, y)
         if index == 256:    # 256 for crafting outcome
             if self.crafting_outcome:
                 self.remove_selected_item()
@@ -849,6 +855,9 @@ class InventorySelector(AbstractInventory):
 
     def on_mouse_motion(self, x, y, dx, dy):
         if self.visible:
+            for slot in self.slots:
+                slot.highlighted = slot.hit_test(x, y)
+
             if self.selected_item_icon:
                 self.selected_item_icon.x = x - (self.selected_item_icon.width / 2)
                 self.selected_item_icon.y = y - (self.selected_item_icon.height / 2)
