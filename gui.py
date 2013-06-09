@@ -214,11 +214,12 @@ class Slot(pyglet.event.EventDispatcher, Rectangle):
         if self._item.max_durability != -1 and self._item.durability != -1:
             self.icon.opacity = min(self._item.max_durability, self._item.durability + 1) * 255 / self._item.max_durability
 
-        self.amount_label = pyglet.text.Label(
-            str(self._item.amount), font_name=G.DEFAULT_FONT, font_size=9,
-            x=self.icon.x + 8, y=self.icon.y, anchor_x='left', anchor_y='bottom',
-            color=self._item.get_object().amount_label_color, batch=self.batch,
-            group=self.label_group)
+        if self._item.amount > 1:
+            self.amount_label = pyglet.text.Label(
+                str(self._item.amount), font_name=G.DEFAULT_FONT, font_size=9,
+                x=self.icon.x + 8, y=self.icon.y, anchor_x='left', anchor_y='bottom',
+                color=self._item.get_object().amount_label_color, batch=self.batch,
+                group=self.label_group)
 
     @property
     def highlighted(self):
@@ -293,7 +294,6 @@ class AbstractInventory(Control):
 class ItemSelector(AbstractInventory):
     def __init__(self, parent, player, world, *args, **kwargs):
         super(ItemSelector, self).__init__(parent, *args, **kwargs)
-        self.amount_labels = []
         self.world = world
         self.player = player
         self.max_items = 9
@@ -440,7 +440,6 @@ class ItemSelector(AbstractInventory):
 class InventorySelector(AbstractInventory):
     def __init__(self, parent, player, world, *args, **kwargs):
         super(InventorySelector, self).__init__(parent, *args, **kwargs)
-        self.amount_labels = []
         self.parent = parent
         self.world = world
         self.player = player
@@ -485,14 +484,12 @@ class InventorySelector(AbstractInventory):
             slot_y += self.icon_size + 4
             self.slots.append(slot)
 
-        crafting_y = inventory_y + inventory_height + (46 if self.mode == 0 else 14 if self.mode == 1 else 32)
         crafting_rows = (2 if self.mode == 0 else 3 if self.mode == 1 else 2)
-        crafting_height = (crafting_rows * self.icon_size) + (crafting_rows * 3)
         slot_x = self.frame.x + (176 if self.mode == 0 else 72 if self.mode == 1 else 63)
-        slot_y = self.frame.y + crafting_y + crafting_height
-        self.crafting_inventory = self.crafting_panel if self.mode == 0 else self.crafting_table_panel if self.mode == 1 else self.furnace_panel
-        for i in range(1, self.crafting_inventory.slot_count + 1):
-            slot = Slot(self, slot_x, slot_y, self.icon_size, self.icon_size, inventory=self.crafting_inventory, index=i-1, is_quickslot=False, world=self.world, batch=self.batch, group=self.group, label_group=self.labels_group)
+        slot_y = self.frame.y + (inventory_y + inventory_height + (46 if self.mode == 0 else 14 if self.mode == 1 else 32)) + ((crafting_rows * self.icon_size) + (crafting_rows * 3))
+        self.current_panel = self.crafting_panel if self.mode == 0 else self.crafting_table_panel if self.mode == 1 else self.furnace_panel
+        for i in range(1, self.current_panel.slot_count + 1):
+            slot = Slot(self, slot_x, slot_y, self.icon_size, self.icon_size, inventory=self.current_panel, index=i-1, is_quickslot=False, world=self.world, batch=self.batch, group=self.group, label_group=self.labels_group)
             self.slots.append(slot)
             slot_x += self.icon_size + 4
             if i%(2 if self.mode == 0 else 3 if self.mode == 1 else 1) == 0:
@@ -507,9 +504,7 @@ class InventorySelector(AbstractInventory):
         elif self.mode == 2:
             slot_x, slot_y = 222, 67
 
-        slot_x = self.frame.x + slot_x
-        slot_y = self.frame.y + inventory_y + inventory_height + slot_y
-        slot = Slot(self, slot_x, slot_y, self.icon_size, self.icon_size, inventory=0, index=256, is_quickslot=False, world=self.world, batch=self.batch, group=self.group, label_group=self.labels_group)
+        slot = Slot(self, self.frame.x + slot_x, self.frame.y + inventory_y + inventory_height + slot_y, self.icon_size, self.icon_size, inventory=0, index=256, is_quickslot=False, world=self.world, batch=self.batch, group=self.group, label_group=self.labels_group)
         self.slots.append(slot)
 
     def change_image(self):
@@ -522,27 +517,15 @@ class InventorySelector(AbstractInventory):
             self.frame.scale = (1.0 / image_scale) * 2
             self.frame.x = (self.parent.window.width - self.frame.width) / 2
             self.frame.y = 74
-
             return
-        elif self.mode == 1:
-            image = load_image('resources', 'gui', 'crafting.png')
-        elif self.mode == 2:
-            image = load_image('resources', 'gui', 'furnace.png')
+        elif self.mode <= 2:
+            image = load_image('resources', 'gui', 'crafting.png' if self.mode == 1 else 'furnace.png')
 
         self.frame = image_sprite(image, self.batch, 0)
         self.frame.x = (self.parent.window.width - self.frame.width) / 2
         self.frame.y = self.icon_size / 2 - 4
 
     def update_items(self):
-        rows = floor(self.max_items / 9)
-        inventory_y = self.frame.y - 16
-        inventory_height = (rows * self.icon_size) + ((rows+1) * 3)
-        self.icons = []
-        for amount_label in self.amount_labels:
-            amount_label.delete()
-        self.amount_labels = []
-        x = self.frame.x + 16
-        y = self.frame.y + inventory_y + inventory_height
         items = self.player.inventory.get_items()[:self.max_items] + self.player.quick_slots.get_items()[:self.player.quick_slots.slot_count] + self.player.armor.get_items()[:4]
         i = 0
         for item in items:
@@ -550,22 +533,21 @@ class InventorySelector(AbstractInventory):
             i += 1
 
         # NOTE: each line in the crafting panel should be a sub-list in the crafting ingredient list
-        crafting_ingredients = [[], []] if self.mode == 0 else [[], [], []] if self.mode == 1 else [[], []]
-        items = self.crafting_inventory.get_items()[:self.crafting_inventory.slot_count]
+        crafting_ingredients = [[], [], []] if self.mode == 1 else [[], []]
+        items = self.current_panel.get_items()[:self.current_panel.slot_count]
         for j, item in enumerate(items):
             self.slots[i].item = item
-            if not item:
-                crafting_ingredients[int(floor(j / (2 if self.mode == 0 else 3 if self.mode == 1 else 1)))].append(air_block)
-            elif item.get_object().id > 0:
-                crafting_ingredients[int(floor(j / (2 if self.mode == 0 else 3 if self.mode == 1 else 1)))].append(item.get_object())
+            if not item or item.get_object().id > 0:
+                crafting_ingredients[int(floor(j / (2 if self.mode == 0 else 3 if self.mode == 1 else 1)))].append(air_block if not item else item.get_object())
             i += 1
 
-        if len(crafting_ingredients) > 0 and self.mode < 2:
-            outcome = G.recipes.craft(crafting_ingredients)
-            self.set_crafting_outcome(outcome)
-        elif len(crafting_ingredients) > 0 and self.mode == 2:
-            outcome = self.furnace_panel.get_smelt_outcome()
-            self.set_crafting_outcome(outcome)
+        if len(crafting_ingredients) > 0:
+            if self.mode < 2:
+                outcome = G.recipes.craft(crafting_ingredients)
+                self.set_crafting_outcome(outcome)
+            elif self.mode == 2:
+                outcome = self.furnace_panel.get_smelt_outcome()
+                self.set_crafting_outcome(outcome)
 
         self.world.packetreceiver.send_player_inventory()  # Tell the server.
 
@@ -606,7 +588,7 @@ class InventorySelector(AbstractInventory):
         self.crafting_outcome = item
         self.slots[-1].item = item
 
-    def set_selected_item(self, item):
+    def set_selected_item(self, item, x=0, y=0):
         if not item:
             self.remove_selected_item()
             return
@@ -616,6 +598,8 @@ class InventorySelector(AbstractInventory):
         self.selected_item_icon = image_sprite(img, self.batch, self.group)
         image_scale = 1.0 / (img.width / self.icon_size)
         self.selected_item_icon.scale = image_scale
+        self.selected_item_icon.x = x - (self.selected_item_icon.width / 2)
+        self.selected_item_icon.y = y - (self.selected_item_icon.height / 2)
 
     def remove_selected_item(self):
         self.selected_item = None
@@ -642,27 +626,17 @@ class InventorySelector(AbstractInventory):
             if self.crafting_outcome:
                 self.remove_selected_item()
                 # set selected_item to the crafting outcome so that users can put it in inventory
-                self.set_selected_item(self.crafting_outcome)
-                # set coordinates
-                inventory_rows = floor(self.max_items / 9)
-                inventory_height = (inventory_rows * self.icon_size) + (inventory_rows * 3)
-                quick_slots_y = self.frame.y + 4
-                inventory_y = quick_slots_y + (42 if self.mode == 0 else 14 if self.mode == 1 else 32)
-                self.selected_item_icon.y = inventory_y + inventory_height + (60 if self.mode == 0 else 42 if self.mode == 1 else 57)
-                self.selected_item_icon.x = self.frame.x + (270 if self.mode == 0 else 222)
+                self.set_selected_item(self.crafting_outcome, x, y)
                 # cost
-                current_panel = self.crafting_panel if self.mode == 0 else self.crafting_table_panel if self.mode == 1 else self.furnace_panel
-                for ingre in current_panel.slots:
+                for ingre in self.current_panel.slots:
                     if ingre :
                         ingre.change_amount(-1)
                         # ingredient has been used up
                         if ingre.amount <= 0:
                             self.set_crafting_outcome(None)
-                current_panel.remove_unnecessary_stacks()
+                self.current_panel.remove_unnecessary_stacks()
                 self.update_items()
-                return pyglet.event.EVENT_HANDLED
-            else:   # nothing happens
-                return pyglet.event.EVENT_HANDLED
+            return pyglet.event.EVENT_HANDLED
         if self.selected_item:
             if index == -1:
                 # throw it
@@ -691,10 +665,7 @@ class InventorySelector(AbstractInventory):
                 inventory.set_slot(index, self.selected_item)
             else:
                 inventory.slots[index] = self.selected_item
-            self.set_selected_item(item)
-            if self.selected_item_icon:
-                self.selected_item_icon.x = x - (self.selected_item_icon.width / 2)
-                self.selected_item_icon.y = y - (self.selected_item_icon.height / 2)
+            self.set_selected_item(item, x, y)
         else:
             if index == -1:
                 return pyglet.event.EVENT_HANDLED
@@ -715,16 +686,11 @@ class InventorySelector(AbstractInventory):
                     split_amount = int(ceil(item.amount / 2))
                     item.change_amount(split_amount * -1)
                     new_item = ItemStack(item.type, split_amount, item.durability)
-                    self.set_selected_item(new_item)
+                    self.set_selected_item(new_item, x, y)
                     new_stack = True
 
             if not new_stack:
-                self.set_selected_item(item)
-            if self.selected_item_icon:
-                self.selected_item_icon.x = x - (self.selected_item_icon.width / 2)
-                self.selected_item_icon.y = y - (self.selected_item_icon.height / 2)
-
-            if not new_stack:
+                self.set_selected_item(item, x, y)
                 inventory.remove_all_by_index(index)
 
         self.update_items()
