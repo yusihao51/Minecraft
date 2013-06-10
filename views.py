@@ -150,7 +150,7 @@ class OptionsView(MenuView):
         self.text_input.push_handlers(key_released=text_input_callback)
 
         self.buttons.append(self.Button(caption=G._("Controls..."), on_click=self.controller.controls))
-        self.buttons.append(self.Button(caption=G._("Textures"), on_click=self.controller.textures, enabled=os.path.exists(texturepacks_dir)))
+        self.buttons.append(self.Button(caption=G._("Textures"), on_click=self.controller.textures, enabled=textures_enabled))
         self.buttons.append(self.Button(caption=G._("Done"), on_click=self.controller.main_menu))
         self.label = Label('Options', font_name='ChunkFive Roman', font_size=25, x=width/2, y=self.frame.y + self.frame.height,
             anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
