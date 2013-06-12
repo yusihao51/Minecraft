@@ -6,6 +6,7 @@ from math import sin, cos, pi
 # Third-party packages
 import pyglet
 from pyglet.gl import *
+import globals as G
 
 # Modules from this project
 # Nothing for now...
@@ -15,13 +16,21 @@ __all__ = (
     'Skydome',
 )
 
+# radius of the sun (central angle)
+SUN_RADIUS = pi / 6
 
 class Skydome(object):
     def __init__(self, filename, brightness=1.0, size=1.0, direction=0):
         self.direction = direction
         self.image = pyglet.image.load(filename)
         self.color = [brightness] * 3
-        
+
+        self.sun_image = G.texture_pack_list.selected_texture_pack.load_texture(['environment', 'sun.png'])
+        self.size = size
+
+        # FIXME: hard coded
+        self.sun_angle = pi / 3
+
         t = self.image.get_texture().tex_coords
         u = t[3]
         pixel_width = u / self.image.width
@@ -90,11 +99,47 @@ class Skydome(object):
             ('t2f/static', uvs),
         )
 
+    def sun_vertex(self, sun_angle):
+        vertex_list = []
+        uv_list = []
+        r_sun_d2 = SUN_RADIUS / 2
+
+        # x, y, z
+        top_left = ( self.size * cos(sun_angle + r_sun_d2), self.size * sin(sun_angle + r_sun_d2), -self.size * sin(r_sun_d2))
+        top_right =  ( self.size * cos(sun_angle + r_sun_d2), self.size * sin(sun_angle + r_sun_d2), self.size * sin(r_sun_d2))
+        bottom_left = ( self.size * cos(sun_angle - r_sun_d2), self.size * sin(sun_angle - r_sun_d2), -self.size * sin(r_sun_d2))
+        bottom_right = ( self.size * cos(sun_angle - r_sun_d2), self.size * sin(sun_angle - r_sun_d2), self.size * sin(r_sun_d2))
+        vert_list = [bottom_left, top_right, top_left, bottom_right, top_right, bottom_left]
+        for vert in vert_list:
+            vertex_list.extend(vert)
+
+        # u, v
+        top_left = (0, 1)
+        top_right = (1, 1)
+        bottom_left = (0, 0)
+        bottom_right = (1, 0)
+
+        vert_list = [bottom_left, top_right, top_left, bottom_right, top_right, bottom_left]
+        for vert in vert_list:
+            uv_list.extend(vert)
+
+        return pyglet.graphics.vertex_list(6,
+            ('v3f/static', vertex_list),
+            ('t2f/static', uv_list),
+        )
+
     def draw(self):
         glPushMatrix()
+        # draw skydome
         glBindTexture(self.image.texture.target, self.image.texture.id)
         glEnable(self.image.texture.target)
         glColor3f(*self.color)
         glRotatef(-self.direction, 0, 0, 1)
         self.display.draw(GL_TRIANGLES)
+        glDisable(self.image.texture.target)
+        # draw the sun
+        glBindTexture(self.sun_image.texture.target, self.sun_image.texture.id)
+        glEnable(self.sun_image.texture.target)
+        self.sun_vertex(self.sun_angle).draw(GL_TRIANGLES)
+        glDisable(self.sun_image.texture.target)
         glPopMatrix()
