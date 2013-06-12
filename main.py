@@ -22,6 +22,7 @@ from pyglet.window import key
 from controllers import MainMenuController
 import globals as G
 from timer import Timer
+from mod import load_modules
 
 
 class Window(pyglet.window.Window):
@@ -106,6 +107,8 @@ def main(options):
         gettext.bind_textdomain_codeset(G.APP_NAME.lower(), 'UTF-8')
         language = gettext.translation(G.APP_NAME.lower(), 'locale', languages=[G.LANGUAGE], fallback=True)
         G._ = lambda s: language.ugettext(s)
+
+    load_modules()
 
     # try:
         # window_config = Config(sample_buffers=1, samples=4) #, depth_size=8)  #, double_buffer=True) #TODO Break anti-aliasing/multisampling into an explicit menu option

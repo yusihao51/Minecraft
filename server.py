@@ -19,6 +19,7 @@ from world_server import WorldServer
 import blocks
 from commands import CommandParser, COMMAND_HANDLED, CommandException, COMMAND_ERROR_COLOR
 from utils import sectorize, make_string_packet
+from mod import load_modules
 
 #This class is effectively a serverside "Player" object
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
@@ -221,6 +222,8 @@ if __name__ == '__main__':
     #In the mean time, manually set
     setattr(G.LAUNCH_OPTIONS, "seed", None)
     G.SAVE_FILENAME = "world"
+
+    load_modules()
 
     server, server_thread = start_server()
     print('Server loop running in thread: ' + server_thread.name)

@@ -57,6 +57,9 @@ class Item(object):
     def on_right_click(self, world, player):
         pass
 
+    def __repr__(self):
+        return self.name
+
 class ItemStack(object):
     def __init__(self, type = 0, amount = 1, durability = -1):
         if amount < 1:
@@ -72,7 +75,7 @@ class ItemStack(object):
 
     # for debugging
     def __repr__(self):
-        return '{ Item stack with type = ' + str(self.type) + ' }'
+        return '{ Item stack with type = ' + str(get_item(self.type)) + ' }'
 
     def change_amount(self, change=0):
         overflow = 0
@@ -265,30 +268,6 @@ class IronAxe(Tool):
     durability = 60
     name = "Iron Axe"
 
-class EmeraldAxe(Tool):
-    material = G.IRON_TOOL
-    tool_type = G.AXE
-    max_stack_size = 1
-    id = 258,1
-    durability = 70
-    name = "Emerald Axe"
-
-class RubyAxe(Tool):
-    material = G.IRON_TOOL
-    tool_type = G.AXE
-    max_stack_size = 1
-    id = 258,2
-    durability = 80
-    name = "Ruby Axe"
-
-class SapphireAxe(Tool):
-    material = G.IRON_TOOL
-    tool_type = G.AXE
-    max_stack_size = 1
-    id = 258,3
-    durability = 80
-    name = "Sapphire Axe"
-
 class DiamondAxe(Tool):
     material = G.DIAMOND_TOOL
     tool_type = G.AXE
@@ -329,30 +308,6 @@ class IronPickaxe(Tool):
     durability = 40
     name = "Iron Pickaxe"
 
-class EmeraldPickaxe(Tool):
-    material = G.IRON_TOOL
-    tool_type = G.PICKAXE
-    max_stack_size = 1
-    id = 257,1
-    durability = 50
-    name = "Emerald Pickaxe"
-
-class RubyPickaxe(Tool):
-    material = G.IRON_TOOL
-    tool_type = G.PICKAXE
-    max_stack_size = 1
-    id = 257,2
-    durability = 100
-    name = "Ruby Pickaxe"
-
-class SapphirePickaxe(Tool):
-    material = G.IRON_TOOL
-    tool_type = G.PICKAXE
-    max_stack_size = 1
-    id = 257,3
-    durability = 200
-    name = "Sapphire Pickaxe"
-
 class DiamondPickaxe(Tool):
     material = G.DIAMOND_TOOL
     tool_type = G.PICKAXE
@@ -392,30 +347,6 @@ class IronShovel(Tool):
     id = 256
     durability = 70
     name = "Iron Shovel"
-
-class EmeraldShovel(Tool):
-    material = G.IRON_TOOL
-    tool_type = G.SHOVEL
-    max_stack_size = 1
-    id = 256,1
-    durability = 60
-    name = "Emerald Shovel"
-
-class RubyShovel(Tool):
-    material = G.IRON_TOOL
-    tool_type = G.SHOVEL
-    max_stack_size = 1
-    id = 256,2
-    durability = 40
-    name = "Ruby Shovel"
-
-class SapphireShovel(Tool):
-    material = G.IRON_TOOL
-    tool_type = G.SHOVEL
-    max_stack_size = 1
-    id = 256,3
-    durability = 70
-    name = "Sapphire Shovel"
 
 class DiamondShovel(Tool):
     material = G.DIAMOND_TOOL
@@ -466,30 +397,6 @@ class IronHoe(Hoe):
     id = 292
     durability = 40
     name = "Iron Hoe"
-
-class EmeraldHoe(Hoe):
-    material = G.IRON_TOOL
-    tool_type = G.HOE
-    max_stack_size = 1
-    id = 292,1
-    durability = 50
-    name = "Emerald Hoe"
-
-class RubyHoe(Hoe):
-    material = G.IRON_TOOL
-    tool_type = G.HOE
-    max_stack_size = 1
-    id = 292,2
-    durability = 60
-    name = "Ruby Hoe"
-
-class SapphireHoe(Hoe):
-    material = G.IRON_TOOL
-    tool_type = G.HOE
-    max_stack_size = 1
-    id = 292,3
-    durability = 80
-    name = "Sapphire Hoe"
 
 class DiamondHoe(Hoe):
     material = G.DIAMOND_TOOL
@@ -585,20 +492,16 @@ stone_axe = StoneAxe()
 iron_axe = IronAxe()
 diamond_axe = DiamondAxe()
 golden_axe = GoldenAxe()
-emerald_axe = EmeraldAxe()
 wood_pickaxe = WoodPickaxe()
 stone_pickaxe = StonePickaxe()
 iron_pickaxe = IronPickaxe()
 diamond_pickaxe = DiamondPickaxe()
 golden_pickaxe = GoldenPickaxe()
-emerald_pickaxe = EmeraldPickaxe()
 wood_shovel = WoodShovel()
 stone_shovel = StoneShovel()
 iron_shovel = IronShovel()
 diamond_shovel = DiamondShovel()
 golden_shovel = GoldenShovel()
-emerald_shovel = EmeraldShovel()
-emerald_hoe = EmeraldHoe()
 wood_hoe = WoodHoe()
 stone_hoe = StoneHoe()
 iron_hoe = IronHoe()
@@ -614,14 +517,6 @@ iron_boots = IronBoots()
 #emerald_boots = EmeraldBoots()
 yellowdye_item = YellowDyeItem()
 ladder_item = LadderItem()
-ruby_pickaxe = RubyPickaxe()
-ruby_shovel = RubyShovel()
-ruby_axe = RubyAxe()
-ruby_hoe = RubyHoe()
-sapphire_pickaxe = SapphirePickaxe()
-sapphire_shovel = SapphireShovel()
-sapphire_axe = SapphireAxe()
-sapphire_hoe = SapphireHoe()
 ladder_item = LadderItem()
 reddye_item = RedDyeItem()
 sugar_item = SugarItem()

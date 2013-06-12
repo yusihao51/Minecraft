@@ -26,6 +26,8 @@ class Recipe(object):
         self.output = output
         self.shapeless = False
 
+    def __repr__(self):
+        return 'Ingredients: ' + str(self.ingre) + '; Output: ' + str(self.output)
 
 class Recipes(object):
     def __init__(self):
@@ -114,6 +116,9 @@ class Recipes(object):
 
         return None
 
+    def dump(self):
+        for recipe in self.recipes:
+            print recipe
 
 class SmeltingRecipe(object):
     def __init__(self, ingre, output):
@@ -205,9 +210,6 @@ G.recipes.add_recipe(["# #", "###", "# #"], {'#': stick_item},
 for material, toolset in [(diamond_item, [diamond_pickaxe, diamond_axe, diamond_shovel, diamond_hoe]),
                             (cobble_block, [stone_pickaxe, stone_axe, stone_shovel, stone_hoe]),
                             (iron_ingot_item, [iron_pickaxe, iron_axe, iron_shovel, iron_hoe]),
-                            (emeraldore_block, [emerald_pickaxe, emerald_axe, emerald_shovel, emerald_hoe]),
-                            (rubyore_block, [ruby_pickaxe, ruby_axe, ruby_shovel, ruby_hoe]),
-                            (sapphireore_block, [sapphire_pickaxe, sapphire_axe, sapphire_shovel, sapphire_hoe]),
                             (gold_ingot_item, [golden_pickaxe, golden_axe, golden_shovel, golden_hoe])]:
 
     G.recipes.add_recipe(["###", " @ ", " @ "], {'#': material, '@': stick_item},
