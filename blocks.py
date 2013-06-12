@@ -323,6 +323,9 @@ class Block(object):
                     setattr(self, k, get_texture_coordinates(*v))
             self.texture_data = self.get_texture_data()
 
+    def on_neighbor_change(self, world, neighbor_pos, self_pos):
+        pass
+
 class BlockColorizer(object):
         def __init__(self, filename):
             self.color_data = G.texture_pack_list.selected_texture_pack.load_texture(['misc', filename])
@@ -388,6 +391,12 @@ class GrassBlock(Block):
         ret.extend(list(self.colorizer.get_color(temperature, humidity)) * 4)
         ret.extend([1] * 60)
         return ret
+
+    def on_neighbor_change(self, world, neighbor_pos, self_pos):
+        # something has been put on this grass block, which makes it become dirt block
+        if (self_pos[0], self_pos[1] + 1, self_pos[-1]) in world:
+            world.remove_block(None, self_pos)
+            world.add_block(self_pos, dirt_block)
 
 class DirtBlock(Block):
     texture_name = "dirt",
@@ -784,6 +793,11 @@ class TorchBlock(WoodBlock):
     id = 50
     name = "Torch"
 
+    def on_neighbor_change(self, world, neighbor_pos, self_pos):
+        # the block under this torch has been removed, so remove the torch too
+        if (self_pos[0], self_pos[1] - 1, self_pos[-1]) not in world:
+            world.remove_block(None, self_pos)
+
 class YFlowersBlock(Block):
     width = 0.5
     height = 0.7
@@ -798,6 +812,10 @@ class YFlowersBlock(Block):
     icon_name = "flower"
     name = "Dandelion"
     break_sound = sounds.leaves_break
+
+    def on_neighbor_change(self, world, neighbor_pos, self_pos):
+        if (self_pos[0], self_pos[1] - 1, self_pos[-1]) not in world:
+            world.remove_block(None,self_pos)
 
 
 class StoneSlabBlock(HardBlock):
@@ -932,6 +950,12 @@ class FarmBlock(Block):
     def __init__(self):
         super(FarmBlock, self).__init__()
         self.drop_id = BlockID(DirtBlock.id)
+
+    def on_neighbor_change(self, world, neighbor_pos, self_pos):
+        # replace self with dirt
+        if (self_pos[0], self_pos[1] + 1, self_pos[-1]) in world:
+            world.remove_block(None, self_pos)
+            world.add_block(self_pos, dirt_block)
 
 class ChestBlock(Block):
     top_texture = 8, 4
@@ -1172,6 +1196,10 @@ class RoseBlock(Block):
     break_sound = sounds.leaves_break
     amount_label_color = 0, 0, 0, 255
 
+    def on_neighbor_change(self, world, neighbor_pos, self_pos):
+        if (self_pos[0], self_pos[1] - 1, self_pos[-1]) not in world:
+            world.remove_block(None, self_pos)
+
 class ReedBlock(Block):
     top_texture = -1, -1
     bottom_texture = -1, -1
@@ -1185,6 +1213,10 @@ class ReedBlock(Block):
     crossed_sides = True
     max_stack_size = 16
     amount_label_color = 0, 0, 0, 255
+
+    def on_neighbor_change(self, world, neighbor_pos, self_pos):
+        if (self_pos[0], self_pos[1] - 1, self_pos[-1]) not in world:
+            world.remove_block(None, self_pos)
 
 class CropBlock(Block):
     top_texture = -1, -1
@@ -1248,6 +1280,10 @@ class CropBlock(Block):
         elif 'action' in nbt:
             if nbt['action'] == 'fertilize':
                 self.entity.fertilize()
+
+    def on_neighbor_change(self, world, neighbor_pos, self_pos):
+        if (self_pos[0], self_pos[1] - 1, self_pos[-1]) not in world:
+            world.remove_block(None, self_pos)
 
 class PotatoBlock(CropBlock):
     id = 142
@@ -1349,6 +1385,10 @@ class TallGrassBlock(Block):
     def drop_id(self, value):
         self._drop_id = value
 
+    def on_neighbor_change(self, world, neighbor_pos, self_pos):
+        if (self_pos[0], self_pos[1] - 1, self_pos[-1]) not in world:
+            world.remove_block(None, self_pos)
+
 # More tall grass blocks
 
 # Tall grass of different heights...
@@ -1408,12 +1448,20 @@ class DesertGrassBlock(TallGrassBlock):
     name = "Desert Grass"
     texture_name = 'wg_red_bush'
 
+    def on_neighbor_change(self, world, neighbor_pos, self_pos):
+        if (self_pos[0], self_pos[1] - 1, self_pos[-1]) not in world:
+            world.remove_block(None, self_pos)
+
 
 class DeadBushBlock(TallGrassBlock):
     density = 0.3
     id = 31,0
     name = "Dead bush"
     texture_name = 'deadbush'
+
+    def on_neighbor_change(self, world, neighbor_pos, self_pos):
+        if (self_pos[0], self_pos[1] - 1, self_pos[-1]) not in world:
+            world.remove_block(None, self_pos)
 
 
 class DiamondBlock(HardBlock):

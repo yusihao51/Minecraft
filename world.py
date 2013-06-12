@@ -70,6 +70,7 @@ class World(dict):
         self.sectors[sectorize(position)].append(position)
         if self.is_exposed(position):
             self.show_block(position)
+        self.inform_neighbors_of_block_change(position)
 
     def remove_block(self, player, position, sync=True, sound=True):
         if sound and player is not None:
@@ -92,6 +93,7 @@ class World(dict):
             if position in self.shown:
                 self.hide_block(position)
             self.check_neighbors(position)
+            self.inform_neighbors_of_block_change(position)
 
     def is_exposed(self, position):
         x, y, z = position
@@ -127,6 +129,12 @@ class World(dict):
                 if is_in is None or self[other_position] in is_in:
                     return True
         return False
+
+    def inform_neighbors_of_block_change(self, position):
+        for neigbor in self.neighbors_iterator(position):
+            if neigbor not in self:
+                continue
+            self[neigbor].on_neighbor_change(self, position, neigbor)
 
     def hit_test(self, position, vector, max_distance=8, hitwater=False):
         m = 8
