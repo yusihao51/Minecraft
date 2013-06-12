@@ -70,6 +70,9 @@ class WorldServer(dict):
         if hasattr(block, 'entity_type'):
             self[position] = type(block)()
             self[position].entity = self[position].entity_type(self, position)
+        elif block.sub_id_as_metadata:
+            self[position] = type(block)()
+            self[position].set_metadata(block.get_metadata())
         else:
             self[position] = block
         self.sectors[sectorize(position)].append(position)

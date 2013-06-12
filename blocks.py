@@ -221,6 +221,10 @@ class Block(object):
 
     render_as_normal_block = True
 
+    # if sub_id_as_metadata, we will create an instance for this block when it's being added to the world
+    # and use its sub id as metadata
+    sub_id_as_metadata = False
+
     def __init__(self, width=None, height=None):
         self.id = BlockID(self.id or 0, 0, self.icon_name)
         self.drop_id = self.id
@@ -295,6 +299,14 @@ class Block(object):
                 xp, ym, zm,   xm, ym, zm,   xm, yp, zm,   xp, yp, zm,  # back
             )
         return vertices
+
+    def get_metadata(self):
+        if self.sub_id_as_metadata:
+            return self.id.sub
+
+    def set_metadata(self, metadata):
+        if self.sub_id_as_metadata:
+            self.id.sub = metadata
 
     def play_break_sound(self, player=None, position=None):
         if self.break_sound is not None:
@@ -1227,6 +1239,7 @@ class CropBlock(Block):
     transparent = True
     break_sound = sounds.leaves_break
 
+    sub_id_as_metadata = True
     growth_stage = 0
     entity_type = CropEntity
     entity = None
@@ -1260,6 +1273,14 @@ class CropBlock(Block):
     @drop_id.setter
     def drop_id(self, value):
         self._drop_id = value
+
+    @property
+    def growth_stage(self):
+        return self.get_metadata()
+
+    @growth_stage.setter
+    def growth_stage(self, value):
+        self.set_metadata(value)
 
     # called on client side
     def fertilize(self):

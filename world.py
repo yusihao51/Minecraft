@@ -65,8 +65,12 @@ class World(dict):
             # and tell us
             self[position] = type(block)()
             self[position].entity = TileEntity(self, position)
+        elif block.sub_id_as_metadata:
+            self[position] = type(block)()
+            self[position].set_metadata(block.get_metadata())
         else:
             self[position] = block
+
         self.sectors[sectorize(position)].append(position)
         if self.is_exposed(position):
             self.show_block(position)
