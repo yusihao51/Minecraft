@@ -99,27 +99,27 @@ class SapphireAxe(Tool):
     name = "Sapphire Axe"
 
 def initialize():
-	emerald_shovel = EmeraldShovel()
-	emerald_hoe = EmeraldHoe()
-	emerald_axe = EmeraldAxe()
-	emerald_pickaxe = EmeraldPickaxe()
-	ruby_pickaxe = RubyPickaxe()
-	ruby_shovel = RubyShovel()
-	ruby_axe = RubyAxe()
-	ruby_hoe = RubyHoe()
-	sapphire_hoe = SapphireHoe()
-	sapphire_pickaxe = SapphirePickaxe()
-	sapphire_shovel = SapphireShovel()
-	sapphire_axe = SapphireAxe()
+    emerald_shovel = EmeraldShovel()
+    emerald_hoe = EmeraldHoe()
+    emerald_axe = EmeraldAxe()
+    emerald_pickaxe = EmeraldPickaxe()
+    ruby_pickaxe = RubyPickaxe()
+    ruby_shovel = RubyShovel()
+    ruby_axe = RubyAxe()
+    ruby_hoe = RubyHoe()
+    sapphire_hoe = SapphireHoe()
+    sapphire_pickaxe = SapphirePickaxe()
+    sapphire_shovel = SapphireShovel()
+    sapphire_axe = SapphireAxe()
 
-	for material, toolset in [(emeraldore_block, [emerald_pickaxe, emerald_axe, emerald_shovel, emerald_hoe]),
-                            		(rubyore_block, [ruby_pickaxe, ruby_axe, ruby_shovel, ruby_hoe]),
-                            		(sapphireore_block, [sapphire_pickaxe, sapphire_axe, sapphire_shovel, sapphire_hoe])]:
-		G.recipes.add_recipe(["###", " @ ", " @ "], {'#': material, '@': stick_item},
-                   ItemStack(toolset[0].id, amount=1))
-    	G.recipes.add_recipe(["## ", "#@ ", " @ "], {'#': material, '@': stick_item},
-                   ItemStack(toolset[1].id, amount=1))
-    	G.recipes.add_recipe([" # ", " @ ", " @ "], {'#': material, '@': stick_item},
-                    ItemStack(toolset[2].id, amount=1))
-    	G.recipes.add_recipe(["## ", " @ ", " @ "], {'#': material, '@': stick_item},
-                   ItemStack(toolset[-1].id, amount=1))
+    for material, toolset in [(emeraldore_block, [emerald_pickaxe, emerald_axe, emerald_shovel, emerald_hoe]),
+                              (rubyore_block, [ruby_pickaxe, ruby_axe, ruby_shovel, ruby_hoe]),
+                              (sapphireore_block, [sapphire_pickaxe, sapphire_axe, sapphire_shovel, sapphire_hoe])]:
+        G.recipes.add_recipe(["###", " @ ", " @ "], {'#': material, '@': stick_item},
+                             ItemStack(toolset[0].id, amount=1))
+        G.recipes.add_recipe(["## ", "#@ ", " @ "], {'#': material, '@': stick_item},
+                             ItemStack(toolset[1].id, amount=1))
+        G.recipes.add_recipe([" # ", " @ ", " @ "], {'#': material, '@': stick_item},
+                             ItemStack(toolset[2].id, amount=1))
+        G.recipes.add_recipe(["## ", " @ ", " @ "], {'#': material, '@': stick_item},
+                             ItemStack(toolset[-1].id, amount=1))
