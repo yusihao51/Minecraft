@@ -138,6 +138,8 @@ class Skydome(object):
         self.display.draw(GL_TRIANGLES)
         glDisable(self.image.texture.target)
         # draw the sun
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
         glBindTexture(self.sun_image.texture.target, self.sun_image.texture.id)
         glEnable(self.sun_image.texture.target)
         self.sun_vertex(self.sun_angle).draw(GL_TRIANGLES)
