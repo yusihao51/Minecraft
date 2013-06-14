@@ -313,7 +313,8 @@ class GameController(Controller):
                                    visible=False, multi_line=True, readonly=True,
                                    font_size=14,
                                    font_name='Arial',
-                                   background_color=(64,64,64,128))
+                                   background_color=(64,64,64,128),
+                                   enable_escape=True)
         self.camera = Camera3D(target=self.player)
         if G.HUD_ENABLED:
             self.label = pyglet.text.Label(

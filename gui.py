@@ -757,17 +757,20 @@ class TextWidget(Control):
                  background_color=(200, 200, 200, 128),
                  readonly=False,
                  batch = None,
+                 enable_escape = False,
                  *args, **kwargs):
         super(TextWidget, self).__init__(parent, *args, **kwargs)
         self.batch = pyglet.graphics.Batch() if not batch else batch
         self.vertex_list = None
         blank_text = not bool(text)
         self.document = pyglet.text.document.FormattedDocument(text if not blank_text else ' ')
-        self.document.set_style(0, len(self.document.text),
-                                dict(color=text_color,
+        self.default_style = dict(color=text_color,
                                      font_size=font_size,
                                      font_name=font_name)
-        )
+
+        # parse escape sequences
+        self.enable_escape = enable_escape
+        self.document.set_style(0, len(self.document.text), self.default_style)
         font = self.document.get_font(0)
         if blank_text:
             self.clear()
@@ -819,11 +822,60 @@ class TextWidget(Control):
         if self.multi_line:
             self.layout.view_y = -self.layout.content_height # Scroll to the bottom
 
+    def write_escape(self, text):
+        # parse escape sequences
+        # a escape sequence is a sub-sequence in the text which starts with '$$'
+        # currently available escape sequences:
+        # $$r: set text color to red
+        # $$g: set text color to green
+        # $$b: set text color to blue
+        # $$y: set text color to yellow
+        # $$D: set text style to default
+        style = self.default_style.copy()
+        cooked_text = ''
+        escape = 0
+        for c in text:
+            # command
+            if escape == 1:
+                if c == 'r':
+                    style['color'] = [255, 0, 0, 255]
+                if c == 'g':
+                    style['color'] = [0, 255, 0, 255]
+                if c == 'b':
+                    style['color'] = [0, 0, 255, 255]
+                if c == 'y':
+                    style['color'] = [255, 255, 0, 255]
+                if c == 'D':
+                    style = self.default_style.copy()
+                escape = 0 # end sequence
+                continue
+
+            if c == '$':
+                # first '$' char
+                if escape == 0:
+                    escape = -1
+                    continue
+                # second '$' char
+                if escape == -1:
+                    # output the text
+                    self.write(cooked_text, **style)
+                    cooked_text = ''
+                    escape = 1
+
+            else:
+                cooked_text += c
+
+        if cooked_text != '':
+            self.write(cooked_text, **style)
+
     def write_line(self, text, **kwargs):
         """
         Write the text followed by a newline. Only effective if multi_line is True.
         """
-        self.write("%s\n" % text, **kwargs)
+        if self.enable_escape:
+            self.write_escape("%s\n" % text)
+        else:
+            self.write("%s\n" % text, **kwargs)
 
     def resize(self, x=None, y=None, width=None, height=None):
         self.x = x or self.x
