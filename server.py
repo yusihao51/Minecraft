@@ -24,11 +24,17 @@ from mod import load_modules
 #This class is effectively a serverside "Player" object
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     inventory = "\0"*(4*40)  # Currently, is serialized to be 4 bytes * (27 inv + 9 quickbar + 4 armor) = 160 bytes
+    command_parser = CommandParser()
     def sendpacket(self, size, packet):
         self.request.sendall(struct.pack("i", 5+size)+packet)
     def sendchat(self, txt, color=(255,255,255,255)):
         txt = txt.encode('utf-8')
         self.sendpacket(len(txt) + 4, "\5" + txt + struct.pack("BBBB", *color))
+    def sendinfo(self, info):
+        txt = txt.encode('utf-8')
+        self.sendpacket(len(txt) + 4, "\5" + txt + struct.pack("BBBB", *color))
+    def sendpos(self, pos_bytes, mom_bytes):
+        self.sendpacket(38, "\x08" + struct.pack("H", self.id) + mom_bytes + pos_bytes)
 
     def handle(self):
         self.username = str(self.client_address)
@@ -89,12 +95,14 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     players[address].sendpacket(12, "\4" + positionbytes)
             elif packettype == 5:  # Receive chat text
                 txtlen = struct.unpack("i", self.request.recv(4))[0]
-                txt = "%s: %s" % (self.username, self.request.recv(txtlen).decode('utf-8'))
+                raw_txt = self.request.recv(txtlen).decode('utf-8')
+                txt = "%s: %s" % (self.username, raw_txt)
                 try:
-                    #TODO: Enable the command parser again. This'll need some serverside controller object and player object
-                    #ex = self.command_parser.execute(txt, controller=self, user=self.player, world=self.world)
-                    ex = None
-                    if ex != COMMAND_HANDLED:
+                    if raw_txt[0] == '/':
+                        ex = self.command_parser.execute(raw_txt, user=self, world=world)
+                        if ex != COMMAND_HANDLED:
+                            self.sendchat('$$rUnknown command.')
+                    else:
                         # Not a command, send the chat to all players
                         for address in players:
                             players[address].sendchat(txt)
@@ -127,7 +135,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 load_player(self, "world")
 
                 for player in self.server.players.itervalues():
-                    player.sendchat("%s has connected." % self.username)
+                    player.sendchat("$$y%s has connected." % self.username)
                 print "%s's username is %s" % (self.client_address, self.username)
 
                 position = (0,self.server.world.terraingen.get_height(0,0)+2,0)

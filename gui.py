@@ -830,6 +830,8 @@ class TextWidget(Control):
         # $$g: set text color to green
         # $$b: set text color to blue
         # $$y: set text color to yellow
+        # $$m: set text color to magenta
+        # $$c: set text color to cyan
         # $$D: set text style to default
         style = self.default_style.copy()
         cooked_text = ''
@@ -845,6 +847,10 @@ class TextWidget(Control):
                     style['color'] = [0, 0, 255, 255]
                 if c == 'y':
                     style['color'] = [255, 255, 0, 255]
+                if c == 'm':
+                    style['color'] = [255, 0, 255, 255]
+                if c == 'c':
+                    style['color'] = [0, 255, 255, 255]
                 if c == 'D':
                     style = self.default_style.copy()
                 escape = 0 # end sequence

@@ -311,7 +311,6 @@ class GameController(Controller):
                                    0, self.text_input.y + self.text_input.height + 50,
                                    self.window.width / 2, height=min(300, self.window.height / 3),
                                    visible=False, multi_line=True, readonly=True,
-                                   font_size=14,
                                    font_name='Arial',
                                    background_color=(64,64,64,128),
                                    enable_escape=True)

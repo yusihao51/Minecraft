@@ -38,20 +38,20 @@ class CommandException(Exception):
         self.message = message
 
     def __str__(self):
-        return "%s: %s" % (self.__class__.__name__, self.message)
+        return self.message
 
 
 class UnknownCommandException(CommandException):
     def __init__(self, command_text, *args, **kwargs):
         super(UnknownCommandException, self).__init__(command_text, *args, **kwargs)
-        self.message = "Unrecognized command: %s" % self.command_text
+        self.message = "$$rUnkonwn command. Try /help for help."
 
 
 class CommandParser(object):
     """
     Entry point for parsing and executing game commands.
     """
-    def parse(self, command_text, controller=None, user=None, world=None):
+    def parse(self, command_text, user=None, world=None):
         """
         Parse the specified string and find the Command and match
         information that can handle it. Returns None if no known
@@ -66,18 +66,18 @@ class CommandParser(object):
                 cmd_regex = command_type.command
                 match = re.match(cmd_regex, stripped)
                 if match:
-                    instance = command_type(stripped, user, world, controller)
+                    instance = command_type(stripped, user, world)
                     return instance, match
         return None
 
-    def execute(self, command_text, controller=None, user=None, world=None):
+    def execute(self, command_text, user=None, world=None):
         """
         Finds and executes the first command that can handle the specified
         string. If the command has a return value, that value is returned.
         If it does not, then COMMAND_HANDLED is returned. If no commands
         can handle the string, COMMAND_NOT_HANDLED is returned.
         """
-        parsed = self.parse(command_text, controller=controller, user=user, world=world)
+        parsed = self.parse(command_text, user=user, world=world)
         if parsed:
             command, match = parsed
             # Pass matched groups to command.execute
@@ -104,25 +104,24 @@ class Command(object):
     command = None
     help_text = None
 
-    def __init__(self, command_text, user, world, controller):
+    def __init__(self, command_text, user, world):
         self.command_text = command_text
         self.user = user
         self.world = world
-        self.controller = controller
 
     def execute(self, *args, **kwargs):
         pass
 
     def send_info(self, text):
-        self.controller.write_line(text, color=COMMAND_INFO_COLOR)
+        self.user.sendchat(text, color=COMMAND_INFO_COLOR)
 
     def send_error(self, text):
-        self.controller.write_line(text, color=COMMAND_ERROR_COLOR)
+        self.user.sendchat(text, color=COMMAND_ERROR_COLOR)
 
 
 class HelpCommand(Command):
     command = r"^help$"
-    help_text = "help: Show this help information"
+    help_text = "$$yhelp: $$DShow this help information"
 
     def execute(self, *args, **kwargs):
         self.send_info("****** Available Commands ******")
@@ -133,7 +132,7 @@ class HelpCommand(Command):
 
 class GiveBlockCommand(Command):
     command = r"^give (\d+(?:[\.,]\d+)?)(?:\s+(\d+))?$"
-    help_text = "give <block_id> [amount]: Give a specified amount (default of 1) of the item to the player"
+    help_text = "$$ygive <block_id> [amount]: $$DGive a specified amount (default of 1) of the item to the player"
 
     def execute(self, block_id, amount=1, *args, **kwargs):
         try:
@@ -141,8 +140,8 @@ class GiveBlockCommand(Command):
             item_or_block = get_item(float("%s.%s" % (bid.main, bid.sub)))
             self.send_info("Giving %s of '%s'." % (amount, item_or_block.name))
             self.user.inventory.add_item(bid, quantity=int(amount))
-            self.controller.item_list.update_items()
-            self.controller.inventory_list.update_items()
+            #self.controller.item_list.update_items()
+            #self.controller.inventory_list.update_items()
         except KeyError:
             raise CommandException(self.command_text, message="ID %s unknown." % block_id)
         except ValueError:
@@ -151,14 +150,14 @@ class GiveBlockCommand(Command):
 
 class SetTimeCommand(Command):
     command = r"^time set (\d+)$"
-    help_text = "time set <number>: Set the time of day 00-24"
+    help_text = "$$ytime set <number>: $$DSet the time of day 00-24"
 
     def execute(self, time, *args, **kwargs):
         try:
             tod = int(time)
             if 0 <= tod <= 24:
                 self.send_info("Setting time to %s" % tod)
-                self.controller.time_of_day = tod
+                #self.controller.time_of_day = tod
             else:
                 raise ValueError
         except ValueError:
@@ -167,10 +166,11 @@ class SetTimeCommand(Command):
 
 class GetIDCommand(Command):
     command = r"^id$"
-    help_text = "id: Get the id of the active item"
+    help_text = "$$yid: $$DGet the id of the active item"
 
     def execute(self, *args, **kwargs):
-        current = self.controller.item_list.get_current_block()
+        #current = self.controller.item_list.get_current_block()
+        current = None
         if current:
             self.send_info("ID: %s" % current.id)
         else:
@@ -178,7 +178,7 @@ class GetIDCommand(Command):
 
 class TakeScreencapCommand(Command):
     command = r"^screencap$"
-    help_text = "screencap: saves current screen to a file. Press " + str(G.SCREENCAP_KEY) + " for instant screencap."
+    help_text = "$$yscreencap: $$DSaves current screen to a file. Press " + str(G.SCREENCAP_KEY) + " for instant screencap."
 
 
     def execute(self, *args, **kwargs):
@@ -190,16 +190,16 @@ class TakeScreencapCommand(Command):
             os.makedirs('screencaptures')
 
         # Hide inputs so they're not on the screencapture
-        self.controller.text_input.visible = False
-        self.controller.chat_box.visible = False
-        self.controller.on_draw()
+        #self.controller.text_input.visible = False
+        #self.controller.chat_box.visible = False
+        #self.controller.on_draw()
 
         path = 'screencaptures/' + filename
         pyglet.image.get_buffer_manager().get_color_buffer().save(path)
         self.send_info("Screen capture saved to '%s'" % path)
 
         # ...and then show them again
-        self.controller.text_input.visible = True
-        self.controller.chat_box.visible = True
+        #self.controller.text_input.visible = True
+        #self.controller.chat_box.visible = True
 
 
