@@ -77,7 +77,7 @@ class TexturePackImplementation(object):
 
     def delete_texture_pack(self):
         if self.thumbnail_image and self.__thumbnail_texture_name != -1:
-            glDeleteTextures(self.__thumbnail_texture_name)
+            pyglet.gl.glDeleteTextures(self.__thumbnail_texture_name)
 
     @property
     def texture_pack_id(self):
