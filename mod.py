@@ -12,7 +12,7 @@ import globals as G
 
 __all__ = ('load_modules')
 
-def load_modules():
+def load_modules(server=False):
 	mod_dir = os.path.join(G.game_dir, 'mods')
 
 	if not os.path.isdir(mod_dir):
@@ -25,4 +25,4 @@ def load_modules():
 	print('Mod loader has identified %d mods to load' % (len(os.listdir(mod_dir))))
 	for name in os.listdir(mod_dir):
 		module = importlib.import_module(name)
-		module.initialize()
+		module.initialize(server)

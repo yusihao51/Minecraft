@@ -223,7 +223,7 @@ if __name__ == '__main__':
     setattr(G.LAUNCH_OPTIONS, "seed", None)
     G.SAVE_FILENAME = "world"
 
-    load_modules()
+    load_modules(server=True)
 
     server, server_thread = start_server()
     print('Server loop running in thread: ' + server_thread.name)

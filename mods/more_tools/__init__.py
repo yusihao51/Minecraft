@@ -98,7 +98,7 @@ class SapphireAxe(Tool):
     durability = 80
     name = "Sapphire Axe"
 
-def initialize():
+def initialize(server=False):
     emerald_shovel = EmeraldShovel()
     emerald_hoe = EmeraldHoe()
     emerald_axe = EmeraldAxe()
@@ -111,6 +111,9 @@ def initialize():
     sapphire_pickaxe = SapphirePickaxe()
     sapphire_shovel = SapphireShovel()
     sapphire_axe = SapphireAxe()
+
+    # don't need to initialize crafting recipes on server
+    if server: return
 
     for material, toolset in [(emeraldore_block, [emerald_pickaxe, emerald_axe, emerald_shovel, emerald_hoe]),
                               (rubyore_block, [ruby_pickaxe, ruby_axe, ruby_shovel, ruby_hoe]),
