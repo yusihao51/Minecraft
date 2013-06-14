@@ -538,7 +538,10 @@ class GameController(Controller):
             self.item_list.draw()
             self.inventory_list.draw()
         self.text_input.draw()
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
         self.chat_box.draw()
+        glDisable(GL_BLEND)
 
     def show_cracks(self, hit_block, vertex_data):
         if self.block_damage:  # also show the cracks
