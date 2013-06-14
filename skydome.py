@@ -144,4 +144,5 @@ class Skydome(object):
         glEnable(self.sun_image.texture.target)
         self.sun_vertex(self.sun_angle).draw(GL_TRIANGLES)
         glDisable(self.sun_image.texture.target)
+        glDisable(GL_BLEND)
         glPopMatrix()

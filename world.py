@@ -135,10 +135,12 @@ class World(dict):
         return False
 
     def inform_neighbors_of_block_change(self, position):
-        for neigbor in self.neighbors_iterator(position):
-            if neigbor not in self:
+        for neighbor in self.neighbors_iterator(position):
+            if neighbor not in self:
                 continue
-            self[neigbor].on_neighbor_change(self, position, neigbor)
+            self[neighbor].on_neighbor_change(self, position, neighbor)
+            #self.hide_block(neighbor)
+            #self.show_block(neighbor)
 
     def hit_test(self, position, vector, max_distance=8, hitwater=False):
         m = 8
@@ -173,32 +175,37 @@ class World(dict):
             self.enqueue(self._show_block, position, block)
 
     def _show_block(self, position, block):
-    #    x, y, z = position
         # only show exposed faces
-    #    index = 0
-        vertex_data = block.get_vertices(*position)
-        texture_data = block.texture_data
-        count = len(texture_data) / 2
-        # FIXME: Do something of what follows.
-    #    for dx, dy, dz in []:  # FACES:
-    #        if (x + dx, y + dy, z + dz) in self:
-    #            count -= 8  # 4
-    #            i = index * 12
-    #            j = index * 8
-    #            del vertex_data[i:i + 12]
-    #            del texture_data[j:j + 8]
-    #        else:
-    #            index += 1
-
-        # create vertex list
-        batch = self.transparency_batch if block.transparent else self.batch
+        index = 0
+        vertex_data = list(block.get_vertices(*position))
+        texture_data = list(block.texture_data)
+        color_data = None
         if hasattr(block, 'get_color') and self.biome_generator is not None:
             temp = self.biome_generator.get_temperature(position[0], position[-1])
             humidity = self.biome_generator.get_humidity(position[0], position[-1])
+            color_data =  block.get_color(temp, humidity)
+        count = len(texture_data) / 2
+        # FIXME: Do something of what follows.
+        #for neighbor in self.neighbors_iterator(position):
+        #    if neighbor in self:
+        #        count -= 4
+        #        i = index * 12
+        #        j = index * 8
+        #        del vertex_data[i:i + 12]
+        #        del texture_data[j:j + 8]
+        #        if color_data is not None:
+        #            del color_data[i:i+12]
+        #    else:
+        #       index += 1
+
+        count = len(texture_data) / 2
+        # create vertex list
+        batch = self.transparency_batch if block.transparent else self.batch
+        if color_data is not None:
             self._shown[position] = batch.add(count, GL_QUADS, block.group or self.group,
                                           ('v3f/static', vertex_data),
                                           ('t2f/static', texture_data),
-                                          ('c3f/static', block.get_color(temp, humidity)))
+                                          ('c3f/static', color_data))
         else:
             self._shown[position] = batch.add(count, GL_QUADS, block.group or self.group,
                                           ('v3f/static', vertex_data),
