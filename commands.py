@@ -176,30 +176,26 @@ class GetIDCommand(Command):
         else:
             self.send_info("ID: None")
 
-class TakeScreencapCommand(Command):
-    command = r"^screencap$"
-    help_text = "$$yscreencap: $$DSaves current screen to a file. Press " + str(G.SCREENCAP_KEY) + " for instant screencap."
-
+class SeedCommand(Command):
+    command = r"^seed$"
+    help_text = "$$yseed: $$DGet the seed of the world"
 
     def execute(self, *args, **kwargs):
-        now = datetime.datetime.now()
-        dt = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute, now.second)
-        st = dt.strftime('%Y-%m-%d_%H.%M.%S')
-        filename = str(st) + '.png'
-        if not os.path.exists('screencaptures'):
-            os.makedirs('screencaptures')
+        self.send_info("Seed: %s" % G.SEED) 
 
-        # Hide inputs so they're not on the screencapture
-        #self.controller.text_input.visible = False
-        #self.controller.chat_box.visible = False
-        #self.controller.on_draw()
+class MeCommand(Command):
+    command = r"^me (\w+)$"
+    help_text = "$$yme <actiontext>: $$DTell people what you are doing"
 
-        path = 'screencaptures/' + filename
-        pyglet.image.get_buffer_manager().get_color_buffer().save(path)
-        self.send_info("Screen capture saved to '%s'" % path)
+    def execute(self, actiontext, *args, **kwargs):
+        self.user.broadcast("* %s %s" % (self.user.username, actiontext))
 
-        # ...and then show them again
-        #self.controller.text_input.visible = True
-        #self.controller.chat_box.visible = True
+class TellCommand(Command):
+    command = r"^tell (\w+) (\w+)$"
+    help_text = "$$ytell <playername> <message>: $$DSend a private message to a player on the server"
 
-
+    def execute(self, playername, message, *args, **kwargs):
+        try:
+            self.user.lookup_player(playername).sendinfo("%s whisper %s " % (self.user.username, message))
+        except AttributeError:
+            raise CommandException(self.command_text, message="Player %s not found." % playername)
