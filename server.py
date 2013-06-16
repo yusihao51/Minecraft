@@ -25,16 +25,29 @@ from mod import load_modules
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     inventory = "\0"*(4*40)  # Currently, is serialized to be 4 bytes * (27 inv + 9 quickbar + 4 armor) = 160 bytes
     command_parser = CommandParser()
+
+    operator = False
+
     def sendpacket(self, size, packet):
         self.request.sendall(struct.pack("i", 5+size)+packet)
     def sendchat(self, txt, color=(255,255,255,255)):
         txt = txt.encode('utf-8')
         self.sendpacket(len(txt) + 4, "\5" + txt + struct.pack("BBBB", *color))
-    def sendinfo(self, info):
-        txt = txt.encode('utf-8')
-        self.sendpacket(len(txt) + 4, "\5" + txt + struct.pack("BBBB", *color))
+    def sendinfo(self, info, color=(255,255,255,255)):
+        info = info.encode('utf-8')
+        self.sendpacket(len(info) + 4, "\5" + info + struct.pack("BBBB", *color))
+    def broadcast(self, txt):
+        for player in self.server.players.itervalues():
+            player.sendchat(txt)
     def sendpos(self, pos_bytes, mom_bytes):
         self.sendpacket(38, "\x08" + struct.pack("H", self.id) + mom_bytes + pos_bytes)
+
+    def lookup_player(self, playername):
+        # find player by name
+        for player in self.server.players.values():
+            if player.username == playername:
+                return player
+        return None
 
     def handle(self):
         self.username = str(self.client_address)
