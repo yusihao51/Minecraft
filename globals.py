@@ -151,7 +151,9 @@ WINDOW_WIDTH = 850  # Screen width (in pixels)
 WINDOW_HEIGHT = 480  # Screen height (in pixels)
 
 MAX_FPS = 60  # Maximum frames per second.
-QUEUE_PROCESS_SPEED = 0.3 / MAX_FPS #Try shrinking this if chunk loading is laggy, higher loads chunks faster
+
+#Maximum time to process the queue
+QUEUE_PROCESS_SPEED = 0.1 / MAX_FPS #Try shrinking this if chunk loading is laggy, higher loads chunks faster
 
 VISIBLE_SECTORS_RADIUS = 8
 DELOAD_SECTORS_RADIUS = 12
