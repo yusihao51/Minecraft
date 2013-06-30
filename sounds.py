@@ -5,7 +5,6 @@
 
 # Third-party packages
 import pyglet.media
-import pyglet.info
 
 # Modules from this project
 import globals as G
