@@ -197,7 +197,7 @@ FAR_CLIP_DISTANCE = 200.0  # Maximum render distance,
 
 MOTION_BLUR = False
 
-FOG_ENABLED = True
+FOG_ENABLED = False
 
 TEXTURE_PACK = 'default'
 texture_pack_list = None
