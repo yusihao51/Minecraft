@@ -305,14 +305,15 @@ class GameController(Controller):
                                      0, 0,
                                      self.window.width,
                                      visible=False,
-                                     font_name='Arial')
+                                     font_name='Silkscreen')
         self.text_input.push_handlers(on_toggled=self.on_text_input_toggled, key_released=self.text_input_callback)
         self.chat_box = TextWidget(self.window, '',
                                    0, self.text_input.y + self.text_input.height + 50,
                                    self.window.width / 2, height=min(300, self.window.height / 3),
                                    visible=False, multi_line=True, readonly=True,
-                                   font_name='Arial',
-                                   background_color=(64,64,64,128),
+                                   font_name=G.CHAT_FONT,
+                                   text_color=(255, 255, 255, 255),
+                                   background_color=(0, 0, 0, 75),
                                    enable_escape=True)
         self.camera = Camera3D(target=self.player)
         if G.HUD_ENABLED:
@@ -539,7 +540,7 @@ class GameController(Controller):
             self.inventory_list.draw()
         self.text_input.draw()
         glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         self.chat_box.draw()
         glDisable(GL_BLEND)
 
