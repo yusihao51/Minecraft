@@ -295,7 +295,6 @@ class World(dict):
 
     def hide_sectors(self, dt, player):
         #TODO: This is pretty laggy, I feel an FPS drop once a second while sector changing because of this
-        #travcunn: I dont notice the drop. Is this what is causing problems?
         deload = G.DELOAD_SECTORS_RADIUS
         plysector = sectorize(player.position)
         if player.last_sector != plysector:

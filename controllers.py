@@ -313,7 +313,7 @@ class GameController(Controller):
                                    visible=False, multi_line=True, readonly=True,
                                    font_name=G.CHAT_FONT,
                                    text_color=(255, 255, 255, 255),
-                                   background_color=(0, 0, 0, 75),
+                                   background_color=(0, 0, 0, 100),
                                    enable_escape=True)
         self.camera = Camera3D(target=self.player)
         if G.HUD_ENABLED:
