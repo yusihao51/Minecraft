@@ -305,7 +305,7 @@ class GameController(Controller):
                                      0, 0,
                                      self.window.width,
                                      visible=False,
-                                     font_name='Silkscreen')
+                                     font_name=G.CHAT_FONT)
         self.text_input.push_handlers(on_toggled=self.on_text_input_toggled, key_released=self.text_input_callback)
         self.chat_box = TextWidget(self.window, '',
                                    0, self.text_input.y + self.text_input.height + 50,
