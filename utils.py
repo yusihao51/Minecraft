@@ -61,7 +61,7 @@ class FastRandom(object):
 
 def init_resources():
     init_font('resources/fonts/Chunkfive.ttf', 'ChunkFive Roman')
-    init_font('resources/fonts/slkscr.ttf', 'Silkscreen')
+    init_font('resources/fonts/slkscr.ttf', 'Silkscreen Normal')
 
 
 def init_font(filename, fontname):
