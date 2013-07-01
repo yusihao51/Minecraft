@@ -37,11 +37,26 @@ class Window(pyglet.window.Window):
         self.controller = None
         controller = MainMenuController(self)
         self.switch_controller(controller)
+
         if G.FULLSCREEN:
             self.set_fullscreen()
         self.total_fps = 0.0
         self.iterations = 0
         pyglet.clock.schedule_interval(self.update, 1.0 / G.MAX_FPS)
+
+        if G.FOG_ENABLED:
+            self.enableFog()
+
+    def enableFog(self):
+        glEnable(GL_FOG)
+        glFogfv(GL_FOG_COLOR, (GLfloat * 4)(0.5, 0.69, 1.0, 1))
+        glHint(GL_FOG_HINT, GL_DONT_CARE)
+        glFogi(GL_FOG_MODE, GL_LINEAR)
+        glFogf(GL_FOG_START, 30.0)
+        glFogf(GL_FOG_END, 120)
+
+    def disableFog(self):
+        glDisable(GL_FOG)
 
     def set_exclusive_mouse(self, exclusive):
         super(Window, self).set_exclusive_mouse(exclusive)

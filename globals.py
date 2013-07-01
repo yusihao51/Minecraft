@@ -24,28 +24,21 @@ from pyglet.resource import get_settings_path
 
 
 APP_NAME = 'pyCraft'  # should I stay or should I go?
-
 DEBUG = False
-
 IP_ADDRESS = "neb.nebtown.info"  # The IP Address to connect to
 USERNAME = getpass.getuser()  # Default to system username
 
 CLIENT = None  # Becomes the instance of PacketReceiver if running the client
 SERVER = None  # Becomes the instance of Server if running the server
 
-#
 # Game modes
-#
-
 SURVIVAL_MODE = 'survival'
 CREATIVE_MODE = 'creative'
 GAME_MODE_CHOICES = (SURVIVAL_MODE, CREATIVE_MODE)
 GAME_MODE = CREATIVE_MODE
 SINGLEPLAYER = False
 
-#
 # User input
-#
 
 # Movement
 MOVE_FORWARD_KEY = 'W'
@@ -72,7 +65,6 @@ INVENTORY_10_KEY = '0'
 TALK_KEY = 'T'
 VALIDATE_KEY = 'ENTER'
 
-
 # Settings
 SOUND_UP_KEY = 'PAGEUP'
 SOUND_DOWN_KEY = 'PAGEDOWN'
@@ -87,26 +79,15 @@ KEY_BINDINGS = dict(
     (k.lower()[:-4], v) for k, v in locals().items() if k[-4:] == '_KEY'
 )
 
-
-#
 # Saves
-#
-
 DISABLE_SAVE = True
 SAVE_FILENAME = None
 
-#
 # Game engine
-#
-
 SECTOR_SIZE = 8
 TILESET_SIZE = 16  # The tileset therefore contains TILESET_SIZE ** 2 tiles.
 
-
-#
 # Game logic
-#
-
 BLOCKS_DIR = {}  # Block ID => block object
 ITEMS_DIR = {}  # Item ID => item object
 
@@ -127,10 +108,8 @@ TIME_RATE = 240 * 10  # Rate of change (steps per hour).
 SPREADING_MUTATION_DELAY = 4  # in seconds
 
 
-#
-# Terrain generation
-#
 
+# Terrain generation
 TERRAIN_CHOICES = {  # hill_height & max_trees mandatory for the moment.
     'plains': {
         'hill_height': 2,
@@ -162,21 +141,19 @@ SEED = None
 TREE_CHANCE = 0.006
 WILDFOOD_CHANCE = 0.0005
 GRASS_CHANCE = 0.05
-#
+
 # Biome
-#
 DESERT, PLAINS, MOUNTAINS, SNOW, FOREST, ISLAND, NETHER = range(7)
 
-#
 # Graphical rendering
-#
-
 FULLSCREEN = False
 WINDOW_WIDTH = 850  # Screen width (in pixels)
 WINDOW_HEIGHT = 480  # Screen height (in pixels)
 
 MAX_FPS = 60  # Maximum frames per second.
-QUEUE_PROCESS_SPEED = 0.3 / MAX_FPS #Try shrinking this if chunk loading is laggy, higher loads chunks faster
+
+#Maximum time to process the queue
+QUEUE_PROCESS_SPEED = 0.1 / MAX_FPS #Try shrinking this if chunk loading is laggy, higher loads chunks faster
 
 VISIBLE_SECTORS_RADIUS = 8
 DELOAD_SECTORS_RADIUS = 12
@@ -196,62 +173,40 @@ FAR_CLIP_DISTANCE = 200.0  # Maximum render distance,
                            # ignoring effects of sector_size
 
 MOTION_BLUR = False
+FOG_ENABLED = False
 
 TEXTURE_PACK = 'default'
 texture_pack_list = None
 
 HUD_ENABLED = True
 
-
-#
 # Sound
-#
-
 EFFECT_VOLUME = 1
 
-
-#
 # Tool types
-#
-
 WOODEN_TOOL, STONE_TOOL, IRON_TOOL, DIAMOND_TOOL, GOLDEN_TOOL = range(5)
 PICKAXE, AXE, SHOVEL, HOE, SWORD = range(5)
 HELMET, CHESTPLATE, LEGGINGS, BOOTS = range(4)
 
-#
 # Static aliases
-#
-
 DEG_RAD = pi / 180.0
 HALF_PI = pi / 2.0  # 90 degrees
 
-#
 # Recipes
-#
-
 recipes = None
 smelting_recipes = None
 
-
-#
 # Timer
-#
-
 TIMER_INTERVAL = 1
 main_timer = None
 
 CHAT_FADE_TIME = 8
 
-#
 # Localization
-#
 LANGUAGE = 'default'
 _ = lambda x:x
 
-#
 # Global files & directories
-#
-
 game_dir = get_settings_path(APP_NAME)
 if not os.path.exists(game_dir):
     os.makedirs(game_dir)
@@ -270,6 +225,7 @@ ANCHOR_BOTTOM = 1 << 3
 ICONS_PATH = os.path.join('resources', 'textures', 'icons')
 TEXTURES_PATH = os.path.join('resources', 'textures')
 DEFAULT_FONT = 'ChunkFive Roman'
+CHAT_FONT = 'Silkscreen'
 
 
 class InvalidChoice(Exception):
@@ -321,7 +277,7 @@ def initialize_config():
     #
     # General
     #
-    global DEBUG, FULLSCREEN, WINDOW_WIDTH, WINDOW_HEIGHT, DRAW_DISTANCE_CHOICE, DRAW_DISTANCE_CHOICES, DRAW_DISTANCE, MOTION_BLUR, TEXTURE_PACK, USERNAME, IP_ADDRESS, LANGUAGE
+    global DEBUG, FULLSCREEN, WINDOW_WIDTH, WINDOW_HEIGHT, DRAW_DISTANCE_CHOICE, DRAW_DISTANCE_CHOICES, DRAW_DISTANCE, MOTION_BLUR, FOG_ENABLED, TEXTURE_PACK, USERNAME, IP_ADDRESS, LANGUAGE
 
     general = 'General'
 

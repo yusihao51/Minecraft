@@ -246,10 +246,11 @@ class World(dict):
                         if dx ** 2 + dy ** 2 + dz ** 2 > (pad + 1) ** 2:
                             continue
                         after_set.add((x + dx, y + dy, z + dz))
+        #for sector in (after_set - before_set):
+           # self.show_sector(sector)
+        #Queue the sectors to be shown, instead of rendering them in real time
         for sector in (after_set - before_set):
-            self.show_sector(sector)
-        #for sector in (before_set - after_set):
-        #    self.enqueue_sector(False, sector)
+            self.enqueue_sector(True, sector)
         self.before_set = after_set
 
     def enqueue_sector(self, state, sector): #State=True to show, False to hide
@@ -258,7 +259,7 @@ class World(dict):
     def dequeue_sector(self):
         sector, state = self.sector_queue.popitem(False)
         if state:
-            #self._show_sector(sector)
+            self.show_sector(sector)
             pass
         else:
             self._hide_sector(sector)
@@ -276,7 +277,7 @@ class World(dict):
         func(*args, **kwargs)
 
     def process_queue(self, dt):
-        stoptime=time() + G.QUEUE_PROCESS_SPEED
+        stoptime = time() + G.QUEUE_PROCESS_SPEED
         while time() < stoptime:
             #Process as much of the queues as we can
             if self.sector_queue:
