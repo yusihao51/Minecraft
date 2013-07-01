@@ -196,6 +196,6 @@ class TellCommand(Command):
 
     def execute(self, playername, message, *args, **kwargs):
         try:
-            self.user.lookup_player(playername).sendinfo("%s whisper %s " % (self.user.username, message))
+            self.user.lookup_player(playername).sendinfo("%s whispered: %s " % (self.user.username, message))
         except AttributeError:
             raise CommandException(self.command_text, message="Player %s not found." % playername)
