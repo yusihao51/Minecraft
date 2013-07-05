@@ -12,6 +12,7 @@ import pyglet
 from blocks import BlockID
 from items import get_item
 import globals as G
+from savingsystem import save_world
 
 
 __all__ = (
@@ -199,3 +200,10 @@ class TellCommand(Command):
             self.user.lookup_player(playername).sendinfo("%s whispered: %s " % (self.user.username, message))
         except AttributeError:
             raise CommandException(self.command_text, message="Player %s not found." % playername)
+
+class SaveCommand(Command):
+    command = r"^save$"
+    help_text = "$$ysave: Save the game."
+
+    def execute(self):
+        save_world(G.SERVER, "world")
