@@ -151,6 +151,11 @@ class MainMenuView(MenuView):
         self.panorama = [G.texture_pack_list.selected_texture_pack.load_texture(['title', 'bg', 'panorama' + str(x) + '.png']) for x in range(6)]
         self.panorama_timer = 0
 
+        pyglet.clock.schedule_interval(self.update_panorama_timer, .1)
+
+    def update_panorama_timer(self, dt):
+        self.panorama_timer += 1
+
     def draw_panorama(self):
         glMatrixMode(GL_PROJECTION)
         glPushMatrix()
