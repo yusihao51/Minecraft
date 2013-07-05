@@ -434,7 +434,10 @@ class ItemSelector(AbstractInventory):
             self.update_items()
 
     def _on_draw(self):
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         self.batch.draw()
+        glDisable(GL_BLEND)
 
 
 class InventorySelector(AbstractInventory):
@@ -596,7 +599,7 @@ class InventorySelector(AbstractInventory):
         self.selected_item = item
         img = get_block_icon(item.get_object(), self.icon_size, self.world)
         self.selected_item_icon = image_sprite(img, self.batch, self.group)
-        image_scale = 1.0 / (img.width / self.icon_size)
+        image_scale = 0.8 / (img.width / self.icon_size)
         self.selected_item_icon.scale = image_scale
         self.selected_item_icon.x = x - (self.selected_item_icon.width / 2)
         self.selected_item_icon.y = y - (self.selected_item_icon.height / 2)
@@ -727,9 +730,12 @@ class InventorySelector(AbstractInventory):
             self.update_items()
 
     def _on_draw(self):
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         self.batch.draw()
         if self.selected_item_icon:
             self.selected_item_icon.draw()
+        glDisable(GL_BLEND)
 
 
 # TODO: This is a total hack. The issue seen here: https://code.google.com/p/pyglet/issues/detail?id=471
