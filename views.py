@@ -7,6 +7,8 @@ import os
 import socket
 import subprocess
 import sys
+import datetime
+from math import sin
 
 # Third-party packages
 import pyglet
@@ -18,7 +20,7 @@ import globals as G
 from gui import frame_image, Rectangle, backdrop, Button, button_image, \
     button_highlighted, ToggleButton, TextWidget
 from textures import TexturePackList
-from utils import image_sprite
+from utils import image_sprite, load_image
 
 
 __all__ = (
@@ -103,9 +105,10 @@ class MenuView(View):
         return button
 
     def on_resize(self, width, height):
-        self.background.scale = 1.0
-        self.background.scale = max(float(width) / self.background.width, float(height) / self.background.height)
-        self.background.x, self.background.y = 0, 0
+        if self.background is not None:
+            self.background.scale = 1.0
+            self.background.scale = max(float(width) / self.background.width, float(height) / self.background.height)
+            self.background.x, self.background.y = 0, 0
         self.frame.x, self.frame.y = (width - self.frame.width) / 2, (height - self.frame.height) / 2
         button_x, button_y = 0, self.frame.y + (self.frame.height) / 2 + 10
         for button in self.buttons:
@@ -116,7 +119,15 @@ class MenuView(View):
 
 class MainMenuView(MenuView):
     def setup(self):
-        MenuView.setup(self)
+        self.group = pyglet.graphics.OrderedGroup(3)
+        self.labels_group = pyglet.graphics.OrderedGroup(4)
+
+        image = frame_image
+        # Custom background
+        self.background = None
+        self.frame_rect = Rectangle(0, 0, image.width, image.height)
+        self.frame = image_sprite(image, self.batch, 2)
+
         width, height = self.controller.window.width, self.controller.window.height
 
         self.buttons.append(self.Button(caption=G._("Singleplayer"),on_click=self.controller.start_singleplayer_game))
@@ -129,10 +140,92 @@ class MainMenuView(MenuView):
 
         self.on_resize(width, height)
 
+        # Splash text
+        self.splash_text = 'missing'
+
+        now = datetime.datetime.now()
+        if now.month == 1 and now.day == 1:
+            self.splash_text = 'Happy new year!'
+
+        # Panorama
+        self.panorama = [load_image('resources', 'title', 'bg', 'panorama' + str(x) + '.png') for x in range(6)]
+        self.panorama_timer = 0
+
+    def draw_panorama(self):
+        glMatrixMode(GL_PROJECTION)
+        glPushMatrix()
+        glLoadIdentity()
+        gluPerspective(120.0, 1.0, 0.05, 10.0)
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        glLoadIdentity()
+        glColor4f(1.0, 1.0, 1.0, 1.0)
+        glRotatef(180.0, 1.0, 0.0, 0.0)
+        glEnable(GL_BLEND)
+        glDisable(GL_ALPHA_TEST)
+        glDisable(GL_CULL_FACE)
+        glDepthMask(False)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glPushMatrix()
+        glRotatef(sin(float(self.panorama_timer) / 400.0) * 25.0 + 20.0, 1.0, 0.0, 0.0)
+        glRotatef(-float(self.panorama_timer) * 0.1, 0.0, 1.0, 0.0)
+
+        # 6 faces
+        for i in range(6):
+            glPushMatrix()
+
+            if i == 1:
+                glRotatef(90.0, 0.0, 1.0, 0.0)
+
+            elif i == 2:
+                glRotatef(180.0, 0.0, 1.0, 0.0)
+
+            elif i == 3:
+                glRotatef(-90.0, 0.0, 1.0, 0.0)
+
+            elif i == 4:
+                glRotatef(90.0, 1.0, 0.0, 0.0)
+
+            elif i == 5:
+                glRotatef(-90.0, 1.0, 0.0, 0.0)
+
+            glBindTexture(self.panorama[i].texture.target, self.panorama[i].texture.id)
+            glEnable(self.panorama[i].texture.target)
+            vert_list = [-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0]
+            uv_list = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
+            l = pyglet.graphics.vertex_list(4,
+                ('v3f/static', vert_list),
+                ('t2f/static', uv_list),
+            )
+            l.draw(GL_QUADS)
+            glDisable(self.panorama[i].texture.target)
+            glPopMatrix()
+
+        glPopMatrix()
+        glColorMask(True, True, True, False)
+
+        glColorMask(True, True, True, True)
+        glMatrixMode(GL_PROJECTION)
+        glPopMatrix()
+        glMatrixMode(GL_MODELVIEW)
+        glPopMatrix()
+        glDepthMask(True)
+        glEnable(GL_CULL_FACE)
+        glEnable(GL_ALPHA_TEST)
+        glEnable(GL_DEPTH_TEST)
+
     def on_resize(self, width, height):
         MenuView.on_resize(self, width, height)
         self.label.y = self.frame.y + self.frame.height - 15
         self.label.x = width / 2
+
+    def on_draw(self):
+        self.clear()
+        glColor3d(1, 1, 1)
+        self.draw_panorama()
+        self.controller.set_2d()
+        self.batch.draw()
 
 class OptionsView(MenuView):
     def setup(self):
