@@ -148,7 +148,7 @@ class MainMenuView(MenuView):
             self.splash_text = 'Happy new year!'
 
         # Panorama
-        self.panorama = [load_image('resources', 'title', 'bg', 'panorama' + str(x) + '.png') for x in range(6)]
+        self.panorama = [G.texture_pack_list.selected_texture_pack.load_texture(['title', 'bg', 'panorama' + str(x) + '.png']) for x in range(6)]
         self.panorama_timer = 0
 
     def draw_panorama(self):
@@ -169,7 +169,7 @@ class MainMenuView(MenuView):
 
         glPushMatrix()
         glRotatef(sin(float(self.panorama_timer) / 400.0) * 25.0 + 20.0, 1.0, 0.0, 0.0)
-        glRotatef(-float(self.panorama_timer) * 0.1, 0.0, 1.0, 0.0)
+        glRotatef(-float(self.panorama_timer) * 0.1, 0.0, -1.0, 0.0)
 
         # 6 faces
         for i in range(6):
@@ -193,7 +193,7 @@ class MainMenuView(MenuView):
             glBindTexture(self.panorama[i].texture.target, self.panorama[i].texture.id)
             glEnable(self.panorama[i].texture.target)
             vert_list = [-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0]
-            uv_list = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
+            uv_list = [0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0]
             l = pyglet.graphics.vertex_list(4,
                 ('v3f/static', vert_list),
                 ('t2f/static', uv_list),
