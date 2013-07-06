@@ -23,6 +23,7 @@ from controllers import MainMenuController
 import globals as G
 from timer import Timer
 from mod import load_modules
+from utils import load_image
 
 
 class Window(pyglet.window.Window):

@@ -126,7 +126,7 @@ class MainMenuView(MenuView):
         # Custom background
         self.background = None
         self.frame_rect = Rectangle(0, 0, image.width, image.height)
-        self.frame = image_sprite(image, self.batch, 2)
+        self.frame = Rectangle(0, 0, image.width, image.height)
 
         width, height = self.controller.window.width, self.controller.window.height
 
@@ -152,6 +152,10 @@ class MainMenuView(MenuView):
         self.panorama_timer = 0
 
         pyglet.clock.schedule_interval(self.update_panorama_timer, .1)
+        self.blur_texture = pyglet.image.Texture.create(256, 256)
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
     def update_panorama_timer(self, dt):
         self.panorama_timer += 1
@@ -220,6 +224,58 @@ class MainMenuView(MenuView):
         glEnable(GL_ALPHA_TEST)
         glEnable(GL_DEPTH_TEST)
 
+    def render_to_texture(self):
+        glViewport(0, 0, 256, 256)
+        self.draw_panorama()
+        glBindTexture(GL_TEXTURE_2D, self.blur_texture.id)
+        glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 0, 0, 256, 256, 0)
+
+        glClearColor(0.0, 0.0, 0.5, 0.5)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        glViewport(0, 0, self.controller.window.get_size()[0], self.controller.window.get_size()[1])
+
+    def draw_blur(self, times=25, inc=0.02):
+        alpha = 0.2
+
+        glDisable(GL_TEXTURE_GEN_S)
+        glDisable(GL_TEXTURE_GEN_T)
+
+        glEnable(GL_TEXTURE_2D)
+        glDisable(GL_DEPTH_TEST)
+        glEnable(GL_BLEND)
+        glBindTexture(GL_TEXTURE_2D, self.blur_texture.id)
+
+        alphainc = alpha / float(times)
+        spost = 0
+        width = self.controller.window.get_size()[0]
+        height = self.controller.window.get_size()[1]
+        glBegin(GL_QUADS)
+        for _ in range(times):
+            glColor4f(1.0, 1.0, 1.0, alpha)
+
+            glTexCoord2f(0+spost, 1-spost)
+            glVertex2f(0, 0)
+
+            glTexCoord2f(0+spost, 0+spost)
+            glVertex2f(0, height)
+
+            glTexCoord2f(1-spost, 0+spost)
+            glVertex2f(width, height)
+
+            glTexCoord2f(1-spost, 1-spost)
+            glVertex2f(width, 0)
+
+            spost += inc
+            alpha = alpha - alphainc
+
+        glEnd()
+
+        glEnable(GL_DEPTH_TEST)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_BLEND)
+        glBindTexture(GL_TEXTURE_2D, 0)
+
     def on_resize(self, width, height):
         MenuView.on_resize(self, width, height)
         self.label.y = self.frame.y + self.frame.height - 15
@@ -228,7 +284,9 @@ class MainMenuView(MenuView):
     def on_draw(self):
         self.clear()
         glColor3d(1, 1, 1)
+        #self.render_to_texture()
         self.draw_panorama()
+        #self.draw_blur()
         self.controller.set_2d()
         self.batch.draw()
 
