@@ -6,6 +6,7 @@ from math import floor, ceil
 from functools import partial
 
 # Third-party packages
+import pyglet
 from pyglet.gl import *
 from pyglet.text import Label
 from pyglet.window import key
@@ -999,8 +1000,28 @@ class ProgressBarWidget(Control):
 
 
 frame_image = load_image('resources', 'textures', 'frame.png')
-button_image = load_image('resources', 'textures', 'button.png')
-button_highlighted = load_image('resources', 'textures', 'button_highlighted.png')
+
+def init_button_image():
+    gui_image = G.texture_pack_list.selected_texture_pack.load_texture(['gui', 'gui.png'])
+    image_scale = gui_image.height / 256
+    print image_scale
+    x_size = 200 * image_scale
+    y_offset = 86 * image_scale
+    y_size = 20 * image_scale
+    batch = pyglet.graphics.Batch()
+    button = image_sprite(gui_image, batch, 0, y=gui_image.height - y_offset, height=y_size, x=0, width=x_size)
+
+    y_offset += y_size
+    highlighted_button = image_sprite(gui_image, batch, 0, y=gui_image.height - y_offset, height=y_size, x=0, width=x_size)
+    button = button.image
+    print button.height, button.width
+    button.scale = 1.0 / float(image_scale)
+    highlighted_button = highlighted_button.image
+    highlighted_button.scale = 1.0 / float(image_scale)
+    return button, highlighted_button
+
+button_image, button_highlighted = init_button_image()
+print button_image.height, button_image.width
 background_image = load_image('resources', 'textures', 'main_menu_background.png')
 backdrop_images = []
 rnd_backdrops = ('main_menu_background.png', 'main_menu_background_2.png', 'main_menu_background_3.png',
