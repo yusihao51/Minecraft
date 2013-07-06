@@ -8,7 +8,7 @@ import socket
 import subprocess
 import sys
 import datetime
-from math import sin
+from math import sin, pi
 
 # Third-party packages
 import pyglet
@@ -138,14 +138,18 @@ class MainMenuView(MenuView):
             anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
             group=self.labels_group)
 
-        self.on_resize(width, height)
-
         # Splash text
         self.splash_text = 'missing'
 
         now = datetime.datetime.now()
         if now.month == 1 and now.day == 1:
             self.splash_text = 'Happy new year!'
+
+        self.splash_text_label = Label(self.splash_text, font_name='Arial', font_size=30, x=self.label.x, y=self.label.y,
+            anchor_x='center', anchor_y='top', color=(255, 255, 0, 255),
+            group=self.labels_group)
+
+        self.on_resize(width, height)
 
         # Panorama
         self.panorama = [G.texture_pack_list.selected_texture_pack.load_texture(['title', 'bg', 'panorama' + str(x) + '.png']) for x in range(6)]
@@ -276,10 +280,19 @@ class MainMenuView(MenuView):
         glDisable(GL_BLEND)
         glBindTexture(GL_TEXTURE_2D, 0)
 
+    def draw_splash_text(self):
+        glPushMatrix()
+        glTranslatef(float(self.controller.window.get_size()[0] / 2 - self.label.content_width / 2), -float(self.controller.window.get_size()[1] / 3), 0.0)
+        glRotatef(20.0, 0.0, 0.0, 1.0)
+        self.splash_text_label.draw()
+        glPopMatrix()
+
     def on_resize(self, width, height):
         MenuView.on_resize(self, width, height)
         self.label.y = self.frame.y + self.frame.height - 15
         self.label.x = width / 2
+        self.splash_text_label.x = self.label.x
+        self.splash_text_label.y = self.label.y
 
     def on_draw(self):
         self.clear()
@@ -289,6 +302,7 @@ class MainMenuView(MenuView):
         #self.draw_blur()
         self.controller.set_2d()
         self.batch.draw()
+        self.draw_splash_text()
 
 class OptionsView(MenuView):
     def setup(self):
