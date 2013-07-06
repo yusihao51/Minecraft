@@ -1013,11 +1013,15 @@ def init_button_image():
 
     y_offset += y_size
     highlighted_button = image_sprite(gui_image, batch, 0, y=gui_image.height - y_offset, height=y_size, x=0, width=x_size)
+    button.scale = 1.0 / float(image_scale)
+    highlighted_button.scale = 1.0 / float(image_scale)
     button = button.image
     print button.height, button.width
-    button.scale = 1.0 / float(image_scale)
+    button.height = 40
+    button.width = 400
     highlighted_button = highlighted_button.image
-    highlighted_button.scale = 1.0 / float(image_scale)
+    highlighted_button.height = 40
+    highlighted_button.width = 400
     return button, highlighted_button
 
 button_image, button_highlighted = init_button_image()

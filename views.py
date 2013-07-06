@@ -139,7 +139,7 @@ class MainMenuView(MenuView):
             group=self.labels_group)
 
         # Splash text
-        self.splash_text = 'missing'
+        self.splash_text = 'Hello!'
 
         now = datetime.datetime.now()
         if now.month == 1 and now.day == 1:
@@ -155,7 +155,7 @@ class MainMenuView(MenuView):
         self.panorama = [G.texture_pack_list.selected_texture_pack.load_texture(['title', 'bg', 'panorama' + str(x) + '.png']) for x in range(6)]
         self.panorama_timer = 0
 
-        pyglet.clock.schedule_interval(self.update_panorama_timer, .1)
+        pyglet.clock.schedule_interval(self.update_panorama_timer, .05)
         self.blur_texture = pyglet.image.Texture.create(256, 256)
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
