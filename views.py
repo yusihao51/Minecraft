@@ -90,13 +90,13 @@ class MenuView(View):
         self.background.scale = max(float(self.controller.window.get_size()[0]) / self.background.width, float(self.controller.window.get_size()[1]) / self.background.height)
         self.frame = image_sprite(image, self.batch, 2)
 
-    def Button(self, x=0, y=0, width=400, height=50, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, enabled=True):
+    def Button(self, x=0, y=0, width=400, height=40, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, enabled=True):
         button = Button(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
         if on_click:
             button.push_handlers(on_click=on_click)
         return button
 
-    def ToggleButton(self, x=0, y=0, width=400, height=50, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, on_toggle=None, enabled=True):
+    def ToggleButton(self, x=0, y=0, width=400, height=40, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, on_toggle=None, enabled=True):
         button = ToggleButton(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
         if on_click:
             button.push_handlers(on_click=on_click)
