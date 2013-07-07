@@ -120,8 +120,6 @@ class MenuView(View):
         bg_height = self.background.height
         vert_list = [0.0, 0.0, 0.0, width, 0.0, 0.0, width, height, 0.0, 0.0, height, 0.0]
         uv_list = [0.0, 0.0, width / bg_width, 0.0, width / bg_width, height / bg_height, 0.0, height / bg_height]
-        print vert_list
-        print uv_list
         l = pyglet.graphics.vertex_list(4,
             ('v3f/static', vert_list),
             ('t2f/static', uv_list),
