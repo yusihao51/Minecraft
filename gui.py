@@ -1006,7 +1006,6 @@ frame_image = load_image('resources', 'textures', 'frame.png')
 def init_button_image():
     gui_image = G.texture_pack_list.selected_texture_pack.load_texture(['gui', 'gui.png'])
     image_scale = gui_image.height / 256
-    print image_scale
     x_size = 200 * image_scale
     y_offset = 86 * image_scale
     y_size = 20 * image_scale
@@ -1020,12 +1019,7 @@ def init_button_image():
     button.scale = 1.0 / float(image_scale)
     highlighted_button.scale = 1.0 / float(image_scale)
     button = button.image
-    print button.height, button.width
-    #button.height = 40
-    #button.width = 400
     highlighted_button = highlighted_button.image
-    #highlighted_button.height = 40
-    #highlighted_button.width = 400
     return button, highlighted_button
 
 button_image, button_highlighted = init_button_image()

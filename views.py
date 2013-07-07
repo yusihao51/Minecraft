@@ -86,9 +86,14 @@ class MenuView(View):
 
         image = frame_image
         self.frame_rect = Rectangle(0, 0, image.width, image.height)
-        self.background = image_sprite(backdrop, self.batch, 0)
-        self.background.scale = max(float(self.controller.window.get_size()[0]) / self.background.width, float(self.controller.window.get_size()[1]) / self.background.height)
-        self.frame = image_sprite(image, self.batch, 2)
+        self.background = G.texture_pack_list.selected_texture_pack.load_texture(['gui', 'background.png'])
+        self.background = self.background.get_texture()
+        self.background.height = 64
+        self.background.width = 64
+        self.frame = Rectangle(0, 0, image.width, image.height)
+
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
 
     def Button(self, x=0, y=0, width=400, height=40, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, enabled=True):
         button = Button(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
@@ -104,11 +109,34 @@ class MenuView(View):
             button.push_handlers(on_toggle=on_toggle)
         return button
 
+    def draw_background(self):
+        glBindTexture(self.background.target, self.background.id)
+        glEnable(self.background.target)
+        glColor4f(0.3, 0.3, 0.3, 1.0)
+
+        width = float(self.controller.window.get_size()[0])
+        height = float(self.controller.window.get_size()[1])
+        bg_width = self.background.width
+        bg_height = self.background.height
+        vert_list = [0.0, 0.0, 0.0, width, 0.0, 0.0, width, height, 0.0, 0.0, height, 0.0]
+        uv_list = [0.0, 0.0, width / bg_width, 0.0, width / bg_width, height / bg_height, 0.0, height / bg_height]
+        print vert_list
+        print uv_list
+        l = pyglet.graphics.vertex_list(4,
+            ('v3f/static', vert_list),
+            ('t2f/static', uv_list),
+        )
+        l.draw(GL_QUADS)
+        glDisable(self.background.target)
+
+    def on_draw(self):
+        self.clear()
+        glColor3d(1, 1, 1)
+        self.draw_background()
+        self.controller.set_2d()
+        self.batch.draw()
+
     def on_resize(self, width, height):
-        if self.background is not None:
-            self.background.scale = 1.0
-            self.background.scale = max(float(width) / self.background.width, float(height) / self.background.height)
-            self.background.x, self.background.y = 0, 0
         self.frame.x, self.frame.y = (width - self.frame.width) / 2, (height - self.frame.height) / 2
         button_x, button_y = 0, self.frame.y + (self.frame.height) / 2 + 10
         for button in self.buttons:
