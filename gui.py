@@ -6,6 +6,7 @@ from math import floor, ceil
 from functools import partial
 
 # Third-party packages
+import pyglet
 from pyglet.gl import *
 from pyglet.text import Label
 from pyglet.window import key
@@ -76,7 +77,9 @@ class Button(pyglet.event.EventDispatcher, Rectangle):
         parent.push_handlers(self)
         self.batch, self.group, self.label_group = batch, group, label_group
         self.sprite = image_sprite(image, self.batch, self.group)
+        self.sprite.scale = max(float(self.width) / float(image.width), float(self.height) / float(image.height))
         self.sprite_highlighted = hidden_image_sprite(image_highlighted, self.batch, self.group)
+        self.sprite_highlighted.scale = max(float(self.width) / float(image_highlighted.width), float(self.height) / float(image_highlighted.height))
         self.highlighted = False
         self.label = Label(str(caption), font_name, 12, anchor_x='center', anchor_y='center',
             color=(255, 255, 255, 255), batch=self.batch, group=self.label_group) if caption else None
@@ -999,8 +1002,28 @@ class ProgressBarWidget(Control):
 
 
 frame_image = load_image('resources', 'textures', 'frame.png')
-button_image = load_image('resources', 'textures', 'button.png')
-button_highlighted = load_image('resources', 'textures', 'button_highlighted.png')
+
+def init_button_image():
+    gui_image = G.texture_pack_list.selected_texture_pack.load_texture(['gui', 'gui.png'])
+    image_scale = gui_image.height / 256
+    x_size = 200 * image_scale
+    y_offset = 86 * image_scale
+    y_size = 20 * image_scale
+    batch = pyglet.graphics.Batch()
+    button = image_sprite(gui_image, batch, 0, y=gui_image.height - y_offset, height=y_size, x=0, width=x_size)
+
+    y_offset += y_size
+    highlighted_button = image_sprite(gui_image, batch, 0, y=gui_image.height - y_offset, height=y_size, x=0, width=x_size)
+    button.scale = 1.0
+    highlighted_button.scale = 1.0
+    button.scale = 1.0 / float(image_scale)
+    highlighted_button.scale = 1.0 / float(image_scale)
+    button = button.image
+    highlighted_button = highlighted_button.image
+    return button, highlighted_button
+
+button_image, button_highlighted = init_button_image()
+print button_image.height, button_image.width
 background_image = load_image('resources', 'textures', 'main_menu_background.png')
 backdrop_images = []
 rnd_backdrops = ('main_menu_background.png', 'main_menu_background_2.png', 'main_menu_background_3.png',

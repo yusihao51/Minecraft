@@ -8,7 +8,7 @@ import socket
 import subprocess
 import sys
 import datetime
-from math import sin
+from math import sin, pi
 
 # Third-party packages
 import pyglet
@@ -86,17 +86,22 @@ class MenuView(View):
 
         image = frame_image
         self.frame_rect = Rectangle(0, 0, image.width, image.height)
-        self.background = image_sprite(backdrop, self.batch, 0)
-        self.background.scale = max(float(self.controller.window.get_size()[0]) / self.background.width, float(self.controller.window.get_size()[1]) / self.background.height)
-        self.frame = image_sprite(image, self.batch, 2)
+        self.background = G.texture_pack_list.selected_texture_pack.load_texture(['gui', 'background.png'])
+        self.background = self.background.get_texture()
+        self.background.height = 64
+        self.background.width = 64
+        self.frame = Rectangle(0, 0, image.width, image.height)
 
-    def Button(self, x=0, y=0, width=160, height=50, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, enabled=True):
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+
+    def Button(self, x=0, y=0, width=400, height=40, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, enabled=True):
         button = Button(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
         if on_click:
             button.push_handlers(on_click=on_click)
         return button
 
-    def ToggleButton(self, x=0, y=0, width=160, height=50, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, on_toggle=None, enabled=True):
+    def ToggleButton(self, x=0, y=0, width=400, height=40, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, on_toggle=None, enabled=True):
         button = ToggleButton(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
         if on_click:
             button.push_handlers(on_click=on_click)
@@ -104,11 +109,32 @@ class MenuView(View):
             button.push_handlers(on_toggle=on_toggle)
         return button
 
+    def draw_background(self):
+        glBindTexture(self.background.target, self.background.id)
+        glEnable(self.background.target)
+        glColor4f(0.3, 0.3, 0.3, 1.0)
+
+        width = float(self.controller.window.get_size()[0])
+        height = float(self.controller.window.get_size()[1])
+        bg_width = self.background.width
+        bg_height = self.background.height
+        vert_list = [0.0, 0.0, 0.0, width, 0.0, 0.0, width, height, 0.0, 0.0, height, 0.0]
+        uv_list = [0.0, 0.0, width / bg_width, 0.0, width / bg_width, height / bg_height, 0.0, height / bg_height]
+        l = pyglet.graphics.vertex_list(4,
+            ('v3f/static', vert_list),
+            ('t2f/static', uv_list),
+        )
+        l.draw(GL_QUADS)
+        glDisable(self.background.target)
+
+    def on_draw(self):
+        self.clear()
+        glColor3d(1, 1, 1)
+        self.draw_background()
+        self.controller.set_2d()
+        self.batch.draw()
+
     def on_resize(self, width, height):
-        if self.background is not None:
-            self.background.scale = 1.0
-            self.background.scale = max(float(width) / self.background.width, float(height) / self.background.height)
-            self.background.x, self.background.y = 0, 0
         self.frame.x, self.frame.y = (width - self.frame.width) / 2, (height - self.frame.height) / 2
         button_x, button_y = 0, self.frame.y + (self.frame.height) / 2 + 10
         for button in self.buttons:
@@ -125,8 +151,8 @@ class MainMenuView(MenuView):
         image = frame_image
         # Custom background
         self.background = None
-        self.frame_rect = Rectangle(0, 0, image.width, image.height)
-        self.frame = image_sprite(image, self.batch, 2)
+        self.frame_rect = Rectangle(0, 0, self.controller.window.get_size()[0], image.height)
+        self.frame = Rectangle(0, 0, self.controller.window.get_size()[0], image.height)
 
         width, height = self.controller.window.width, self.controller.window.height
 
@@ -138,20 +164,28 @@ class MainMenuView(MenuView):
             anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
             group=self.labels_group)
 
-        self.on_resize(width, height)
-
         # Splash text
-        self.splash_text = 'missing'
+        self.splash_text = 'Hello!'
 
         now = datetime.datetime.now()
         if now.month == 1 and now.day == 1:
             self.splash_text = 'Happy new year!'
 
+        self.splash_text_label = Label(self.splash_text, font_name='Arial', font_size=30, x=self.label.x, y=self.label.y,
+            anchor_x='center', anchor_y='top', color=(255, 255, 0, 255),
+            group=self.labels_group)
+
+        self.on_resize(width, height)
+
         # Panorama
         self.panorama = [G.texture_pack_list.selected_texture_pack.load_texture(['title', 'bg', 'panorama' + str(x) + '.png']) for x in range(6)]
         self.panorama_timer = 0
 
-        pyglet.clock.schedule_interval(self.update_panorama_timer, .1)
+        pyglet.clock.schedule_interval(self.update_panorama_timer, .05)
+        self.blur_texture = pyglet.image.Texture.create(256, 256)
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
     def update_panorama_timer(self, dt):
         self.panorama_timer += 1
@@ -220,17 +254,81 @@ class MainMenuView(MenuView):
         glEnable(GL_ALPHA_TEST)
         glEnable(GL_DEPTH_TEST)
 
+    def render_to_texture(self):
+        glViewport(0, 0, 256, 256)
+        self.draw_panorama()
+        glBindTexture(GL_TEXTURE_2D, self.blur_texture.id)
+        glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 0, 0, 256, 256, 0)
+
+        glClearColor(0.0, 0.0, 0.5, 0.5)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        glViewport(0, 0, self.controller.window.get_size()[0], self.controller.window.get_size()[1])
+
+    def draw_blur(self, times=25, inc=0.02):
+        alpha = 0.2
+
+        glDisable(GL_TEXTURE_GEN_S)
+        glDisable(GL_TEXTURE_GEN_T)
+
+        glEnable(GL_TEXTURE_2D)
+        glDisable(GL_DEPTH_TEST)
+        glEnable(GL_BLEND)
+        glBindTexture(GL_TEXTURE_2D, self.blur_texture.id)
+
+        alphainc = alpha / float(times)
+        spost = 0
+        width = self.controller.window.get_size()[0]
+        height = self.controller.window.get_size()[1]
+        glBegin(GL_QUADS)
+        for _ in range(times):
+            glColor4f(1.0, 1.0, 1.0, alpha)
+
+            glTexCoord2f(0+spost, 1-spost)
+            glVertex2f(0, 0)
+
+            glTexCoord2f(0+spost, 0+spost)
+            glVertex2f(0, height)
+
+            glTexCoord2f(1-spost, 0+spost)
+            glVertex2f(width, height)
+
+            glTexCoord2f(1-spost, 1-spost)
+            glVertex2f(width, 0)
+
+            spost += inc
+            alpha = alpha - alphainc
+
+        glEnd()
+
+        glEnable(GL_DEPTH_TEST)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_BLEND)
+        glBindTexture(GL_TEXTURE_2D, 0)
+
+    def draw_splash_text(self):
+        glPushMatrix()
+        glTranslatef(float(self.controller.window.get_size()[0] / 2 - self.label.content_width / 2), -float(self.controller.window.get_size()[1] / 3), 0.0)
+        glRotatef(20.0, 0.0, 0.0, 1.0)
+        self.splash_text_label.draw()
+        glPopMatrix()
+
     def on_resize(self, width, height):
         MenuView.on_resize(self, width, height)
         self.label.y = self.frame.y + self.frame.height - 15
         self.label.x = width / 2
+        self.splash_text_label.x = self.label.x
+        self.splash_text_label.y = self.label.y
 
     def on_draw(self):
         self.clear()
         glColor3d(1, 1, 1)
+        #self.render_to_texture()
         self.draw_panorama()
+        #self.draw_blur()
         self.controller.set_2d()
         self.batch.draw()
+        self.draw_splash_text()
 
 class OptionsView(MenuView):
     def setup(self):
