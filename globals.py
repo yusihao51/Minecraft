@@ -25,6 +25,8 @@ from pyglet.resource import get_settings_path
 
 APP_NAME = 'pyCraft'  # should I stay or should I go?
 DEBUG = False
+LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_FATAL = range(5)
+LOG_LEVEL = LOG_INFO
 IP_ADDRESS = "neb.nebtown.info"  # The IP Address to connect to
 USERNAME = getpass.getuser()  # Default to system username
 

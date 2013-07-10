@@ -9,6 +9,7 @@ import sys
 
 # Modules from this project
 import globals as G
+from debug import log_info
 
 __all__ = ('load_modules')
 
@@ -22,7 +23,7 @@ def load_modules(server=False):
 
 	sys.path.append(mod_dir)
 
-	print('Mod loader has identified %d mods to load' % (len(os.listdir(mod_dir))))
+	log_info('Mod loader has identified %d mods to load' % (len(os.listdir(mod_dir))))
 	for name in os.listdir(mod_dir):
 		module = importlib.import_module(name)
 		module.initialize(server)

@@ -22,6 +22,7 @@ from pyglet.window import key
 from controllers import MainMenuController
 import globals as G
 from timer import Timer
+from debug import log_info
 from mod import load_modules
 
 
@@ -99,7 +100,7 @@ class Window(pyglet.window.Window):
         )
 
     def on_close(self):
-        print('Average FPS: %f' % (self.total_fps / self.iterations))
+        log_info('Average FPS: %f' % (self.total_fps / self.iterations))
         super(Window, self).on_close()
 
 
@@ -142,6 +143,8 @@ def main(options):
         G.SERVER.shutdown()
 
 if __name__ == '__main__':
+    log_info('Starting pyCraft...')
+
     parser = argparse.ArgumentParser(description='Play a Python made Minecraft clone.')
 
     game_group = parser.add_argument_group('Game options')
