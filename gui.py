@@ -567,10 +567,9 @@ class InventorySelector(AbstractInventory):
         self.frame.y = 74
 
     def update_items(self):
-        print 'Update items'
         # only inventory has armor slots
         items = self.player.inventory.get_items()[:self.max_items] + self.player.quick_slots.get_items()[:self.player.quick_slots.slot_count] + \
-                    self.player.armor.get_items()[:4] if self.mode == 0 else []
+                (self.player.armor.get_items()[:4] if self.mode == 0 else [])
         i = 0
         for item in items:
             self.slots[i].item = item
@@ -678,7 +677,6 @@ class InventorySelector(AbstractInventory):
             if slot.hit_test(x, y):
                 inventory = slot.inventory
                 index = slot.index
-                print slot
                 break
 
         if index == 256:    # 256 for crafting outcome
@@ -699,7 +697,8 @@ class InventorySelector(AbstractInventory):
         if self.selected_item:
             if index == -1:
                 # throw it
-                self.remove_selected_item()
+                if not (self.frame.x <= x <= self.frame.x + self.frame.width and self.frame.y <= y <= self.frame.y + self.frame.height):
+                    self.remove_selected_item()
                 self.update_items()
                 return pyglet.event.EVENT_HANDLED
             item = inventory.at(index)
@@ -713,7 +712,6 @@ class InventorySelector(AbstractInventory):
                     if hasattr(inventory, 'set_slot'):
                         inventory.set_slot(index, ItemStack(type=self.selected_item.type, durability=self.selected_item.durability, amount=amount_to_change))
                     else:
-                        print 'Setting slot ' + repr(slot)
                         inventory.slots[index] = ItemStack(type=self.selected_item.type, durability=self.selected_item.durability, amount=amount_to_change)
                     remaining = self.selected_item.amount - amount_to_change
                 if remaining > 0:
