@@ -22,6 +22,9 @@ class Inventory(object):
         self.slot_count = slot_count
         self.slots = [None] * self.slot_count
 
+    def __repr__(self):
+        return "Inventory(" + str(self.slot_count) + ")"
+
     def find_empty_slot(self):
         return next((index for index,value in enumerate(self.slots) if not value), -1)
 
