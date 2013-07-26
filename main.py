@@ -24,7 +24,7 @@ import globals as G
 from timer import Timer
 from debug import log_info
 from mod import load_modules
-from utils import load_image
+from savingsystem import save_world
 
 
 class Window(pyglet.window.Window):
@@ -138,6 +138,8 @@ def main(options):
         G.CLIENT.stop()
         
     if G.SERVER:
+        print 'Saving...'
+        save_world(G.SERVER, "world")
         print 'Shutting down internal server...'
         G.main_timer.stop()
         G.SERVER._stop.set()
