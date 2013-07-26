@@ -404,10 +404,10 @@ class GameController(Controller):
         if previous:
             hit_block = self.world[block]
             if hit_block.id == craft_block.id:
-                self.inventory_list.mode = 1
+                self.inventory_list.switch_mode(1)
                 self.inventory_list.toggle(False)
             elif hit_block.id == furnace_block.id:
-                self.inventory_list.mode = 2
+                self.inventory_list.switch_mode(2)
                 self.inventory_list.set_furnace(hit_block)
                 self.inventory_list.toggle(False)
             elif hit_block.density >= 1:
