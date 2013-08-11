@@ -1077,7 +1077,6 @@ def init_button_image():
     return button, highlighted_button
 
 button_image, button_highlighted = init_button_image()
-print button_image.height, button_image.width
 background_image = load_image('resources', 'textures', 'main_menu_background.png')
 backdrop_images = []
 rnd_backdrops = ('main_menu_background.png', 'main_menu_background_2.png', 'main_menu_background_3.png',
