@@ -1,5 +1,5 @@
 import cython
-
+cimport client
 #cython: boundscheck=False
 #cython: wraparound=False
 #cython: cdivision=True
@@ -24,6 +24,7 @@ cdef class World(dict):
         double spreading_time
         object packetreceiver
         object sector_packets
+        object biome_generator
 
     cpdef object add_block(self, tuple position, object block,
                            bint sync=?, bint force=?)
@@ -66,7 +67,7 @@ cdef class World(dict):
     @cython.locals(block=object)
     cpdef object show_block(self, tuple position, bint immediate=?)
 
-    @cython.locals(vertex_data=tuple, texture_data=list,
+    @cython.locals(vertex_data=list, texture_data=list,
                    count=int, batch=object)
     cpdef object _show_block(self, tuple position, object block)
 

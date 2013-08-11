@@ -31,7 +31,7 @@ import utils
 from utils import vec, sectorize, normalize, load_image, image_sprite
 from views import MainMenuView, OptionsView, ControlsView, TexturesView, MultiplayerView
 from world import World
-from terrain import BiomeGenerator
+from biome import BiomeGenerator
 from server import start_server
 
 __all__ = (
@@ -234,8 +234,10 @@ class GameController(Controller):
                 print "Socket Error:", e
                 #Otherwise back to the main menu we go
                 return False
-            except:
+            except Exception as e:
                 print 'Unable to start internal server'
+                import traceback
+                traceback.print_exc()
                 return False
         else:
             try:

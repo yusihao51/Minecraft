@@ -15,7 +15,7 @@ from items import ItemStack
 from player import Player
 from savingsystem import null2, structuchar2, sector_to_blockpos
 from utils import extract_string_packet
-from terrain import BiomeGenerator
+from biome import BiomeGenerator
 
 class PacketReceiver(Thread):
     def __init__ (self, world, controller, sock):
