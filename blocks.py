@@ -341,10 +341,20 @@ class Block(object):
 class BlockColorizer(object):
         def __init__(self, filename):
             self.color_data = G.texture_pack_list.selected_texture_pack.load_texture(['misc', filename])
+            # if the texture is not available, don't colorize it
+            if self.color_data is None:
+                return
             self.color_data = self.color_data.get_data('RGB', self.color_data.width * 3)
 
         def get_color(self, temperature, humidity):
-            pos = int(floor(humidity * 255) * BYTE_PER_LINE + 3 * floor((1-temperature) * 255))
+            temperature = 1 - temperature
+            if temperature + humidity > 1:
+                delta = (temperature + humidity - 1) / 2
+                temperature -= delta
+                humidity -= delta
+            if self.color_data is None:
+                return 1, 1, 1
+            pos = int(floor(humidity * 255) * BYTE_PER_LINE + 3 * floor((temperature) * 255))
             return float(ord(self.color_data[pos])) / 255, float(ord(self.color_data[pos + 1])) / 255, float(ord(self.color_data[pos + 2])) / 255
 
 class AirBlock(Block):
