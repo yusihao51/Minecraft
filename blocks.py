@@ -1599,9 +1599,13 @@ class CrackTextureBlock(object):
     def __init__(self):
         self.crack_level = CRACK_LEVELS
         self.texture_data = []
+        texture_name = []
         for i in range(self.crack_level):
-            texture_coords = get_texture_coordinates(i, 8)
-            self.texture_data.append(texture_coords * 6)
+            texture_name.append('destroy_' + str(i))
+        self.group = TextureGroupIndividual(texture_name)
+
+        for i in range(self.crack_level):
+            self.texture_data.append(self.group.texture_data[i * 8:(i + 1) * 8] * 6)
 
 crack_textures = CrackTextureBlock()
 
