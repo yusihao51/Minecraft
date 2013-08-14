@@ -38,7 +38,7 @@ def get_texture_coordinates(x, y, tileset_size=G.TILESET_SIZE):
 #To enable, extract a texture pack's blocks folder to resources/texturepacks/textures/blocks/
 #For MC 1.5 Texture Packs
 class TextureGroupIndividual(pyglet.graphics.Group):
-    def __init__(self, names):
+    def __init__(self, names, height=1.0, width=1.0):
         super(TextureGroupIndividual, self).__init__()
         atlas = None
         # self.texture = atlas.texture
@@ -46,12 +46,13 @@ class TextureGroupIndividual(pyglet.graphics.Group):
         i=0
         texture_pack = G.texture_pack_list.selected_texture_pack
         for name in names:
+            
             if not name in BLOCK_TEXTURE_DIR:
                 BLOCK_TEXTURE_DIR[name] = texture_pack.load_texture(['textures', 'blocks', name + '.png'])
 
             if not BLOCK_TEXTURE_DIR[name]:
                 continue
-            
+
             texture_size = BLOCK_TEXTURE_DIR[name].width
 
             if atlas == None:
@@ -70,6 +71,25 @@ class TextureGroupIndividual(pyglet.graphics.Group):
         # ie: ("dirt",) ("grass_top","dirt","grass_side")
         # Becomes ("dirt","dirt","dirt","dirt","dirt","dirt") ("grass_top","dirt","grass_side","grass_side","grass_side","grass_side")
         self.texture_data += self.texture_data[-8:]*(6-len(names))
+
+        # resize the texture
+        if height != 1.0 or width != 1.0 :
+            if len(self.texture_data) == 0:
+                return
+
+            tex_width = tex_height = self.texture_data[2] - self.texture_data[0]
+            h_margin = tex_height * (1.0 - height)
+            w_margin = tex_width * (1.0 - width) / 2
+            # top and bottom
+            for i in (0, 1):
+                for j in (0, 1, 3, 6): self.texture_data[i * 8 + j] += w_margin
+                for j in (2, 4, 5, 7): self.texture_data[i * 8 + j] -= w_margin
+
+            # side
+            for i in range(2, 6):
+                for j in (0, 6): self.texture_data[i * 8 + j] += w_margin
+                for j in (2, 4): self.texture_data[i * 8 + j] -= w_margin
+                for j in (5, 7): self.texture_data[i * 8 + j] -= h_margin
 
     def set_state(self):
         if self.texture:
@@ -317,7 +337,7 @@ class Block(object):
 
     def update_texture(self):
         if self.texture_name:
-            self.group = TextureGroupIndividual(self.texture_name)
+            self.group = TextureGroupIndividual(self.texture_name, self.height, self.width)
 
             if self.group:
                 self.texture_data = self.group.texture_data
@@ -808,7 +828,7 @@ class PumpkinBlock(Block):
 
 class TorchBlock(WoodBlock):
     width = 0.1
-    height = 0.5
+    height = 0.55
     texture_name = "torch",
     hardness = 1
     transparent = True
@@ -821,19 +841,21 @@ class TorchBlock(WoodBlock):
             world.remove_block(None, self_pos)
 
 class YFlowersBlock(Block):
-    width = 0.5
-    height = 0.7
-    top_texture = 6, 6
-    bottom_texture = -1, -1
-    side_texture = 6, 5
     vertex_mode = G.VERTEX_CROSS
     hardness = 0.0
+    # prevent generating vertices for top and bottom
+    side_texture = 0, 0
     transparent = True
     density = 0.3
     id = 37
+    texture_name = "flower", "flower", "flower"
     icon_name = "flower"
     name = "Dandelion"
     break_sound = sounds.leaves_break
+
+    def __init__(self):
+        super(YFlowersBlock, self).__init__()
+        self.texture_data = self.texture_data[0:2 * 4 * 2]
 
     def on_neighbor_change(self, world, neighbor_pos, self_pos):
         if (self_pos[0], self_pos[1] - 1, self_pos[-1]) not in world:
@@ -1204,19 +1226,21 @@ class WhiteCarpetBlock(Block):
 
 # moreplants
 class RoseBlock(Block):
-    width = 0.5
-    height = 0.7
-    top_texture = -1, -1
-    bottom_texture = -1, -1
-    side_texture = 10, 0
     vertex_mode = G.VERTEX_CROSS
+    side_texture = 0, 0
     hardness = 0.0
     transparent = True
     density = 0.3
     id = 38
+    texture_name = "rose", "rose", "rose"
+    icon_name = "rose"
     name = "Rose"
     break_sound = sounds.leaves_break
     amount_label_color = 0, 0, 0, 255
+
+    def __init__(self):
+        super(RoseBlock, self).__init__()
+        self.texture_data = self.texture_data[0:2 * 4 * 2]
 
     def on_neighbor_change(self, world, neighbor_pos, self_pos):
         if (self_pos[0], self_pos[1] - 1, self_pos[-1]) not in world:
@@ -1585,6 +1609,7 @@ class SoulsandBlock(Block):
 
 class CakeBlock(Block):
     height = 0.5
+    width = 0.9
     texture_name = "cake_top", "cake_bottom", "cake_side"
     hardness = 0.5
     id = 92

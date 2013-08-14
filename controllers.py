@@ -532,7 +532,7 @@ class GameController(Controller):
         self.world.batch.draw()
         self.world.transparency_batch.draw()
         glEnable(GL_BLEND)
-        glBlendFunc(GL_ONE, GL_DST_COLOR)
+        glBlendFunc(GL_ZERO, GL_DST_ALPHA)
         self.crack_batch.draw()
         glDisable(GL_BLEND)
         self.draw_focused_block()

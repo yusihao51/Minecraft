@@ -8,7 +8,7 @@ import random
 # Nothing for now...
 
 # Modules from this project
-from blocks import torch_block
+from blocks import *
 from entity import Entity
 import globals as G
 from inventory import Inventory
@@ -43,6 +43,11 @@ class Player(Entity):
         self.last_damage_block = 0, 100, 0 # dummy temp value
         self.username = username
         self.local_player = local_player
+
+        # for debug
+        #initial_items = [cake_block, torch_block]
+        #for item in initial_items:
+        #        self.inventory.add_item(item.id, item.max_stack_size)
 
         if not local_player:
             self.model = PlayerModel(position)
