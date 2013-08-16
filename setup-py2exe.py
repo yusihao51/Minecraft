@@ -6,6 +6,7 @@ from distutils.core import setup
 from distutils.extension import Extension
 import os
 import glob
+import py2exe
 
 
 # Third-party packages
@@ -20,6 +21,9 @@ excluded_modules = (
     'gui',
     'views',
     'controllers',
+	'mods',
+	'build',
+	'setup-py2exe',
     'pyglet.gl.glext_arb',
     'pyglet.gl.glext_nv',
     'pyglet.image.codecs',
@@ -29,6 +33,11 @@ excluded_modules = (
     'pyglet.window.xlib.xlib',
 )
 
+excluded_includes = (
+	'main',
+	'manager',
+)
+	
 def find_files(source, target, patterns):
     """Locates the specified data-files and returns the matches
     in a data_files compatible format.
@@ -60,7 +69,7 @@ def get_modules(path=None):
     for f_or_d in os.listdir(path):
         if not first:
             f_or_d = os.path.join(path, f_or_d)
-        if os.path.isdir(f_or_d):
+        if os.path.isdir(f_or_d) and f_or_d not in excluded_modules:
             d = f_or_d
             for name, f in get_modules(d):
                 yield name, f
@@ -73,6 +82,8 @@ def get_modules(path=None):
                     yield name, f
 
 ext_modules = [Extension(name, [f]) for name, f in get_modules()]
+includes = [ name for name, f in get_modules() if name not in excluded_includes ]
+includes.extend(['SocketServer', 'importlib'])
 
 setup(
     name=G.APP_NAME,
@@ -89,6 +100,6 @@ setup(
     description="A Minecraft demo clone in Python 2.7.x",
     author="github.com/boskee/Minecraft",
     console=['main.py'],
-    ext_modules=ext_modules, requires=['pyglet', 'Cython']
-
+    ext_modules=ext_modules, requires=['pyglet', 'Cython'],
+	options={"py2exe":{"includes": includes}}
 )
