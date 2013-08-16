@@ -531,7 +531,10 @@ class GameController(Controller):
         #glColor3d(1, 1, 1)
         self.world.batch.draw()
         self.world.transparency_batch.draw()
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_ZERO, GL_DST_ALPHA)
         self.crack_batch.draw()
+        glDisable(GL_BLEND)
         self.draw_focused_block()
         for ply in self.player_ids.itervalues():
             ply.model.draw()
@@ -556,7 +559,7 @@ class GameController(Controller):
             count = len(texture_data) / 2
             if self.crack:
                 self.crack.delete()
-            self.crack = self.crack_batch.add(count, GL_QUADS, self.world.group,
+            self.crack = self.crack_batch.add(count, GL_QUADS, crack_textures.group,
                                               ('v3f/static', vertex_data),
                                               ('t2f/static', texture_data))
 

@@ -137,6 +137,7 @@ class StickItem(Item):
     max_stack_size = 64
     name = "Stick"
     burning_time = 5
+    icon_name = "stick"
 
 class BreadItem(Item):
     id = 297
@@ -155,21 +156,25 @@ class YellowDyeItem(Item):
     id = 351
     max_stack_size = 64
     name = "Dandelion Yellow Dye"
+    icon_name = "dyePowder_yellow"
 
 class CactusGreenDyeItem(Item):
     id = 351,2
     max_stack_size = 64
     name = "Cactus Green Dye"
+    icon_name = "dyePowder_green"
 
 class RedDyeItem(Item):
     id = 351,1
     max_stack_size = 64
     name = "Red Dye"
+    icon_name = "dyePowder_red"
 
 class BoneMeal(Item):
     id = 351,15
     max_stack_size = 64
     name = "Bone Meal"
+    icon_name = "dyePowder_white"
 
     def on_right_click(self, world, player):
         block, previous = world.hit_test(player.position, player.get_sight_vector(), player.attack_range)
@@ -251,6 +256,7 @@ class WoodAxe(Tool):
     id = 271
     durability = 20
     name = "Wooden Axe"
+    icon_name = "hatchetWood"
 
 class StoneAxe(Tool):
     material = G.STONE_TOOL
@@ -259,6 +265,7 @@ class StoneAxe(Tool):
     id = 275
     durability = 40
     name = "Stone Axe"
+    icon_name = "hatchetStone"
 
 class IronAxe(Tool):
     material = G.IRON_TOOL
@@ -267,6 +274,7 @@ class IronAxe(Tool):
     id = 258
     durability = 60
     name = "Iron Axe"
+    icon_name = "hatchetIron"
 
 class DiamondAxe(Tool):
     material = G.DIAMOND_TOOL
@@ -275,6 +283,7 @@ class DiamondAxe(Tool):
     id = 279
     durability = 100
     name = "Diamond Axe"
+    icon_name = "hatchetDiamond"
 
 class GoldenAxe(Tool):
     material = G.GOLDEN_TOOL
@@ -283,12 +292,14 @@ class GoldenAxe(Tool):
     id = 286
     durability = 50
     name = "Golden Axe"
+    icon_name = "hatchetGold"
 
 class WoodPickaxe(Tool):
     material = G.WOODEN_TOOL
     tool_type = G.PICKAXE
     max_stack_size = 1
     id = 270
+    icon_name = 'pickaxeWood'
     durability = 10
     name = "Wooden Pickaxe"
 
@@ -297,6 +308,7 @@ class StonePickaxe(Tool):
     tool_type = G.PICKAXE
     max_stack_size = 1
     id = 274
+    icon_name = 'pickaxeStone'
     durability = 30
     name = "Stone Pickaxe"
 
@@ -305,6 +317,7 @@ class IronPickaxe(Tool):
     tool_type = G.PICKAXE
     max_stack_size = 1
     id = 257
+    icon_name = 'pickaxeIron'
     durability = 40
     name = "Iron Pickaxe"
 
@@ -313,6 +326,7 @@ class DiamondPickaxe(Tool):
     tool_type = G.PICKAXE
     max_stack_size = 1
     id = 278
+    icon_name = 'pickaxeDiamond'
     durability = 150
     name = "Diamond Pickaxe"
 
@@ -323,6 +337,7 @@ class GoldenPickaxe(Tool):
     id = 285
     durability = 30
     name = "Golden Pickaxe"
+    icon_name = "pickaxeGold"
 
 class WoodShovel(Tool):
     material = G.WOODEN_TOOL
@@ -331,6 +346,7 @@ class WoodShovel(Tool):
     id = 269
     durability = 10
     name = "Wooden Shovel"
+    icon_name = "shovelWood"
 
 class StoneShovel(Tool):
     material = G.STONE_TOOL
@@ -339,6 +355,7 @@ class StoneShovel(Tool):
     id = 273
     durability = 30
     name = "Stone Shovel"
+    icon_name = "shovelStone"
 
 class IronShovel(Tool):
     material = G.IRON_TOOL
@@ -347,6 +364,7 @@ class IronShovel(Tool):
     id = 256
     durability = 70
     name = "Iron Shovel"
+    icon_name = "shovelIron"
 
 class DiamondShovel(Tool):
     material = G.DIAMOND_TOOL
@@ -355,6 +373,7 @@ class DiamondShovel(Tool):
     id = 277
     durability = 100
     name = "Diamond Shovel"
+    icon_name = "shovelDiamond"
 
 class GoldenShovel(Tool):
     material = G.GOLDEN_TOOL
@@ -363,6 +382,7 @@ class GoldenShovel(Tool):
     id = 284
     durability = 30
     name = "Golden Shovel"
+    icon_name = "shovelGold"
 
 class Hoe(Tool):
     def __init__(self):
@@ -381,6 +401,7 @@ class WoodHoe(Hoe):
     id = 290
     durability = 60
     name = "Wooden Hoe"
+    icon_name = "hoeWood"
 
 class StoneHoe(Hoe):
     material = G.STONE_TOOL
@@ -389,6 +410,7 @@ class StoneHoe(Hoe):
     id = 291
     durability = 40
     name = "Stone Hoe"
+    icon_name = "hoeStone"
 
 class IronHoe(Hoe):
     material = G.IRON_TOOL
@@ -397,6 +419,7 @@ class IronHoe(Hoe):
     id = 292
     durability = 40
     name = "Iron Hoe"
+    icon_name = "hoeIron"
 
 class DiamondHoe(Hoe):
     material = G.DIAMOND_TOOL
@@ -405,6 +428,7 @@ class DiamondHoe(Hoe):
     id = 293
     durability = 100
     name = "Diamond Hoe"
+    icon_name = "hoeDiamond"
 
 class GoldenHoe(Hoe):
     material = G.GOLDEN_TOOL
@@ -413,6 +437,7 @@ class GoldenHoe(Hoe):
     id = 294
     durability = 100
     name = "Golden Hoe"
+    icon_name = "hoeGold"
 
 class Armor(Item):
     material = None
@@ -429,6 +454,7 @@ class IronHelmet(Armor):
     armor_type = G.HELMET
     id = 306
     name = "Iron Helmet"
+    icon_name = "helmetIron"
 
 class IronChestplate(Armor):
     material = G.IRON_TOOL
@@ -436,6 +462,7 @@ class IronChestplate(Armor):
     armor_type = G.CHESTPLATE
     id = 307
     name = "Iron Chestplate"
+    icon_name = "chestplateIron"
 
 class IronLeggings(Armor):
     material = G.IRON_TOOL
@@ -443,6 +470,7 @@ class IronLeggings(Armor):
     armor_type = G.LEGGINGS
     id = 308
     name = "Iron Leggings"
+    icon_name = "leggingsIron"
 
 class IronBoots(Armor):
     material = G.IRON_TOOL
@@ -450,6 +478,7 @@ class IronBoots(Armor):
     armor_type = G.BOOTS
     id = 309
     name = "Iron Boots"
+    icon_name = "bootsIron"
 
 ##Emerald Armor .. Pretty much re-textured Iron armor (from Tekkit)
 
