@@ -10,6 +10,7 @@ import pyglet
 from pyglet.gl import *
 from pyglet.text import Label
 from pyglet.window import key
+from pyglet.image.atlas import TextureAtlas
 
 # Modules from this project
 from blocks import air_block
@@ -24,8 +25,9 @@ from utils import load_image, image_sprite, hidden_image_sprite, get_block_icon
 __all__ = (
     'Rectangle', 'Button', 'ToggleButton', 'Control', 'AbstractInventory',
     'ItemSelector', 'InventorySelector', 'TextWidget', 'ProgressBarWidget',
-    'frame_image', 'button_image', 'button_highlighted', 'background_image',
-    'backdrop_images', 'rnd_backdrops', 'backdrop',
+    'frame_image', 'button_image', 'button_highlighted', 'button_disabled',
+    'background_image', 'backdrop_images', 'rnd_backdrops', 'backdrop', 'ScrollbarWidget',
+    'resize_button_image'
 )
 
 
@@ -1054,6 +1056,113 @@ class ProgressBarWidget(Control):
         self.batch.draw()
 
 
+class ScrollbarWidget(Control):
+    # style: 0 - vertical, 1 - horizontal
+    def __init__(self, parent, x, y, width, height,
+                 sb_width, sb_height,
+                 style=0, 
+                 background_image=None,
+                 scrollbar_image=None, 
+                 caption=None, font_size=12, font_name=G.DEFAULT_FONT,
+                 batch=None, group=None, label_group=None,
+                 pos=0, on_pos_change=None,
+                 *args, **kwargs):
+        super(ScrollbarWidget, self).__init__(parent, *args, **kwargs)
+        parent.push_handlers(self)
+        self.batch = pyglet.graphics.Batch() if not batch else batch
+        self.group = group
+        self.label_group = label_group
+        self.x, self.y, self.width, self.height = x, y, width, height
+        self.sb_width, self.sb_height = sb_width, sb_height
+
+        self.style = style
+        if self.style == 0:
+            self.sb_width = self.width
+        else:
+            self.sb_height = self.height
+
+        self.background = image_sprite(background_image, self.batch, self.group)
+        self.background.scale = max(float(self.width) / float(background_image.width), float(self.height) / float(background_image.height))
+        self.scrollbar = image_sprite(scrollbar_image, self.batch, self.group)
+        self.scrollbar.scale = max(float(self.sb_width) / float(scrollbar_image.width), float(self.sb_height) / float(scrollbar_image.height))
+
+        self.pos = pos
+        self.on_pos_change = on_pos_change
+        self.caption = caption
+        self.label = Label(str(caption) + ":" + str(pos) + "%", font_name, 12, anchor_x='center', anchor_y='center',
+            color=(255, 255, 255, 255), batch=self.batch, group=self.label_group) if caption else None
+        
+        self.resize(self.x, self.y, self.width, self.height)
+
+    def resize(self, x=None, y=None, width=None, height=None):
+        self.x = x or self.x
+        self.y = y or self.y
+
+        self.sb_height *= height / self.height
+        self.sb_width *= width / self.width
+
+        if hasattr(self, 'background') and self.background:
+            self.background.x, self.background.y = x, y
+            #self.background.scale = max(float(self.width) / float(self.background.width), float(self.height) / float(self.background.height))
+        if hasattr(self, 'scrollbar') and self.scrollbar:
+            self.scrollbar.x, self.scrollbar.y = x, y
+            #self.scrollbar.scale = max(float(self.sb_width) / float(self.scrollbar.width), float(self.sb_height) / float(self.scrollbar.height))
+        if hasattr(self, 'label') and self.label:
+            self.label.x, self.label.y = self.center
+
+        self.width = width or self.width
+        self.height = height or self.height
+        # Recreate the bounding box
+        self.rectangle = Rectangle(self.x, self.y, self.width, self.height)
+
+        self.update_pos(self.pos)
+
+    @property
+    def center(self):
+        return self.x + self.width / 2, self.y + self.height / 2
+
+    def _on_draw(self):
+        self.background.draw()
+        self.scrollbar.draw()
+        if self.label is not None:
+            self.label.draw()
+
+    def update_pos(self, new_pos):
+        sb_space = self.width - self.sb_width if self.style == 1 else self.height - self.sb_height
+        offset = sb_space * new_pos / 100
+
+        # vertical
+        if self.style == 0:
+            self.scrollbar.y = self.y + self.height
+            self.scrollbar.y -= offset
+        elif self.style == 1:     # horizontal
+            self.scrollbar.x = self.x + offset
+
+        if self.label is not None:
+            self.label.text = self.caption + ':' + str(new_pos) + '%'
+
+        if self.on_pos_change is not None:
+            self.on_pos_change(new_pos)
+
+        self.pos = new_pos
+
+    def coord_to_pos(self, x, y):
+        offset = (self.y + self.height - y) if self.style == 0 else (x - self.x)
+        return int(offset * 100 / (self.height if self.style == 0 else self.width))
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if self.visible:
+            x += dx
+            y += dy
+            if self.rectangle.hit_test(x, y):
+                self.update_pos(self.coord_to_pos(x, y))
+            return pyglet.event.EVENT_HANDLED
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        if self.visible:
+            if self.rectangle.hit_test(x, y):
+                self.update_pos(self.coord_to_pos(x, y))
+            return pyglet.event.EVENT_HANDLED
 
 frame_image = load_image('resources', 'textures', 'frame.png')
 
@@ -1061,22 +1170,38 @@ def init_button_image():
     gui_image = G.texture_pack_list.selected_texture_pack.load_texture(['gui', 'gui.png'])
     image_scale = gui_image.height / 256
     x_size = 200 * image_scale
-    y_offset = 86 * image_scale
+    y_offset = 66 * image_scale
     y_size = 20 * image_scale
     batch = pyglet.graphics.Batch()
+    button_disabled = image_sprite(gui_image, batch, 0, y=gui_image.height - y_offset, height=y_size, x=0, width=x_size)
+
+    y_offset += y_size
     button = image_sprite(gui_image, batch, 0, y=gui_image.height - y_offset, height=y_size, x=0, width=x_size)
 
     y_offset += y_size
     highlighted_button = image_sprite(gui_image, batch, 0, y=gui_image.height - y_offset, height=y_size, x=0, width=x_size)
+    
     button.scale = 1.0
     highlighted_button.scale = 1.0
+    button_disabled.scale = 1.0
     button.scale = 1.0 / float(image_scale)
     highlighted_button.scale = 1.0 / float(image_scale)
+    button_disabled.scale = 1.0 / float(image_scale)
     button = button.image
     highlighted_button = highlighted_button.image
-    return button, highlighted_button
+    button_disabled = button_disabled.image
+    return button, highlighted_button, button_disabled
 
-button_image, button_highlighted = init_button_image()
+def resize_button_image(image, old_width, new_width):
+    if new_width == old_width:
+        return image
+    new_width = int(image.width * new_width / old_width)
+    atlas = TextureAtlas(new_width, image.height)
+    atlas.add(image.get_region(0, 0, new_width // 2, image.height).image_data)
+    atlas.add(image.get_region(image.width - new_width // 2, 0, new_width // 2, image.height).image_data)
+    return atlas.texture.image_data
+
+button_image, button_highlighted, button_disabled = init_button_image()
 background_image = load_image('resources', 'textures', 'main_menu_background.png')
 backdrop_images = []
 rnd_backdrops = ('main_menu_background.png', 'main_menu_background_2.png', 'main_menu_background_3.png',

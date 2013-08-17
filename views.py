@@ -18,7 +18,8 @@ from pyglet.gl import *
 # Modules from this project
 import globals as G
 from gui import frame_image, Rectangle, backdrop, Button, button_image, \
-    button_highlighted, ToggleButton, TextWidget
+    button_highlighted, ToggleButton, TextWidget, ScrollbarWidget, \
+    button_disabled, resize_button_image
 from textures import TexturePackList
 from utils import image_sprite, load_image
 
@@ -96,18 +97,28 @@ class MenuView(View):
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
 
     def Button(self, x=0, y=0, width=400, height=40, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, enabled=True):
-        button = Button(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
+        button = Button(self, x=x, y=y, width=width, height=height, image=resize_button_image(image, 400, width), image_highlighted=resize_button_image(image_highlighted, 400, width), caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
         if on_click:
             button.push_handlers(on_click=on_click)
         return button
 
     def ToggleButton(self, x=0, y=0, width=400, height=40, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, on_toggle=None, enabled=True):
-        button = ToggleButton(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
+        button = ToggleButton(self, x=x, y=y, width=width, height=height, image=resize_button_image(image, 400, width), image_highlighted=resize_button_image(image_highlighted, 400, width), caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
         if on_click:
             button.push_handlers(on_click=on_click)
         if on_toggle:
             button.push_handlers(on_toggle=on_toggle)
         return button
+
+    def Scrollbar(self, x=0, y=0, width=400, height=40, sb_width=40, sb_height=40, style=1, background_image=button_disabled, scrollbar_image=button_image, caption="Test", font_size=12, font_name=G.DEFAULT_FONT, batch=None, group=None, label_group=None, pos=0, on_pos_change=None):
+        return ScrollbarWidget(self.controller.window, x=x, y=y, width=width, height=height,
+                 sb_width=sb_width, sb_height=sb_height,
+                 style=style, 
+                 background_image=resize_button_image(background_image, 400, width),
+                 scrollbar_image=resize_button_image(scrollbar_image, 400, sb_width), 
+                 caption=caption, font_size=font_size, font_name=font_name,
+                 batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group),
+                 pos=pos, on_pos_change=on_pos_change)
 
     def draw_background(self):
         glBindTexture(self.background.target, self.background.id)
@@ -365,7 +376,7 @@ class ControlsView(MenuView):
 
         self.key_buttons = []
         for identifier in ('move_backward', 'move_forward', 'move_left', 'move_right'):
-            button = self.ToggleButton(caption=pyglet.window.key.symbol_string(getattr(G, identifier.upper() + '_KEY')))
+            button = self.ToggleButton(width=200, caption=pyglet.window.key.symbol_string(getattr(G, identifier.upper() + '_KEY')))
             button.id = identifier
             self.buttons.append(button)
             self.key_buttons.append(button)
