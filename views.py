@@ -18,7 +18,8 @@ from pyglet.gl import *
 # Modules from this project
 import globals as G
 from gui import frame_image, Rectangle, backdrop, Button, button_image, \
-    button_highlighted, ToggleButton, TextWidget
+    button_highlighted, ToggleButton, TextWidget, ScrollbarWidget, \
+    button_disabled, resize_button_image
 from textures import TexturePackList
 from utils import image_sprite, load_image
 
@@ -26,6 +27,55 @@ from utils import image_sprite, load_image
 __all__ = (
     'View', 'MainMenuView', 'OptionsView', 'ControlsView', 'TexturesView', 'MultiplayerView'
 )
+
+class Layout(object):
+    def __init__(self, x, y):
+        self.components = []
+        self._position = x, y
+        self.width, self.height = 0, 0
+
+    def add(self, component):
+        self.components.append(component)
+
+    def _set_component_position(self, component, x, y):
+        if not hasattr(component, 'position'):
+            try:
+                component.resize(x, y, component.width, component.height)
+            except AttributeError:
+                component.x, component.y = x, y
+        else:
+            component.position = x, y
+
+    @property
+    def position(self):
+        return _position
+
+    @position.setter
+    def position(self, value):
+        self._position = value
+
+
+class VerticalLayout(Layout):
+    def add(self, component):
+        self.components.append(component)
+        self.height += component.height + 10
+        self.width = max(component.width, self.width)
+        self._put_components()
+
+    def _put_components(self):
+        c_x, c_y = self._position[0], self._position[-1] + self.height
+        for component in self.components:
+            self._set_component_position(component, c_x, c_y)
+            c_y -= component.height + 10
+
+    @property
+    def position(self):
+        return _position
+
+    @position.setter
+    def position(self, value):
+        self._position = value
+        self._put_components()
 
 
 class View(pyglet.event.EventDispatcher):
@@ -84,6 +134,8 @@ class MenuView(View):
         self.group = pyglet.graphics.OrderedGroup(3)
         self.labels_group = pyglet.graphics.OrderedGroup(4)
 
+        self.layout = Layout(0, 0)
+
         image = frame_image
         self.frame_rect = Rectangle(0, 0, image.width, image.height)
         self.background = G.texture_pack_list.selected_texture_pack.load_texture(['gui', 'background.png'])
@@ -96,18 +148,29 @@ class MenuView(View):
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
 
     def Button(self, x=0, y=0, width=400, height=40, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, enabled=True):
-        button = Button(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
+        button = Button(self, x=x, y=y, width=width, height=height, image=resize_button_image(image, 400, width), image_highlighted=resize_button_image(image_highlighted, 400, width), caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
         if on_click:
             button.push_handlers(on_click=on_click)
         return button
 
     def ToggleButton(self, x=0, y=0, width=400, height=40, image=button_image, image_highlighted=button_highlighted, caption="Unlabeled", batch=None, group=None, label_group=None, font_name='ChunkFive Roman', on_click=None, on_toggle=None, enabled=True):
-        button = ToggleButton(self, x=x, y=y, width=width, height=height, image=image, image_highlighted=image_highlighted, caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
+        button = ToggleButton(self, x=x, y=y, width=width, height=height, image=resize_button_image(image, 400, width), image_highlighted=resize_button_image(image_highlighted, 400, width), caption=caption, batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group), font_name=font_name, enabled=enabled)
         if on_click:
             button.push_handlers(on_click=on_click)
         if on_toggle:
             button.push_handlers(on_toggle=on_toggle)
         return button
+
+    def Scrollbar(self, x=0, y=0, width=400, height=40, sb_width=40, sb_height=40, style=1, background_image=button_disabled, scrollbar_image=button_image, caption="Test", font_size=12, font_name=G.DEFAULT_FONT, batch=None, group=None, label_group=None, pos=0, on_pos_change=None):
+        sb = ScrollbarWidget(self.controller.window, x=x, y=y, width=width, height=height,
+                 sb_width=sb_width, sb_height=sb_height,
+                 style=style, 
+                 background_image=resize_button_image(background_image, 400, width),
+                 scrollbar_image=resize_button_image(scrollbar_image, 400, sb_width), 
+                 caption=caption, font_size=font_size, font_name=font_name,
+                 batch=(batch or self.batch), group=(group or self.group), label_group=(label_group or self.labels_group),
+                 pos=pos, on_pos_change=on_pos_change)
+        return sb
 
     def draw_background(self):
         glBindTexture(self.background.target, self.background.id)
@@ -136,11 +199,7 @@ class MenuView(View):
 
     def on_resize(self, width, height):
         self.frame.x, self.frame.y = (width - self.frame.width) / 2, (height - self.frame.height) / 2
-        button_x, button_y = 0, self.frame.y + (self.frame.height) / 2 + 10
-        for button in self.buttons:
-            button_x = self.frame.x + (self.frame.width - button.width) / 2
-            button.position = button_x, button_y
-            button_y -= button.height + 10
+        self.layout.position = (width - self.layout.width) / 2, self.frame.y
 
 
 class MainMenuView(MenuView):
@@ -149,6 +208,7 @@ class MainMenuView(MenuView):
         self.labels_group = pyglet.graphics.OrderedGroup(4)
 
         image = frame_image
+        self.layout = VerticalLayout(0, 0)
         # Custom background
         self.background = None
         self.frame_rect = Rectangle(0, 0, self.controller.window.get_size()[0], image.height)
@@ -156,13 +216,24 @@ class MainMenuView(MenuView):
 
         width, height = self.controller.window.width, self.controller.window.height
 
-        self.buttons.append(self.Button(caption=G._("Singleplayer"),on_click=self.controller.start_singleplayer_game))
-        self.buttons.append(self.Button(caption=G._("Multiplayer"),on_click=self.controller.multiplayer))
-        self.buttons.append(self.Button(caption=G._("Options..."),on_click=self.controller.game_options))
-        self.buttons.append(self.Button(caption=G._("Exit game"),on_click=self.controller.exit_game))
         self.label = Label(G.APP_NAME, font_name='ChunkFive Roman', font_size=50, x=width/2, y=self.frame.y + self.frame.height,
             anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
             group=self.labels_group)
+        self.label.height = self.label.content_height
+        self.layout.add(self.label)
+
+        button = self.Button(caption=G._("Singleplayer"),on_click=self.controller.start_singleplayer_game)
+        self.layout.add(button)
+        self.buttons.append(button)
+        button = self.Button(caption=G._("Multiplayer"),on_click=self.controller.multiplayer)
+        self.layout.add(button)
+        self.buttons.append(button)
+        button = self.Button(caption=G._("Options..."),on_click=self.controller.game_options)
+        self.layout.add(button)
+        self.buttons.append(button)
+        button = self.Button(caption=G._("Exit game"),on_click=self.controller.exit_game)
+        self.layout.add(button)
+        self.buttons.append(button)
 
         # Splash text
         self.splash_text = 'Hello!'
@@ -335,6 +406,8 @@ class OptionsView(MenuView):
         MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
 
+        self.layout = VerticalLayout(0, 0)
+
         textures_enabled = len(G.texture_pack_list.available_texture_packs) > 1
 
         self.text_input = TextWidget(self.controller.window, G.USERNAME, 0, 0, width=160, height=20, font_name='Arial', batch=self.batch)
@@ -345,9 +418,15 @@ class OptionsView(MenuView):
             G.USERNAME = self.text_input.text
         self.text_input.push_handlers(key_released=text_input_callback)
 
-        self.buttons.append(self.Button(caption=G._("Controls..."), on_click=self.controller.controls))
-        self.buttons.append(self.Button(caption=G._("Textures"), on_click=self.controller.textures, enabled=textures_enabled))
-        self.buttons.append(self.Button(caption=G._("Done"), on_click=self.controller.main_menu))
+        button = self.Button(caption=G._("Controls..."), on_click=self.controller.controls)
+        self.layout.add(button)
+        self.buttons.append(button)
+        button = self.Button(caption=G._("Textures"), on_click=self.controller.textures, enabled=textures_enabled)
+        self.layout.add(button)
+        self.buttons.append(button)
+        button = self.Button(caption=G._("Done"), on_click=self.controller.main_menu)
+        self.layout.add(button)
+        self.buttons.append(button)
         self.label = Label('Options', font_name='ChunkFive Roman', font_size=25, x=width/2, y=self.frame.y + self.frame.height,
             anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
             group=self.labels_group)
@@ -363,9 +442,11 @@ class ControlsView(MenuView):
         MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
 
+        self.layout = VerticalLayout(0, 0)
+
         self.key_buttons = []
         for identifier in ('move_backward', 'move_forward', 'move_left', 'move_right'):
-            button = self.ToggleButton(caption=pyglet.window.key.symbol_string(getattr(G, identifier.upper() + '_KEY')))
+            button = self.ToggleButton(width=200, caption=pyglet.window.key.symbol_string(getattr(G, identifier.upper() + '_KEY')))
             button.id = identifier
             self.buttons.append(button)
             self.key_buttons.append(button)
@@ -416,6 +497,8 @@ class TexturesView(MenuView):
         MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
         
+        self.layout = VerticalLayout(0, 0)
+
         self.texture_buttons = []
         self.current_toggled = None
 
@@ -428,10 +511,12 @@ class TexturesView(MenuView):
             if button.toggled:
                 self.current_toggled = button
             self.buttons.append(button)
+            self.layout.add(button)
             self.texture_buttons.append(button)
 
         self.button_return = self.Button(caption="Done",on_click=self.controller.game_options)
         self.buttons.append(self.button_return)
+        self.layout.add(self.button_return)
 
         self.on_resize(width, height)
 
@@ -448,20 +533,18 @@ class TexturesView(MenuView):
                 G.save_config()
 
     def on_resize(self, width, height):
+        MenuView.on_resize(self, width, height)
         self.background.scale = 1.0
         self.background.scale = max(float(width) / self.background.width, float(height) / self.background.height)
         self.background.x, self.background.y = 0, 0
         self.frame.x, self.frame.y = (width - self.frame.width) / 2, (height - self.frame.height) / 2
-        button_x, button_y = 0, self.frame.y + self.frame.height - 80
-        for button in self.buttons:
-            button_x = self.frame.x + (self.frame.width - button.width) / 2
-            button.position = button_x, button_y
-            button_y -= button.height + 10
 
 class MultiplayerView(MenuView):
     def setup(self):
         MenuView.setup(self)
         width, height = self.controller.window.width, self.controller.window.height
+
+        self.layout = VerticalLayout(0, 0)
 
         self.text_input = TextWidget(self.controller.window, G.IP_ADDRESS, 0, 0, width=160, height=20, font_name='Arial', batch=self.batch)
         self.controller.window.push_handlers(self.text_input)
@@ -470,9 +553,16 @@ class MultiplayerView(MenuView):
             G.IP_ADDRESS = self.text_input.text
         self.text_input.push_handlers(key_released=text_input_callback)
 
-        self.buttons.append(self.Button(caption=G._("Connect to server"), on_click=self.controller.start_multiplayer_game))
-        self.buttons.append(self.Button(caption=G._("Launch server"), on_click=self.launch_server))
-        self.buttons.append(self.Button(caption=G._("Done"), on_click=self.controller.main_menu))
+        button = self.Button(caption=G._("Connect to server"), on_click=self.controller.start_multiplayer_game)
+        self.layout.add(button)
+        self.buttons.append(button)
+        button= self.Button(caption=G._("Launch server"), on_click=self.launch_server)
+        self.layout.add(button)
+        self.buttons.append(button)
+        button= self.Button(caption=G._("Done"), on_click=self.controller.main_menu)
+        self.layout.add(button)
+        self.buttons.append(button)
+
         self.label = Label('Play Multiplayer', font_name='ChunkFive Roman', font_size=25, x=width/2, y=self.frame.y + self.frame.height,
             anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
             group=self.labels_group)
