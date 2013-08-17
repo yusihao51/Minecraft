@@ -1164,6 +1164,7 @@ class ScrollbarWidget(Control):
                 self.update_pos(self.coord_to_pos(x, y))
             return pyglet.event.EVENT_HANDLED
 
+
 frame_image = load_image('resources', 'textures', 'frame.png')
 
 def init_button_image():
