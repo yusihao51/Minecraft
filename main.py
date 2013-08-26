@@ -117,11 +117,11 @@ def main(options):
 
     if G.LANGUAGE != 'default':
         reload(sys)
-        sys.setdefaultencoding('UTF-8')
+        sys.setdefaultencoding('utf8')
         gettext.install(True, localedir=None, unicode=1)
         gettext.find(G.APP_NAME.lower(), 'locale')
         gettext.textdomain(G.APP_NAME.lower())
-        gettext.bind_textdomain_codeset(G.APP_NAME.lower(), 'UTF-8')
+        gettext.bind_textdomain_codeset(G.APP_NAME.lower(), 'utf8')
         language = gettext.translation(G.APP_NAME.lower(), 'locale', languages=[G.LANGUAGE], fallback=True)
         G._ = lambda s: language.ugettext(s)
 
