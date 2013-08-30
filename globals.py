@@ -24,6 +24,7 @@ from pyglet.resource import get_settings_path
 
 
 APP_NAME = 'pyCraft'  # should I stay or should I go?
+APP_VERSION = 0.1
 DEBUG = False
 LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_FATAL = range(5)
 LOG_LEVEL = LOG_INFO
@@ -70,8 +71,9 @@ VALIDATE_KEY = 'ENTER'
 # Settings
 SOUND_UP_KEY = 'PAGEUP'
 SOUND_DOWN_KEY = 'PAGEDOWN'
-TOGGLE_HUD_KEY = 'F3'
+TOGGLE_HUD_KEY = 'F1'
 SCREENCAP_KEY = 'F2'
+TOGGLE_DEBUG_TEXT_KEY = 'F3'
 SHOWMAP_KEY = 'F4'
 
 # Various
@@ -147,6 +149,9 @@ GRASS_CHANCE = 0.05
 # Biome
 DESERT, PLAINS, MOUNTAINS, SNOW, FOREST, ISLAND, NETHER = range(7)
 
+# Direction
+EAST, SOUTH, WEST, NORTH = range(4)
+
 # Graphical rendering
 FULLSCREEN = False
 WINDOW_WIDTH = 850  # Screen width (in pixels)
@@ -181,6 +186,7 @@ TEXTURE_PACK = 'default'
 texture_pack_list = None
 
 HUD_ENABLED = True
+DEBUG_TEXT_ENABLED = True
 
 # Sound
 EFFECT_VOLUME = 1

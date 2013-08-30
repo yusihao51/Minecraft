@@ -1,7 +1,7 @@
 # Imports, sorted alphabetically.
 
 # Python packages
-from math import cos, sin, atan2, radians
+from math import cos, sin, atan2, radians, acos, pi, sqrt
 import random
 
 # Third-party packages
@@ -12,7 +12,7 @@ from blocks import *
 from entity import Entity
 import globals as G
 from inventory import Inventory
-from items import stick_item
+from items import stick_item, bed_item
 from model import PlayerModel
 from utils import normalize, FACES
 
@@ -45,9 +45,9 @@ class Player(Entity):
         self.local_player = local_player
 
         # for debug
-        #initial_items = [cake_block, torch_block]
-        #for item in initial_items:
-        #        self.inventory.add_item(item.id, item.max_stack_size)
+        initial_items = [cake_block, torch_block, bed_item]
+        for item in initial_items:
+            self.inventory.add_item(item.id, item.max_stack_size)
 
         if not local_player:
             self.model = PlayerModel(position)
@@ -149,6 +149,39 @@ class Player(Entity):
         dx = cos(x_r) * m
         dz = sin(x_r) * m
         return dx, dy, dz
+
+    # get sight direction
+    # retval[0]: E/S/W/N
+    # retval[1]: angle between sight vector and east direction
+    def get_sight_direction(self):
+        dx, dy, dz = self.get_sight_vector()
+        dz = -dz
+
+        angle = 0
+        if dz == 0:
+            if dx > 0:
+                angle = 0
+            elif dx < 0:
+                angle = pi
+        elif dz > 0:
+            angle = acos(dx / sqrt(dx * dx + dz * dz))
+        else:
+            angle = -acos(dx / sqrt(dx * dx + dz * dz))
+
+        if angle < 0: angle += 2 * pi
+
+        angle *= 180 / pi
+
+        if 0 < angle <= 45 or 315 < angle <= 360:
+            direction = G.EAST
+        elif 45 < angle <= 135:
+            direction = G.NORTH
+        elif 135 < angle <= 225:
+            direction = G.WEST
+        elif 225 < angle <= 315:
+            direction = G.SOUTH
+
+        return (dx, dy, dz), direction, angle
 
     def update(self, dt, parent):
         # walking

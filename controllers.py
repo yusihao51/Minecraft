@@ -318,10 +318,20 @@ class GameController(Controller):
                                    background_color=(0, 0, 0, 100),
                                    enable_escape=True)
         self.camera = Camera3D(target=self.player)
+
         if G.HUD_ENABLED:
             self.label = pyglet.text.Label(
                 '', font_name='Arial', font_size=8, x=10, y=self.window.height - 10,
                 anchor_x='left', anchor_y='top', color=(255, 255, 255, 255))
+        
+        #if G.DEBUG_TEXT_ENABLED:
+        #    self.debug_text = TextWidget(self.window, '',
+        #                           0, self.window.height - 300,
+        #                           500, 300,
+        #                           visible=True, multi_line=True, readonly=True,
+        #                           font_name='Arial', font_size=10,
+        #                           text_color=(255, 255, 255, 255),
+        #                           background_color=(0, 0, 0, 0))
         pyglet.clock.schedule_interval_soft(self.world.process_queue,
                                             1.0 / G.MAX_FPS)
         pyglet.clock.schedule_interval_soft(self.world.hide_sectors, 10.0, self.player)
@@ -460,6 +470,9 @@ class GameController(Controller):
     def on_key_press(self, symbol, modifiers):
         if symbol == G.TOGGLE_HUD_KEY:
             G.HUD_ENABLED = not G.HUD_ENABLED
+        if symbol == G.TOGGLE_DEBUG_TEXT_KEY:
+            #self.debug_text.visible = not self.debug_text.visible
+            G.DEBUG_TEXT_ENABLED = not G.DEBUG_TEXT_ENABLED
         elif symbol == G.INVENTORY_SORT_KEY:
             if self.last_key == symbol and not self.sorted:
                 self.player.quick_slots.sort()
@@ -502,6 +515,8 @@ class GameController(Controller):
         self.text_input.resize(x=0, y=0, width=self.window.width)
         self.chat_box.resize(x=0, y=self.text_input.y + self.text_input.height + 50,
                              width=self.window.width / 2, height=min(300, self.window.height/3))
+        #self.debug_text.resize(0, self.window.height - 300,
+        #                           500, 300)
 
     def set_3d(self):
         width, height = self.window.get_size()
@@ -543,6 +558,9 @@ class GameController(Controller):
             self.draw_label()
             self.item_list.draw()
             self.inventory_list.draw()
+        #if G.DEBUG_TEXT_ENABLED:
+        #    self.update_label()
+        #self.debug_text.draw()
         self.text_input.draw()
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -600,6 +618,23 @@ class GameController(Controller):
                pyglet.clock.get_fps(), x, y, z,
                len(self.world._shown), len(self.world), len(self.world.sector_packets))
         self.label.draw()
+
+    def update_label(self):
+        x, y, z = self.player.position
+        self.debug_text.clear()
+        self.debug_text.write_line(' '.join((G.APP_NAME, str(G.APP_VERSION))))
+        self.debug_text.write_line('Time:%.1f Inaccurate FPS:%02d Blocks Shown: %d / %d sector_packets:%d'\
+                          % (self.time_of_day if (self.time_of_day < 12.0)
+               else (24.0 - self.time_of_day),
+               pyglet.clock.get_fps(),
+               len(self.world._shown), len(self.world), len(self.world.sector_packets)))
+        self.debug_text.write_line('x: %.2f, sector: %d' %(x, x // G.SECTOR_SIZE))
+        self.debug_text.write_line('y: %.2f, sector: %d' %(y, y // G.SECTOR_SIZE))
+        self.debug_text.write_line('z: %.2f, sector: %d' %(z, z // G.SECTOR_SIZE))
+        #dirs = ['East', 'South', 'West', 'North']
+        #vec, direction, angle = self.player.get_sight_direction()
+        #dx, dy, dz = vec
+        #self.debug_text.write_line('Direction: (%.2f, %.2f, %.2f) %d(%s) %.2f' % (dx, dy, dz, direction, dirs[direction], angle))
 
     def write_line(self, text, **kwargs):
         self.chat_box.write_line(text, **kwargs)

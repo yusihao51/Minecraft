@@ -128,7 +128,7 @@ class TerrainGenerator(TerrainGeneratorBase):
                 first_block = -1
                 for y in range(CHUNK_Y_SIZE - 1, 0, -1):
                     if y == 0:
-                        c.set_block(x, y, z, bed_block)
+                        c.set_block(x, y, z, bedrock_block)
                         break
 
                     # 32: sea level
@@ -512,8 +512,8 @@ class TerrainGeneratorSimple(TerrainGeneratorBase):
                         elif yy > 2:
                             blockset = lowlevel_ores
                         elif yy <= 1:
-                            blockset = (bed_block, )
+                            blockset = (bedrock_block, )
 
                         init_block((x, yy, z), choose(blockset))
                         #if yy == 0:
-                         #   init_block((x, 0, z), bed_block)
+                         #   init_block((x, 0, z), bedrock_block)

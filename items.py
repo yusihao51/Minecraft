@@ -7,7 +7,8 @@
 # Nothing for now...
 
 # Modules from this project
-from blocks import BlockID, dirt_block, farm_block, grass_block, wheat_crop_block, potato_block, carrot_block
+from blocks import BlockID, dirt_block, farm_block, grass_block, wheat_crop_block, potato_block, carrot_block, \
+    bed_block
 import globals as G
 
 
@@ -480,6 +481,43 @@ class IronBoots(Armor):
     name = "Iron Boots"
     icon_name = "bootsIron"
 
+class BedItem(Item):
+    id = 355
+    max_stack_size = 64
+    name = "Bed"
+    icon_name = "bed"
+
+    def on_right_click(self, world, player):
+        vec, direction, angle = player.get_sight_direction()
+        block, previous = world.hit_test(player.position, player.get_sight_vector(), max_distance=player.attack_range)
+
+        if not (previous[0] == block[0] and (previous[1] - 1) == block[1] and previous[-1] == block[-1]):
+            # bed can only be placed ON a block
+            return False
+
+        dir_vector = ((1, 0), (0, 1), (-1, 0), (0, -1))
+        feet = previous
+        head = (previous[0] + dir_vector[direction][0], previous[1], previous[-1] + dir_vector[direction][-1])
+        head_base = (block[0] + dir_vector[direction][0], block[1], block[-1] + dir_vector[direction][-1])
+        try:
+            head_base_id = world[head_base]
+        except KeyError:
+            # no place to stand on
+            return False
+
+        if head in world:
+            # place already taken
+            return False
+
+        if not (bed_block.can_place_on(world[block].id) and bed_block.can_place_on(head_base_id)):
+            return False
+
+        world.add_block(feet, bed_block)
+        world[feet].set_metadata(world[feet].get_metadata() | (1 << 7))
+        world.add_block(head, bed_block)
+
+        return False
+
 ##Emerald Armor .. Pretty much re-textured Iron armor (from Tekkit)
 
 #class EmeraldHelmet(Armor):
@@ -556,3 +594,4 @@ bread_item = BreadItem()
 potato_item = PotatoItem()
 carrot_item = CarrotItem()
 bone_meal_item = BoneMeal()
+bed_item = BedItem()

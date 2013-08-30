@@ -88,6 +88,8 @@ def save_blocks(blocks, world):
             f.write(save_sector_to_string(blocks, secpos))
 
 def save_player(player, world):
+    if type(player) == tuple:
+        print player
     with open(os.path.join(G.game_dir, world, "players", player.username+".dat"), "wb") as f:
         f.write("\1"+player.inventory)
         #TODO: Save player position (and rotation?)
@@ -133,9 +135,20 @@ def load_region(world, world_name=None, region=None, sector=None):
                                     fpos += 2
                                     if read != null2:
                                         position = x,y,z
-                                        try: blocks[position] = BLOCKS_DIR[structuchar2.unpack(read)]
-                                        except KeyError as e:
-                                            print "load_region: Invalid Block", e
+                                        try: 
+                                            full_id = structuchar2.unpack(read)
+                                            blocks[position] = BLOCKS_DIR[full_id]
+                                            if blocks[position].sub_id_as_metadata:
+                                                blocks[position] = type(BLOCKS_DIR[full_id])()
+                                                blocks[position].set_metadata(full_id[-1])
+                                        except KeyError:
+                                            try:
+                                                main_blk = BLOCKS_DIR[(full_id[0], 0)]
+                                                if main_blk.sub_id_as_metadata: # sub id is metadata
+                                                    blocks[position] = type(main_blk)()
+                                                    blocks[position].set_metadata(full_id[-1])
+                                            except KeyError as e:
+                                                print "load_region: Invalid Block", e
                                         sectors[(x/SECTOR_SIZE, y/SECTOR_SIZE, z/SECTOR_SIZE)].append(position)
 
 def load_player(player, world):

@@ -89,7 +89,16 @@ class PacketReceiver(Thread):
                         unpacked = structuchar2.unpack(read)
                         if read != null2 and unpacked in BLOCKS_DIR:
                             position = x,y,z
-                            blocks[position] = BLOCKS_DIR[unpacked]
+                            try:
+                                blocks[position] = BLOCKS_DIR[unpacked]
+                                if blocks[position].sub_id_as_metadata:
+                                    blocks[position] = type(BLOCKS_DIR[unpacked])()
+                                    blocks[position].set_metadata(0)
+                            except KeyError:
+                                main_blk = BLOCKS_DIR[(unpacked[0], 0)]
+                                if main_blk.sub_id_as_metadata: # sub id is metadata
+                                    blocks[position] = type(main_blk)()
+                                    blocks[position].set_metadata(unpacked[-1])
                             sector.append(position)
                             if packet[exposed_pos] is "1":
                                 blocks.show_block(position)

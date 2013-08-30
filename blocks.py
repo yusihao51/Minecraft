@@ -115,7 +115,7 @@ class BlockID(object):
     """
 
     main = 0
-    sub = 0  # A.k.a. DataID, damageID, etc
+    sub = 0  # A.k.a. DataID, damageID, metadata, etc
     icon_name = None
 
     def __init__(self, main, sub=0, icon_name=None):
@@ -357,6 +357,9 @@ class Block(object):
 
     def on_neighbor_change(self, world, neighbor_pos, self_pos):
         pass
+
+    def can_place_on(self, block_id):
+        return False
 
 class BlockColorizer(object):
         def __init__(self, filename):
@@ -1695,6 +1698,29 @@ class CakeBlock(Block):
     name = "Cake"
     max_stack_size = 64
 
+class BedBlock(Block):
+    height = 0.5
+    texture_name = "bed_head_top", "bed_head_top", "bed_head_end", "bed_head_side", "bed_head_side", "bed_head_side", \
+                        "bed_feet_top", "bed_feet_top", "bed_feet_end", "bed_feet_side", "bed_feet_side", "bed_feet_side",
+    id = 26
+
+    # bed metadata
+    # bit 7: 0 - head, 1 - tail
+    # bit 1, bit 0: 00 - east, 01 - south, 10 - west, 11 - north
+    sub_id_as_metadata = True
+
+    hardness = 0.5
+    digging_tool = G.AXE
+    name = "Bed"    # cannot be obtained, doesn't matter
+
+    def can_place_on(self, block_id):
+        return (block_id != 0)
+
+    def set_metadata(self, metadata):
+        print 'metadata: ', metadata
+        if self.sub_id_as_metadata:
+            self.id.sub = metadata
+
 CRACK_LEVELS = 10
 
 
@@ -1726,7 +1752,7 @@ brick_block = BrickBlock()
 stone_block = StoneBlock()
 dirt_block = DirtBlock()
 lamp_block = LampBlock()
-bed_block = BedrockBlock()
+bedrock_block = BedrockBlock()
 water_block = WaterBlock()
 craft_block = CraftTableBlock()
 sandstone_block = SandstoneBlock()
@@ -1833,3 +1859,4 @@ wildgrass6_block = Grass6Block()
 wildgrass7_block = Grass7Block()
 desertgrass_block = DesertGrassBlock()
 deadbush_block = DeadBushBlock()
+bed_block = BedBlock()
