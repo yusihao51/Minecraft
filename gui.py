@@ -1092,14 +1092,18 @@ class ScrollbarWidget(Control):
         self.label = Label(str(caption) + ":" + str(pos) + "%", font_name, 12, anchor_x='center', anchor_y='center',
             color=(255, 255, 255, 255), batch=self.batch, group=self.label_group) if caption else None
         
-        self.resize(self.x, self.y, self.width, self.height)
+        self.move_to(x, y)
 
-    def resize(self, x=None, y=None, width=None, height=None):
-        self.x = x or self.x
-        self.y = y or self.y
+    @property
+    def position(self):
+        return self.x, self.y
 
-        self.sb_height *= height / self.height
-        self.sb_width *= width / self.width
+    @position.setter
+    def position(self, value):
+        self.move_to(*value)
+
+    def move_to(self, x, y):
+        self.x, self.y = x, y
 
         if hasattr(self, 'background') and self.background:
             self.background.x, self.background.y = x, y
@@ -1110,8 +1114,6 @@ class ScrollbarWidget(Control):
         if hasattr(self, 'label') and self.label:
             self.label.x, self.label.y = self.center
 
-        self.width = width or self.width
-        self.height = height or self.height
         # Recreate the bounding box
         self.rectangle = Rectangle(self.x, self.y, self.width, self.height)
 

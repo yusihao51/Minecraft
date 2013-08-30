@@ -38,13 +38,13 @@ class Layout(object):
         self.components.append(component)
 
     def _set_component_position(self, component, x, y):
-        if not hasattr(component, 'position'):
+        try:
+            component.position = x, y
+        except AttributeError:
             try:
                 component.resize(x, y, component.width, component.height)
             except AttributeError:
                 component.x, component.y = x, y
-        else:
-            component.position = x, y
 
     @property
     def position(self):
@@ -65,8 +65,33 @@ class VerticalLayout(Layout):
     def _put_components(self):
         c_x, c_y = self._position[0], self._position[-1] + self.height
         for component in self.components:
+            print type(component)
             self._set_component_position(component, c_x, c_y)
             c_y -= component.height + 10
+
+    @property
+    def position(self):
+        return _position
+
+    @position.setter
+    def position(self, value):
+        self._position = value
+        self._put_components()
+
+
+class HorizontalLayout(Layout):
+    def add(self, component):
+        self.components.append(component)
+        self.width += component.width + 10
+        self.height = max(component.height, self.height)
+        self._put_components()
+
+    def _put_components(self):
+        c_x, c_y = self._position[0], self._position[-1]
+        for component in self.components:
+            self._set_component_position(component, c_x, c_y)
+            c_x += component.width + 10
+            print c_x, c_y
 
     @property
     def position(self):
@@ -418,18 +443,34 @@ class OptionsView(MenuView):
             G.USERNAME = self.text_input.text
         self.text_input.push_handlers(key_released=text_input_callback)
 
-        button = self.Button(caption=G._("Controls..."), on_click=self.controller.controls)
+        hl = HorizontalLayout(0, 0)
+        sb = self.Scrollbar(x=0, y=0, width=300, height=40, sb_width=20, sb_height=40, caption="Music")
+        hl.add(sb)
+
+        def change_sound_volume(pos):
+            print G.EFFECT_VOLUME
+            G.EFFECT_VOLUME = float(float(pos) / 100)
+        sb = self.Scrollbar(x=0, y=0, width=300, height=40, sb_width=20, sb_height=40, caption="Sound", pos=int(G.EFFECT_VOLUME * 100), on_pos_change=change_sound_volume)
+        hl.add(sb)
+        self.layout.add(hl)
+
+        hl = HorizontalLayout(0, 0)
+        button = self.Button(width=300, caption=G._("Controls..."), on_click=self.controller.controls)
+        hl.add(button)
+        self.buttons.append(button)
+        button = self.Button(width=300, caption=G._("Textures"), on_click=self.controller.textures, enabled=textures_enabled)
+        hl.add(button)
+        self.buttons.append(button)
+        self.layout.add(hl)
+
+        button = self.Button(width=610, caption=G._("Done"), on_click=self.controller.main_menu)
         self.layout.add(button)
         self.buttons.append(button)
-        button = self.Button(caption=G._("Textures"), on_click=self.controller.textures, enabled=textures_enabled)
-        self.layout.add(button)
-        self.buttons.append(button)
-        button = self.Button(caption=G._("Done"), on_click=self.controller.main_menu)
-        self.layout.add(button)
-        self.buttons.append(button)
+
         self.label = Label('Options', font_name='ChunkFive Roman', font_size=25, x=width/2, y=self.frame.y + self.frame.height,
             anchor_x='center', anchor_y='top', color=(255, 255, 255, 255), batch=self.batch,
             group=self.labels_group)
+
         self.on_resize(width, height)
 
     def on_resize(self, width, height):
