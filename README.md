@@ -9,7 +9,7 @@
 ## How to Run
 
     pip install pyglet
-    git clone https://github.com/[current repository name]/Minecraft.git
+    git clone git@github.com:boskee/Minecraft
     cd Minecraft
     python main.py
 
