@@ -88,18 +88,25 @@ includes.extend(['SocketServer', 'importlib'])
 setup(
     name=G.APP_NAME,
     cmdclass={'build_ext': build_ext},
-        data_files = find_files('resources','',[
-        'fonts/*',
-        'sounds/*'
-        'textures/*',
-        'textures/icons/*'
-        'textures/xcf source files/*'
+        data_files = find_files('.','',[
+        'resources/fonts/*',
+        'resources/sounds/*',
+        'resources/textures/*',
+		'resources/textures/blocks/*',
+		'resources/textures/items/*',
+        'resources/textures/icons/*',
+        'resources/textures/xcf source files/*',
+		'resources/environment/*',
+		'resources/misc/*',
+		'resources/gui/*',
+		'resources/mob/*',
+		'resources/*.jpg',
+		'resources/title/bg/*',
     ]),
-
     version="1.0",
     description="A Minecraft demo clone in Python 2.7.x",
     author="github.com/boskee/Minecraft",
-    console=['main.py'],
+    windows=[{"script":'main.py', "dest_base":G.APP_NAME}],
     ext_modules=ext_modules, requires=['pyglet', 'Cython'],
 	options={"py2exe":{"includes": includes}}
 )
