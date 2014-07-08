@@ -86,6 +86,7 @@ KEY_BINDINGS = dict(
 # Saves
 DISABLE_SAVE = True
 SAVE_FILENAME = None
+DB_NAME = 'world.db'
 
 # Game engine
 SECTOR_SIZE = 8
@@ -218,6 +219,7 @@ _ = lambda x:x
 game_dir = get_settings_path(APP_NAME)
 if not os.path.exists(game_dir):
     os.makedirs(game_dir)
+worlds_dir = os.path.join(game_dir, 'worlds')
 
 config = ConfigParser()
 config_file = os.path.join(game_dir, 'game.cfg')

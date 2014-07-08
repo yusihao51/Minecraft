@@ -6,6 +6,7 @@ import os
 import random
 import struct
 import time
+import sqlite3
 
 # Third-party packages
 # Nothing for now...
@@ -48,6 +49,20 @@ def sector_to_blockpos(secpos):
     x,y,z = secpos
     return x*8, y*8, z*8
 
+def connect_db(world=None):
+    if world is None: world = 'world'
+    world_dir = os.path.join(G.worlds_dir, world)
+    if not os.path.exists(world_dir):
+        os.makedirs(world_dir)
+    if not os.path.exists(os.path.join(world_dir, G.DB_NAME)):
+        db = sqlite3.connect(os.path.join(world_dir, G.DB_NAME))
+        db.execute('create table players (id integer primary key autoincrement, version integer, ' + \
+            'pos_x real, pos_y real, pos_z real, mom_x real, mom_y real, mom_z real, ' + \
+            'inventory varchar(160), name varchar(30) UNIQUE)');
+        db.commit()
+        return db
+    return sqlite3.connect(os.path.join(world_dir, G.DB_NAME)) 
+
 def save_sector_to_string(blocks, secpos):
     cx, cy, cz = sector_to_blockpos(secpos)
     fstr = ""
@@ -88,16 +103,21 @@ def save_blocks(blocks, world):
             f.write(save_sector_to_string(blocks, secpos))
 
 def save_player(player, world):
-    if type(player) == tuple:
-        print player
-    with open(os.path.join(G.game_dir, world, "players", player.username+".dat"), "wb") as f:
-        f.write("\1"+player.inventory)
-        #TODO: Save player position (and rotation?)
+    db = connect_db(world)
+    cur = db.cursor()
+    cur.execute('insert or replace into players(version, pos_x, pos_y, pos_z, mom_x, mom_y, mom_z, inventory, name) ' + \
+        "values (?, ?, ?, ?, ?, ?, ?, ?, ?)", (1, 
+            player.position[0], player.position[1], player.position[2],
+            player.momentum[0], player.momentum[1], player.momentum[2], 
+            player.inventory, player.username))
+    db.commit()
+    cur.close()
+    db.close()
 
 
 def world_exists(game_dir, world=None):
     if world is None: world = "world"
-    return os.path.lexists(os.path.join(game_dir, world))
+    return os.path.lexists(os.path.join(G.worlds_dir, world))
 
 
 def remove_world(game_dir, world=None):
@@ -152,11 +172,15 @@ def load_region(world, world_name=None, region=None, sector=None):
                                         sectors[(x/SECTOR_SIZE, y/SECTOR_SIZE, z/SECTOR_SIZE)].append(position)
 
 def load_player(player, world):
-    if os.path.lexists(os.path.join(G.game_dir, world, "players", player.username+".dat")):
-        with open(os.path.join(G.game_dir, world, "players", player.username+".dat"), "rb") as f:
-            version = struct.unpack("B", f.read(1))[0]
-            if version == 1:
-                player.inventory = f.read(4*40)
+    db = connect_db(world)
+    cur = db.cursor()
+    cur.execute("select * from players where name='%s'" % player.username)
+    data = cur.fetchone()
+    player.position = list(data[i] for i in range(2, 5))
+    player.momentum = list(data[i] for i in range(5, 8))
+    player.inventory = str(data[8])
+    cur.close()
+    db.close()
 
 @performance_info
 def open_world(gamecontroller, game_dir, world=None):

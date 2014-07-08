@@ -41,6 +41,8 @@ class WorldServer(dict):
         self.server_lock = threading.Lock()
         self.server = server
 
+        self.db = savingsystem.connect_db(G.SAVE_FILENAME)
+
         if os.path.exists(os.path.join(G.game_dir, G.SAVE_FILENAME, "seed")):
             with open(os.path.join(G.game_dir, G.SAVE_FILENAME, "seed"), "rb") as f:
                 G.SEED = f.read()
@@ -50,6 +52,10 @@ class WorldServer(dict):
                 f.write(self.generate_seed())
 
         self.terraingen = terrain.TerrainGeneratorSimple(self, G.SEED)
+
+    def __del__(self):
+        self.db.close()
+        super(WorldServer, self).__del__()
 
     def __delitem__(self, position):
         super(WorldServer, self).__delitem__(position)

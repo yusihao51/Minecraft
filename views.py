@@ -65,7 +65,6 @@ class VerticalLayout(Layout):
     def _put_components(self):
         c_x, c_y = self._position[0], self._position[-1] + self.height
         for component in self.components:
-            print type(component)
             self._set_component_position(component, c_x, c_y)
             c_y -= component.height + 10
 
@@ -91,7 +90,6 @@ class HorizontalLayout(Layout):
         for component in self.components:
             self._set_component_position(component, c_x, c_y)
             c_x += component.width + 10
-            print c_x, c_y
 
     @property
     def position(self):
