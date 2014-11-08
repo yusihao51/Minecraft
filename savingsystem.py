@@ -176,9 +176,14 @@ def load_player(player, world):
     cur = db.cursor()
     cur.execute("select * from players where name='%s'" % player.username)
     data = cur.fetchone()
-    player.position = list(data[i] for i in range(2, 5))
-    player.momentum = list(data[i] for i in range(5, 8))
-    player.inventory = str(data[8])
+    if data is None:    # no such entry, set initial value
+        player.position = None
+        player.momentum = (0, 0, 0)
+        player.inventory = ''.join((struct.pack("HBB", 0, 0, 0)) * 40)
+    else:
+        player.position = list(data[i] for i in range(2, 5))
+        player.momentum = list(data[i] for i in range(5, 8))
+        player.inventory = str(data[8])
     cur.close()
     db.close()
 

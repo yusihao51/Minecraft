@@ -145,6 +145,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             elif packettype == 255:  # Initial Login
                 txtlen = struct.unpack("i", self.request.recv(4))[0]
                 self.username = self.request.recv(txtlen).decode('utf-8')
+                self.position = None
                 load_player(self, "world")
 
                 for player in self.server.players.itervalues():
@@ -152,6 +153,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 print "%s's username is %s" % (self.client_address, self.username)
 
                 position = (0,self.server.world.terraingen.get_height(0,0)+2,0)
+                if self.position is None: self.position = position  # New player, set initial position
 
                 # Send list of current players to the newcomer
                 for player in self.server.players.itervalues():
