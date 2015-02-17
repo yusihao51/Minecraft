@@ -23,7 +23,6 @@ from gui import frame_image, Rectangle, backdrop, Button, button_image, \
 from textures import TexturePackList
 from utils import image_sprite, load_image
 
-
 __all__ = (
     'View', 'MainMenuView', 'OptionsView', 'ControlsView', 'TexturesView', 'MultiplayerView'
 )
@@ -359,8 +358,8 @@ class MainMenuView(MenuView):
 
         glViewport(0, 0, self.controller.window.get_size()[0], self.controller.window.get_size()[1])
 
-    def draw_blur(self, times=25, inc=0.02):
-        alpha = 0.2
+    def draw_blur(self, times=5):
+        alpha = 0.5
 
         glDisable(GL_TEXTURE_GEN_S)
         glDisable(GL_TEXTURE_GEN_T)
@@ -368,7 +367,16 @@ class MainMenuView(MenuView):
         glEnable(GL_TEXTURE_2D)
         glDisable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
         glBindTexture(GL_TEXTURE_2D, self.blur_texture.id)
+
+        glMatrixMode(GL_PROJECTION)
+        glPushMatrix()
+        glLoadIdentity()
+        glOrtho(0, self.controller.window.get_size()[0] , self.controller.window.get_size()[1] , 0, -1, 1 )
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        glLoadIdentity()
 
         alphainc = alpha / float(times)
         spost = 0
@@ -378,22 +386,28 @@ class MainMenuView(MenuView):
         for _ in range(times):
             glColor4f(1.0, 1.0, 1.0, alpha)
 
-            glTexCoord2f(0+spost, 1-spost)
+            glTexCoord2f(0, 1)
             glVertex2f(0, 0)
 
-            glTexCoord2f(0+spost, 0+spost)
+            glTexCoord2f(0, 0)
             glVertex2f(0, height)
 
-            glTexCoord2f(1-spost, 0+spost)
+            glTexCoord2f(1, 0)
             glVertex2f(width, height)
 
-            glTexCoord2f(1-spost, 1-spost)
+            glTexCoord2f(1, 1)
             glVertex2f(width, 0)
 
-            spost += inc
             alpha = alpha - alphainc
+            if alpha < 0:
+                alpha = 0
 
         glEnd()
+
+        glMatrixMode(GL_PROJECTION)
+        glPopMatrix()
+        glMatrixMode(GL_MODELVIEW)
+        glPopMatrix()
 
         glEnable(GL_DEPTH_TEST)
         glDisable(GL_TEXTURE_2D)
