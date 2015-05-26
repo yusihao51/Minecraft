@@ -10,3 +10,6 @@
 - melon_break.wav http://www.freesound.org/people/lolamadeus/sounds/159669/;http://www.freesound.org/people/GagaMan/sounds/88511/ Creative Commons 1.0;Creative Commons Attribution 3.0
 - sand_break.wav http://www.freesound.org/people/crashoverride61088/sounds/146407/ Creative Commons 1.0
 - Chunkfive.otf http://www.fontsquirrel.com/fonts/ChunkFive License in fonts folder
+- skydome.jpg
+www.cgskies.com/sky.php?sky=339
+Free for noncommercial use
