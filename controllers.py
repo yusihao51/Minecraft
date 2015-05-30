@@ -387,6 +387,8 @@ class GameController(Controller):
             else:
                 self.clock += 1
 
+        self.skydome.update_time_of_day(self.time_of_day)
+
     def set_highlighted_block(self, block):
         if self.highlighted_block == block:
             return

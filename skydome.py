@@ -28,8 +28,9 @@ class Skydome(object):
         self.sun_image = G.texture_pack_list.selected_texture_pack.load_texture(['environment', 'sun.png'])
         self.size = size
 
-        # FIXME: hard coded
-        self.sun_angle = pi / 3
+        self.time_of_day = 0.0
+
+        self.sun_angle = 0
 
         t = self.image.get_texture().tex_coords
         u = t[3]
@@ -105,10 +106,10 @@ class Skydome(object):
         r_sun_d2 = SUN_RADIUS / 2
 
         # x, y, z
-        top_left = ( self.size * cos(sun_angle + r_sun_d2), self.size * sin(sun_angle + r_sun_d2), -self.size * sin(r_sun_d2))
-        top_right =  ( self.size * cos(sun_angle + r_sun_d2), self.size * sin(sun_angle + r_sun_d2), self.size * sin(r_sun_d2))
-        bottom_left = ( self.size * cos(sun_angle - r_sun_d2), self.size * sin(sun_angle - r_sun_d2), -self.size * sin(r_sun_d2))
-        bottom_right = ( self.size * cos(sun_angle - r_sun_d2), self.size * sin(sun_angle - r_sun_d2), self.size * sin(r_sun_d2))
+        top_left = (-self.size * sin(r_sun_d2), self.size * cos(sun_angle + r_sun_d2), self.size * sin(sun_angle + r_sun_d2))
+        top_right =  (self.size * sin(r_sun_d2), self.size * cos(sun_angle + r_sun_d2), self.size * sin(sun_angle + r_sun_d2))
+        bottom_left = (-self.size * sin(r_sun_d2), self.size * cos(sun_angle - r_sun_d2), self.size * sin(sun_angle - r_sun_d2))
+        bottom_right = (self.size * sin(r_sun_d2), self.size * cos(sun_angle - r_sun_d2), self.size * sin(sun_angle - r_sun_d2))
         vert_list = [bottom_left, top_right, top_left, bottom_right, top_right, bottom_left]
         for vert in vert_list:
             vertex_list.extend(vert)
@@ -146,3 +147,7 @@ class Skydome(object):
         glDisable(self.sun_image.texture.target)
         glDisable(GL_BLEND)
         glPopMatrix()
+
+    def update_time_of_day(self, time_of_day):
+        self.time_of_day = time_of_day
+        self.sun_angle = 2 * pi * time_of_day / 24.0 - pi / 4
